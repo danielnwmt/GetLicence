@@ -301,19 +301,14 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
                   ))}</SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2"><Label>Plano</Label>
-                  <Select value={form.plan} onValueChange={(v) => setForm({ ...form, plan: v, months: v === "yearly" ? "12" : "1" })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="monthly">Mensal</SelectItem>
-                      <SelectItem value="yearly">Anual</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2"><Label>Duração (meses)</Label>
-                  <Input type="number" min="1" value={form.months} onChange={(e) => setForm({ ...form, months: e.target.value })} />
-                </div>
+              <div className="space-y-2"><Label>Plano</Label>
+                <Select value={form.plan} onValueChange={(v) => setForm({ ...form, plan: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">Mensal (1 mês)</SelectItem>
+                    <SelectItem value="yearly">Anual (12 meses)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2"><Label>Status inicial</Label>
                 <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
