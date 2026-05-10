@@ -43,11 +43,8 @@ export function SiteHeader() {
             </>
           ) : (
             <>
-              <Button asChild variant="ghost" size="sm">
-                <Link to="/auth">Entrar</Link>
-              </Button>
               <Button asChild size="sm">
-                <Link to="/auth">Começar</Link>
+                <Link to="/auth">Entrar</Link>
               </Button>
             </>
           )}
