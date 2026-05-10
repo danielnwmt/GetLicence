@@ -233,7 +233,7 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
 
   const create = async () => {
     if (!form.user_id || !form.product_id) return toast.error("Selecione cliente e produto");
-    const months = Number(form.months) || 1;
+    const months = form.plan === "yearly" ? 12 : 1;
     const expires = new Date();
     expires.setMonth(expires.getMonth() + months);
     const product = products.find((p) => p.id === form.product_id);
