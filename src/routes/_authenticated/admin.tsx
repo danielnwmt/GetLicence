@@ -105,7 +105,7 @@ function AdminPage() {
           <ProductsTab products={products} onChange={reload} />
         </TabsContent>
         <TabsContent value="customers" className="mt-6">
-          <CustomersTab profiles={profiles} licenses={licenses} />
+          <CustomersTab profiles={profiles} licenses={licenses} onChange={reload} />
         </TabsContent>
       </Tabs>
     </div>
