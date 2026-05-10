@@ -1,4 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { createCustomer } from "@/lib/customers.functions";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -103,7 +105,7 @@ function AdminPage() {
           <ProductsTab products={products} onChange={reload} />
         </TabsContent>
         <TabsContent value="customers" className="mt-6">
-          <CustomersTab profiles={profiles} licenses={licenses} />
+          <CustomersTab profiles={profiles} licenses={licenses} onChange={reload} />
         </TabsContent>
       </Tabs>
     </div>
@@ -227,13 +229,13 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
   licenses: LicenseRow[]; products: Product[]; profiles: Profile[]; onChange: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ user_id: "", product_id: "", plan: "monthly", status: "active", months: "1", auto_pay: true });
+  const [form, setForm] = useState({ user_id: "", product_id: "", plan: "monthly", status: "active", auto_pay: true });
 
   const profileById = (id: string) => profiles.find((p) => p.user_id === id);
 
   const create = async () => {
     if (!form.user_id || !form.product_id) return toast.error("Selecione cliente e produto");
-    const months = Number(form.months) || 1;
+    const months = form.plan === "yearly" ? 12 : 1;
     const expires = new Date();
     expires.setMonth(expires.getMonth() + months);
     const product = products.find((p) => p.id === form.product_id);
@@ -301,19 +303,14 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
                   ))}</SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2"><Label>Plano</Label>
-                  <Select value={form.plan} onValueChange={(v) => setForm({ ...form, plan: v, months: v === "yearly" ? "12" : "1" })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="monthly">Mensal</SelectItem>
-                      <SelectItem value="yearly">Anual</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2"><Label>Duração (meses)</Label>
-                  <Input type="number" min="1" value={form.months} onChange={(e) => setForm({ ...form, months: e.target.value })} />
-                </div>
+              <div className="space-y-2"><Label>Plano</Label>
+                <Select value={form.plan} onValueChange={(v) => setForm({ ...form, plan: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">Mensal (1 mês)</SelectItem>
+                    <SelectItem value="yearly">Anual (12 meses)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2"><Label>Status inicial</Label>
                 <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
@@ -437,27 +434,73 @@ function PaymentsTab({ payments, onChange }: { payments: PaymentRow[]; onChange:
 }
 
 // ---------- Customers ----------
-function CustomersTab({ profiles, licenses }: { profiles: Profile[]; licenses: LicenseRow[] }) {
+function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; licenses: LicenseRow[]; onChange: () => void }) {
+  const createCustomerFn = useServerFn(createCustomer);
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ full_name: "", email: "", password: "" });
+
+  const save = async () => {
+    if (!form.full_name.trim() || !form.email.trim() || form.password.length < 6) {
+      return toast.error("Preencha nome, e-mail e senha (mín. 6 caracteres)");
+    }
+    setSaving(true);
+    try {
+      await createCustomerFn({ data: form });
+      toast.success("Cliente cadastrado");
+      setOpen(false);
+      setForm({ full_name: "", email: "", password: "" });
+      onChange();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao cadastrar");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
-    <Card className="overflow-hidden">
-      <table className="w-full text-sm">
-        <thead className="bg-muted/50 text-left"><tr>
-          <th className="p-3 font-medium">Nome</th><th className="p-3 font-medium">E-mail</th><th className="p-3 font-medium">Licenças</th>
-        </tr></thead>
-        <tbody>
-          {profiles.map((p) => {
-            const count = licenses.filter((l) => l.user_id === p.user_id).length;
-            return (
-              <tr key={p.user_id} className="border-t border-border">
-                <td className="p-3 font-medium">{p.full_name || "—"}</td>
-                <td className="p-3">{p.email}</td>
-                <td className="p-3">{count}</td>
-              </tr>
-            );
-          })}
-          {profiles.length === 0 && <tr><td colSpan={3} className="p-6 text-center text-muted-foreground">Nenhum cliente.</td></tr>}
-        </tbody>
-      </table>
-    </Card>
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Novo cliente</Button></DialogTrigger>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Cadastrar cliente</DialogTitle></DialogHeader>
+            <div className="space-y-3 py-2">
+              <div className="space-y-2"><Label>Nome completo</Label>
+                <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+              </div>
+              <div className="space-y-2"><Label>E-mail</Label>
+                <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              </div>
+              <div className="space-y-2"><Label>Senha inicial</Label>
+                <Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="mín. 6 caracteres" />
+              </div>
+            </div>
+            <DialogFooter><Button onClick={save} disabled={saving}>{saving ? "Salvando..." : "Cadastrar"}</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+      <Card className="overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/50 text-left"><tr>
+            <th className="p-3 font-medium">Nome</th><th className="p-3 font-medium">E-mail</th><th className="p-3 font-medium">Licenças</th>
+          </tr></thead>
+          <tbody>
+            {profiles.map((p) => {
+              const count = licenses.filter((l) => l.user_id === p.user_id).length;
+              return (
+                <tr key={p.user_id} className="border-t border-border">
+                  <td className="p-3 font-medium">{p.full_name || "—"}</td>
+                  <td className="p-3">{p.email}</td>
+                  <td className="p-3">{count}</td>
+                </tr>
+              );
+            })}
+            {profiles.length === 0 && <tr><td colSpan={3} className="p-6 text-center text-muted-foreground">Nenhum cliente.</td></tr>}
+          </tbody>
+        </table>
+      </Card>
+    </div>
   );
 }
+
