@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { KeyRound } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,7 +17,6 @@ export const Route = createFileRoute("/auth")({
 
 const emailSchema = z.string().trim().email("E-mail inválido").max(255);
 const passwordSchema = z.string().min(6, "Mínimo 6 caracteres").max(72);
-const nameSchema = z.string().trim().min(2, "Informe seu nome").max(100);
 
 function AuthPage() {
   const { user, loading } = useAuth();
@@ -38,14 +36,11 @@ function AuthPage() {
           <span className="text-xl font-semibold">LicençaHub</span>
         </Link>
         <Card className="p-6 shadow-elevated">
-          <Tabs defaultValue="login">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Entrar</TabsTrigger>
-              <TabsTrigger value="signup">Criar conta</TabsTrigger>
-            </TabsList>
-            <TabsContent value="login"><LoginForm /></TabsContent>
-            <TabsContent value="signup"><SignupForm /></TabsContent>
-          </Tabs>
+          <div className="mb-4">
+            <h1 className="text-xl font-semibold">Entrar</h1>
+            <p className="text-sm text-muted-foreground">Acesse sua conta para gerenciar licenças</p>
+          </div>
+          <LoginForm />
         </Card>
       </div>
     </div>
@@ -73,7 +68,7 @@ function LoginForm() {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-4 pt-4">
+    <form onSubmit={submit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="li-email">E-mail</Label>
         <Input id="li-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
@@ -84,56 +79,6 @@ function LoginForm() {
       </div>
       <Button type="submit" className="w-full" disabled={busy}>
         {busy ? "Entrando..." : "Entrar"}
-      </Button>
-    </form>
-  );
-}
-
-function SignupForm() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      nameSchema.parse(name);
-      emailSchema.parse(email);
-      passwordSchema.parse(password);
-    } catch (err) {
-      if (err instanceof z.ZodError) return toast.error(err.issues[0].message);
-    }
-    setBusy(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
-        data: { full_name: name },
-      },
-    });
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success("Conta criada! Verifique seu e-mail se necessário.");
-  };
-
-  return (
-    <form onSubmit={submit} className="space-y-4 pt-4">
-      <div className="space-y-2">
-        <Label htmlFor="su-name">Nome completo</Label>
-        <Input id="su-name" value={name} onChange={(e) => setName(e.target.value)} required />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="su-email">E-mail</Label>
-        <Input id="su-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="su-pwd">Senha</Label>
-        <Input id="su-pwd" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-      </div>
-      <Button type="submit" className="w-full" disabled={busy}>
-        {busy ? "Criando..." : "Criar conta"}
       </Button>
     </form>
   );
