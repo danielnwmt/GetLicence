@@ -27,12 +27,15 @@ function AuthPage() {
   }, [user, loading, navigate]);
 
   return (
-    <div
-      className="relative flex min-h-screen items-center justify-end bg-cover bg-center px-4 py-12 md:px-24"
-      style={{ backgroundImage: `url(${authHero})` }}
-    >
+    <div className="relative min-h-screen w-full">
+      <img
+        src={authHero}
+        alt="LicençaHub"
+        className="absolute inset-0 h-full w-full object-cover object-center"
+      />
       {/* Card de login posicionado sobre o espaço roxo vazio da imagem */}
-      <div className="relative z-10 w-full max-w-md rounded-2xl border border-white/20 bg-white/10 p-8 shadow-elevated backdrop-blur-xl">
+      <div className="relative z-10 flex min-h-screen items-center justify-end px-4 py-12 md:px-24">
+        <div className="w-full max-w-md rounded-2xl border border-white/20 bg-white/10 p-8 shadow-elevated backdrop-blur-xl">
         <Link to="/" className="mb-6 flex items-center gap-2 text-white">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15 backdrop-blur">
             <KeyRound className="h-5 w-5" />
