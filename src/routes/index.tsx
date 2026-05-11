@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { KeyRound, ShieldCheck, CreditCard, BarChart3, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import authHero from "@/assets/auth-hero.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({
