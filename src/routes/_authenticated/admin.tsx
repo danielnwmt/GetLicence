@@ -472,6 +472,11 @@ function PaymentsTab({ payments, onChange }: { payments: PaymentRow[]; onChange:
                     <FileText className="mr-1 h-3.5 w-3.5" /> {issuingId === p.id ? "Emitindo..." : "Emitir boleto"}
                   </Button>
                 )}
+                {p.boleto_url && p.status !== "paid" && (
+                  <Button size="sm" variant="outline" onClick={() => cancelar(p.id)} disabled={cancelingId === p.id}>
+                    <XCircle className="mr-1 h-3.5 w-3.5" /> {cancelingId === p.id ? "Cancelando..." : "Cancelar boleto"}
+                  </Button>
+                )}
                 {p.status !== "paid" && (
                   <Button size="sm" variant="ghost" onClick={() => markPaid(p.id)}>
                     <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Pago
