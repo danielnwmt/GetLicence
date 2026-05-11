@@ -20,21 +20,22 @@ export function SiteHeader() {
           </div>
           <span className="text-lg">Get<span className="text-primary">Licence</span></span>
         </Link>
-        <div id="site-header-center" className="flex flex-1 justify-center px-4" />
+        <div id="site-header-center" className="flex flex-1 justify-center px-4">
+          {user && !isAdmin && role === "admin" && (
+            <div className="flex items-center gap-1">
+              <Link to="/admin" className={linkCls}>Dashboard</Link>
+              <Link to="/admin" className={linkCls}>Clientes</Link>
+              <Link to="/admin" className={linkCls}>Licenças</Link>
+              <Link to="/dashboard" className={pathname === "/dashboard" ? activeLinkCls : linkCls}>Minhas licenças</Link>
+              <Link to="/admin" className={linkCls}>Integrações</Link>
+              <Link to="/admin" className={linkCls}>Financeiro</Link>
+              <Link to="/account" className={pathname === "/account" ? activeLinkCls : linkCls}>Conta</Link>
+            </div>
+          )}
+        </div>
         <nav className="flex items-center gap-2">
           {user ? (
             <>
-              {!isAdmin && role === "admin" && (
-                <div className="flex items-center gap-1">
-                  <Link to="/admin" className={linkCls}>Dashboard</Link>
-                  <Link to="/admin" className={linkCls}>Clientes</Link>
-                  <Link to="/admin" className={linkCls}>Licenças</Link>
-                  <Link to="/dashboard" className={pathname === "/dashboard" ? activeLinkCls : linkCls}>Minhas licenças</Link>
-                  <Link to="/admin" className={linkCls}>Integrações</Link>
-                  <Link to="/admin" className={linkCls}>Financeiro</Link>
-                  <Link to="/account" className={pathname === "/account" ? activeLinkCls : linkCls}>Conta</Link>
-                </div>
-              )}
               {!isAdmin && role !== "admin" && (
                 <>
                   <Button asChild variant="ghost" size="sm">
