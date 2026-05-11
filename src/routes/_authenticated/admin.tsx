@@ -118,7 +118,7 @@ function AdminPage() {
           <LicensesTab licenses={licenses} products={products} profiles={profiles} onChange={reload} />
         </TabsContent>
         <TabsContent value="payments" className="mt-6">
-          <PaymentsTab payments={payments} onChange={reload} />
+          <PaymentsTab payments={payments} licenses={licenses} profiles={profiles} onChange={reload} />
         </TabsContent>
         <TabsContent value="products" className="mt-6">
           <ProductsTab products={products} onChange={reload} />
@@ -394,11 +394,43 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
 }
 
 // ---------- Payments ----------
-function PaymentsTab({ payments, onChange }: { payments: PaymentRow[]; onChange: () => void }) {
+function PaymentsTab({ payments, licenses, profiles, onChange }: { payments: PaymentRow[]; licenses: LicenseRow[]; profiles: Profile[]; onChange: () => void }) {
   const issueBoleto = useServerFn(issueAsaasBoleto);
   const cancelBoleto = useServerFn(cancelAsaasBoleto);
   const [issuingId, setIssuingId] = useState<string | null>(null);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
+  const [newOpen, setNewOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newForm, setNewForm] = useState({ user_id: "", license_id: "", amount: "", due_date: "" });
+
+  const clientLicenses = licenses.filter((l) => l.user_id === newForm.user_id);
+
+  const createBoleto = async () => {
+    if (!newForm.user_id || !newForm.license_id) return toast.error("Selecione cliente e licença");
+    const amount = Number(newForm.amount);
+    if (!amount || amount <= 0) return toast.error("Informe um valor válido");
+    setCreating(true);
+    try {
+      const { data: pay, error } = await supabase.from("payments").insert({
+        user_id: newForm.user_id,
+        license_id: newForm.license_id,
+        amount,
+        status: "pending" as const,
+        due_date: newForm.due_date || null,
+      }).select().single();
+      if (error) throw new Error(error.message);
+      const r = await issueBoleto({ data: { payment_id: pay.id } });
+      toast.success("Boleto emitido");
+      if (r.boleto_url) window.open(r.boleto_url, "_blank");
+      setNewOpen(false);
+      setNewForm({ user_id: "", license_id: "", amount: "", due_date: "" });
+      onChange();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao emitir boleto");
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const markPaid = async (id: string) => {
     const { error } = await supabase.from("payments").update({ status: "paid" as const, paid_at: new Date().toISOString() }).eq("id", id);
@@ -446,8 +478,48 @@ function PaymentsTab({ payments, onChange }: { payments: PaymentRow[]; onChange:
   };
 
   return (
-    <Card className="overflow-hidden">
-      <table className="w-full text-sm">
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Dialog open={newOpen} onOpenChange={setNewOpen}>
+          <DialogTrigger asChild>
+            <Button><Plus className="mr-2 h-4 w-4" /> Novo boleto</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Emitir novo boleto</DialogTitle></DialogHeader>
+            <div className="space-y-3 py-2">
+              <div className="space-y-2"><Label>Cliente</Label>
+                <Select value={newForm.user_id} onValueChange={(v) => setNewForm({ ...newForm, user_id: v, license_id: "" })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>{profiles.map((p) => (
+                    <SelectItem key={p.user_id} value={p.user_id}>{p.full_name || p.email}</SelectItem>
+                  ))}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2"><Label>Licença</Label>
+                <Select value={newForm.license_id} onValueChange={(v) => setNewForm({ ...newForm, license_id: v })} disabled={!newForm.user_id}>
+                  <SelectTrigger><SelectValue placeholder={newForm.user_id ? "Selecione..." : "Escolha o cliente primeiro"} /></SelectTrigger>
+                  <SelectContent>{clientLicenses.map((l) => (
+                    <SelectItem key={l.id} value={l.id}>{l.product?.name ?? "Licença"} — {l.license_key}</SelectItem>
+                  ))}</SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2"><Label>Valor (R$)</Label>
+                  <Input type="number" step="0.01" value={newForm.amount} onChange={(e) => setNewForm({ ...newForm, amount: e.target.value })} />
+                </div>
+                <div className="space-y-2"><Label>Vencimento</Label>
+                  <Input type="date" value={newForm.due_date} onChange={(e) => setNewForm({ ...newForm, due_date: e.target.value })} />
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={createBoleto} disabled={creating}>{creating ? "Emitindo..." : "Emitir boleto"}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+      <Card className="overflow-hidden">
+        <table className="w-full text-sm">
         <thead className="bg-muted/50 text-left"><tr>
           <th className="p-3 font-medium">Data</th><th className="p-3 font-medium">Licença</th>
           <th className="p-3 font-medium">Valor</th><th className="p-3 font-medium">Pago em</th>
@@ -503,6 +575,7 @@ function PaymentsTab({ payments, onChange }: { payments: PaymentRow[]; onChange:
         </tbody>
       </table>
     </Card>
+    </div>
   );
 }
 
