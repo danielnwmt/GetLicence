@@ -75,9 +75,6 @@ function Index() {
         </div>
       </section>
 
-      <footer className="border-t border-border/60 py-8 text-center text-sm text-muted-foreground">
-        GetLicence — feito com Lovable
-      </footer>
     </div>
   );
 }
