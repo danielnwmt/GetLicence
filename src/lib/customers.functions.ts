@@ -8,6 +8,15 @@ const schema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   full_name: z.string().min(1),
+  cpf_cnpj: z.string().min(11),
+  phone: z.string().optional().nullable(),
+  address_zip: z.string().optional().nullable(),
+  address_street: z.string().optional().nullable(),
+  address_number: z.string().optional().nullable(),
+  address_complement: z.string().optional().nullable(),
+  address_neighborhood: z.string().optional().nullable(),
+  address_city: z.string().optional().nullable(),
+  address_state: z.string().optional().nullable(),
 });
 
 export const createCustomer = createServerFn({ method: "POST" })
@@ -36,5 +45,21 @@ export const createCustomer = createServerFn({ method: "POST" })
       user_metadata: { full_name: data.full_name },
     });
     if (error) throw new Response(error.message, { status: 400 });
-    return { user_id: created.user?.id };
+
+    const newUserId = created.user?.id;
+    if (newUserId) {
+      await admin.from("profiles").update({
+        full_name: data.full_name,
+        cpf_cnpj: data.cpf_cnpj.replace(/\D/g, ""),
+        phone: data.phone ?? null,
+        address_zip: data.address_zip ?? null,
+        address_street: data.address_street ?? null,
+        address_number: data.address_number ?? null,
+        address_complement: data.address_complement ?? null,
+        address_neighborhood: data.address_neighborhood ?? null,
+        address_city: data.address_city ?? null,
+        address_state: data.address_state ?? null,
+      }).eq("user_id", newUserId);
+    }
+    return { user_id: newUserId };
   });

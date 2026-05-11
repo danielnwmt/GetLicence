@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { KeyRound, Calendar, CreditCard, Package, Copy, Check } from "lucide-react";
+import { KeyRound, Calendar, CreditCard, Package, Copy, Check, FileText } from "lucide-react";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -31,6 +31,9 @@ interface Payment {
   method: string | null;
   paid_at: string | null;
   created_at: string;
+  boleto_url: string | null;
+  invoice_url: string | null;
+  barcode: string | null;
   license: { license_key: string } | null;
 }
 
@@ -51,7 +54,7 @@ function Dashboard() {
 
       const { data: pay } = await supabase
         .from("payments")
-        .select("id, amount, status, method, paid_at, created_at, license:licenses(license_key)")
+        .select("id, amount, status, method, paid_at, created_at, boleto_url, invoice_url, barcode, license:licenses(license_key)")
         .order("created_at", { ascending: false });
       setPayments((pay as unknown as Payment[]) || []);
     })();
@@ -131,6 +134,7 @@ function Dashboard() {
                   <th className="p-3 font-medium">Valor</th>
                   <th className="p-3 font-medium">Método</th>
                   <th className="p-3 font-medium">Status</th>
+                  <th className="p-3 font-medium">2ª via</th>
                 </tr>
               </thead>
               <tbody>
@@ -141,6 +145,20 @@ function Dashboard() {
                     <td className="p-3 font-medium">{formatBRL(Number(p.amount))}</td>
                     <td className="p-3">{p.method ?? "—"}</td>
                     <td className="p-3"><Badge className={statusVariant[p.status]} variant="outline">{statusLabel[p.status]}</Badge></td>
+                    <td className="p-3">
+                      {p.boleto_url || p.invoice_url ? (
+                        <a
+                          href={p.boleto_url || p.invoice_url || "#"}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-primary hover:underline"
+                        >
+                          <FileText className="h-3.5 w-3.5" /> Baixar boleto
+                        </a>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
