@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-interface Product { id: string; name: string; description: string | null; price_monthly: number; price_yearly: number; active: boolean; cost_vps?: number; cost_storage?: number; cost_other?: number; profit_margin?: number; }
+interface Product { id: string; name: string; description: string | null; price_monthly: number; price_yearly: number; active: boolean; cost_vps?: number; cost_storage?: number; cost_other?: number; profit_margin?: number; vps_specs?: string | null; storage_amount?: number; storage_unit?: string; }
 interface Profile { user_id: string; full_name: string | null; email: string | null; }
 interface LicenseRow {
   id: string; license_key: string; plan: string; status: string;
