@@ -382,7 +382,9 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
 // ---------- Payments ----------
 function PaymentsTab({ payments, onChange }: { payments: PaymentRow[]; onChange: () => void }) {
   const issueBoleto = useServerFn(issueAsaasBoleto);
+  const cancelBoleto = useServerFn(cancelAsaasBoleto);
   const [issuingId, setIssuingId] = useState<string | null>(null);
+  const [cancelingId, setCancelingId] = useState<string | null>(null);
 
   const markPaid = async (id: string) => {
     const { error } = await supabase.from("payments").update({ status: "paid" as const, paid_at: new Date().toISOString() }).eq("id", id);
@@ -412,6 +414,20 @@ function PaymentsTab({ payments, onChange }: { payments: PaymentRow[]; onChange:
       toast.error(e instanceof Error ? e.message : "Falha ao emitir boleto");
     } finally {
       setIssuingId(null);
+    }
+  };
+
+  const cancelar = async (id: string) => {
+    if (!confirm("Cancelar este boleto no Asaas? Esta ação não pode ser desfeita.")) return;
+    setCancelingId(id);
+    try {
+      await cancelBoleto({ data: { payment_id: id } });
+      toast.success("Boleto cancelado");
+      onChange();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao cancelar boleto");
+    } finally {
+      setCancelingId(null);
     }
   };
 
