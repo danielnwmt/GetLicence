@@ -29,7 +29,7 @@ function Index() {
     <div className="min-h-screen">
       {/* Hero com login no quadrado direito */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-hero opacity-95" />
+        <img src={authHero} alt="" className="absolute inset-0 h-full w-full object-cover object-center" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_oklch(1_0_0_/_0.15),_transparent_60%)]" />
         <div className="relative container mx-auto grid gap-12 px-4 py-24 md:grid-cols-2 md:items-center md:py-32">
           <div className="max-w-2xl">
