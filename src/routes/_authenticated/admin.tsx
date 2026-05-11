@@ -174,7 +174,7 @@ const statusBadge: Record<string, string> = {
 function ProductsTab({ products, onChange }: { products: Product[]; onChange: () => void }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
-  const emptyForm = { name: "", description: "", cost_vps: "0", cost_storage: "0", cost_other: "0", profit_margin: "30", price_monthly: "0", price_yearly: "0" };
+  const emptyForm = { name: "", description: "", vps_specs: "", storage_amount: "0", storage_unit: "GB", cost_vps: "0", cost_storage: "0", cost_other: "0", profit_margin: "30", price_monthly: "0", price_yearly: "0" };
   const [form, setForm] = useState(emptyForm);
 
   const totalCost = (Number(form.cost_vps) || 0) + (Number(form.cost_storage) || 0) + (Number(form.cost_other) || 0);
@@ -188,6 +188,9 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
     setForm({
       name: p.name,
       description: p.description ?? "",
+      vps_specs: p.vps_specs ?? "",
+      storage_amount: String(p.storage_amount ?? 0),
+      storage_unit: p.storage_unit ?? "GB",
       cost_vps: String(p.cost_vps ?? 0),
       cost_storage: String(p.cost_storage ?? 0),
       cost_other: String(p.cost_other ?? 0),
@@ -203,6 +206,9 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
     const payload = {
       name: form.name.trim(),
       description: form.description.trim() || null,
+      vps_specs: form.vps_specs.trim(),
+      storage_amount: Number(form.storage_amount) || 0,
+      storage_unit: form.storage_unit,
       cost_vps: Number(form.cost_vps) || 0,
       cost_storage: Number(form.cost_storage) || 0,
       cost_other: Number(form.cost_other) || 0,
