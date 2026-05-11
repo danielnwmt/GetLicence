@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
+import { Route as ApiPublicWebhooksProviderRouteImport } from './routes/api/public/webhooks/$provider'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -45,6 +46,12 @@ const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const ApiPublicWebhooksProviderRoute =
+  ApiPublicWebhooksProviderRouteImport.update({
+    id: '/api/public/webhooks/$provider',
+    path: '/api/public/webhooks/$provider',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -52,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/api/public/webhooks/$provider': typeof ApiPublicWebhooksProviderRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -59,6 +67,7 @@ export interface FileRoutesByTo {
   '/account': typeof AuthenticatedAccountRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/api/public/webhooks/$provider': typeof ApiPublicWebhooksProviderRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -68,12 +77,25 @@ export interface FileRoutesById {
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/api/public/webhooks/$provider': typeof ApiPublicWebhooksProviderRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/account' | '/admin' | '/dashboard'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/account'
+    | '/admin'
+    | '/dashboard'
+    | '/api/public/webhooks/$provider'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/account' | '/admin' | '/dashboard'
+  to:
+    | '/'
+    | '/auth'
+    | '/account'
+    | '/admin'
+    | '/dashboard'
+    | '/api/public/webhooks/$provider'
   id:
     | '__root__'
     | '/'
@@ -82,12 +104,14 @@ export interface FileRouteTypes {
     | '/_authenticated/account'
     | '/_authenticated/admin'
     | '/_authenticated/dashboard'
+    | '/api/public/webhooks/$provider'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicWebhooksProviderRoute: typeof ApiPublicWebhooksProviderRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -134,6 +158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/public/webhooks/$provider': {
+      id: '/api/public/webhooks/$provider'
+      path: '/api/public/webhooks/$provider'
+      fullPath: '/api/public/webhooks/$provider'
+      preLoaderRoute: typeof ApiPublicWebhooksProviderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -157,6 +188,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicWebhooksProviderRoute: ApiPublicWebhooksProviderRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
