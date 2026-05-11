@@ -256,13 +256,30 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                     <Label>Recursos da VPS</Label>
                     <Textarea
                       rows={2}
-                      placeholder="Ex: 4 vCPU, 8GB RAM, 80GB SSD"
+                      placeholder="Ex: 4 vCPU, 8GB RAM"
                       value={form.vps_specs}
                       onChange={(e) => setForm({ ...form, vps_specs: e.target.value })}
                     />
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="Armaz. da VPS"
+                        value={form.vps_storage_amount}
+                        onChange={(e) => setForm({ ...form, vps_storage_amount: e.target.value })}
+                      />
+                      <select
+                        className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
+                        value={form.vps_storage_unit}
+                        onChange={(e) => setForm({ ...form, vps_storage_unit: e.target.value })}
+                      >
+                        <option value="GB">GB</option>
+                        <option value="TB">TB</option>
+                      </select>
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Armazenamento</Label>
+                    <Label>Armazenamento extra</Label>
                     <div className="flex gap-2">
                       <Input
                         type="number"
