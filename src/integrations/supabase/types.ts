@@ -76,28 +76,55 @@ export type Database = {
       payment_settings: {
         Row: {
           active_provider: Database["public"]["Enums"]["payment_provider"]
+          asaas_api_key: string | null
           asaas_env: string
           created_at: string
           id: string
           notes: string | null
+          sicoob_access_token: string | null
+          sicoob_cert_key: string | null
+          sicoob_cert_pem: string | null
+          sicoob_client_id: string | null
+          sicredi_cert_key: string | null
+          sicredi_cert_pem: string | null
+          sicredi_client_id: string | null
+          sicredi_client_secret: string | null
           updated_at: string
           webhook_token: string
         }
         Insert: {
           active_provider?: Database["public"]["Enums"]["payment_provider"]
+          asaas_api_key?: string | null
           asaas_env?: string
           created_at?: string
           id?: string
           notes?: string | null
+          sicoob_access_token?: string | null
+          sicoob_cert_key?: string | null
+          sicoob_cert_pem?: string | null
+          sicoob_client_id?: string | null
+          sicredi_cert_key?: string | null
+          sicredi_cert_pem?: string | null
+          sicredi_client_id?: string | null
+          sicredi_client_secret?: string | null
           updated_at?: string
           webhook_token?: string
         }
         Update: {
           active_provider?: Database["public"]["Enums"]["payment_provider"]
+          asaas_api_key?: string | null
           asaas_env?: string
           created_at?: string
           id?: string
           notes?: string | null
+          sicoob_access_token?: string | null
+          sicoob_cert_key?: string | null
+          sicoob_cert_pem?: string | null
+          sicoob_client_id?: string | null
+          sicredi_cert_key?: string | null
+          sicredi_cert_pem?: string | null
+          sicredi_client_id?: string | null
+          sicredi_client_secret?: string | null
           updated_at?: string
           webhook_token?: string
         }
