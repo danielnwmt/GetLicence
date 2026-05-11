@@ -209,6 +209,8 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
       name: form.name.trim(),
       description: form.description.trim() || null,
       vps_specs: form.vps_specs.trim(),
+      vps_storage_amount: Number(form.vps_storage_amount) || 0,
+      vps_storage_unit: form.vps_storage_unit,
       storage_amount: Number(form.storage_amount) || 0,
       storage_unit: form.storage_unit,
       cost_vps: Number(form.cost_vps) || 0,
