@@ -77,7 +77,19 @@ function AdminPage() {
   const activeCount = licenses.filter((l) => l.status === "active").length;
 
   return (
-    <div className="space-y-8">
+    <Tabs defaultValue="licenses" className="space-y-8">
+      <div className="sticky top-16 z-30 -mx-4 border-b border-border/60 bg-background/80 px-4 py-3 backdrop-blur-xl">
+        <div className="container mx-auto flex justify-center">
+          <TabsList>
+            <TabsTrigger value="licenses">Licenças</TabsTrigger>
+            <TabsTrigger value="payments">Pagamentos</TabsTrigger>
+            <TabsTrigger value="products">Produtos</TabsTrigger>
+            <TabsTrigger value="customers">Clientes</TabsTrigger>
+            <TabsTrigger value="integrations">Integrações</TabsTrigger>
+          </TabsList>
+        </div>
+      </div>
+
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Painel administrativo</h1>
         <p className="text-muted-foreground">Gerencie produtos, licenças, pagamentos e clientes.</p>
@@ -89,15 +101,6 @@ function AdminPage() {
         <StatCard icon={Package} label="Produtos" value={products.length.toString()} />
         <StatCard icon={DollarSign} label="Receita paga" value={formatBRL(totalRevenue)} />
       </div>
-
-      <Tabs defaultValue="licenses">
-        <TabsList>
-          <TabsTrigger value="licenses">Licenças</TabsTrigger>
-          <TabsTrigger value="payments">Pagamentos</TabsTrigger>
-          <TabsTrigger value="products">Produtos</TabsTrigger>
-          <TabsTrigger value="customers">Clientes</TabsTrigger>
-          <TabsTrigger value="integrations">Integrações</TabsTrigger>
-        </TabsList>
 
         <TabsContent value="licenses" className="mt-6">
           <LicensesTab licenses={licenses} products={products} profiles={profiles} onChange={reload} />
@@ -114,8 +117,7 @@ function AdminPage() {
         <TabsContent value="integrations" className="mt-6">
           <IntegrationsTab />
         </TabsContent>
-      </Tabs>
-    </div>
+    </Tabs>
   );
 }
 

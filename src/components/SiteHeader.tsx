@@ -21,7 +21,7 @@ export function SiteHeader() {
             <>
               {role === "admin" && (
                 <Button asChild variant="ghost" size="sm">
-                  <Link to="/admin">Admin</Link>
+                  <Link to="/admin">Dashboard</Link>
                 </Button>
               )}
               <Button asChild variant="ghost" size="sm">
