@@ -8,7 +8,7 @@ const schema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   full_name: z.string().min(1),
-  role: z.enum(["admin", "moderator"]).default("admin"),
+  role: z.literal("admin").default("admin"),
 });
 
 export const createSystemUser = createServerFn({ method: "POST" })
@@ -62,7 +62,7 @@ export const listSystemUsers = createServerFn({ method: "GET" })
     const { data: roles } = await supabase
       .from("user_roles")
       .select("user_id, role")
-      .in("role", ["admin", "moderator"]);
+      .in("role", ["admin"]);
     const ids = (roles ?? []).map((r) => r.user_id);
     if (ids.length === 0) return [];
     const { data: profiles } = await supabase
