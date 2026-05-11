@@ -24,6 +24,8 @@ export type Database = {
           notes: string | null
           plan: Database["public"]["Enums"]["license_plan"]
           product_id: string
+          provider: Database["public"]["Enums"]["payment_provider"] | null
+          provider_subscription_id: string | null
           starts_at: string
           status: Database["public"]["Enums"]["license_status"]
           updated_at: string
@@ -38,6 +40,8 @@ export type Database = {
           notes?: string | null
           plan?: Database["public"]["Enums"]["license_plan"]
           product_id: string
+          provider?: Database["public"]["Enums"]["payment_provider"] | null
+          provider_subscription_id?: string | null
           starts_at?: string
           status?: Database["public"]["Enums"]["license_status"]
           updated_at?: string
@@ -52,6 +56,8 @@ export type Database = {
           notes?: string | null
           plan?: Database["public"]["Enums"]["license_plan"]
           product_id?: string
+          provider?: Database["public"]["Enums"]["payment_provider"] | null
+          provider_subscription_id?: string | null
           starts_at?: string
           status?: Database["public"]["Enums"]["license_status"]
           updated_at?: string
@@ -67,15 +73,51 @@ export type Database = {
           },
         ]
       }
+      payment_settings: {
+        Row: {
+          active_provider: Database["public"]["Enums"]["payment_provider"]
+          asaas_env: string
+          created_at: string
+          id: string
+          notes: string | null
+          updated_at: string
+          webhook_token: string
+        }
+        Insert: {
+          active_provider?: Database["public"]["Enums"]["payment_provider"]
+          asaas_env?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          webhook_token?: string
+        }
+        Update: {
+          active_provider?: Database["public"]["Enums"]["payment_provider"]
+          asaas_env?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          webhook_token?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
+          boleto_url: string | null
           created_at: string
+          due_date: string | null
           id: string
           license_id: string
           method: string | null
           notes: string | null
           paid_at: string | null
+          pix_copy_paste: string | null
+          pix_qr_code: string | null
+          provider: Database["public"]["Enums"]["payment_provider"] | null
+          provider_charge_id: string | null
           reference: string | null
           status: Database["public"]["Enums"]["payment_status"]
           updated_at: string
@@ -83,12 +125,18 @@ export type Database = {
         }
         Insert: {
           amount: number
+          boleto_url?: string | null
           created_at?: string
+          due_date?: string | null
           id?: string
           license_id: string
           method?: string | null
           notes?: string | null
           paid_at?: string | null
+          pix_copy_paste?: string | null
+          pix_qr_code?: string | null
+          provider?: Database["public"]["Enums"]["payment_provider"] | null
+          provider_charge_id?: string | null
           reference?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           updated_at?: string
@@ -96,12 +144,18 @@ export type Database = {
         }
         Update: {
           amount?: number
+          boleto_url?: string | null
           created_at?: string
+          due_date?: string | null
           id?: string
           license_id?: string
           method?: string | null
           notes?: string | null
           paid_at?: string | null
+          pix_copy_paste?: string | null
+          pix_qr_code?: string | null
+          provider?: Database["public"]["Enums"]["payment_provider"] | null
+          provider_charge_id?: string | null
           reference?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           updated_at?: string
@@ -215,6 +269,7 @@ export type Database = {
       app_role: "admin" | "client"
       license_plan: "monthly" | "yearly"
       license_status: "active" | "expired" | "cancelled" | "pending"
+      payment_provider: "asaas" | "sicredi" | "sicoob" | "manual"
       payment_status: "pending" | "paid" | "failed" | "refunded"
     }
     CompositeTypes: {
@@ -346,6 +401,7 @@ export const Constants = {
       app_role: ["admin", "client"],
       license_plan: ["monthly", "yearly"],
       license_status: ["active", "expired", "cancelled", "pending"],
+      payment_provider: ["asaas", "sicredi", "sicoob", "manual"],
       payment_status: ["pending", "paid", "failed", "refunded"],
     },
   },
