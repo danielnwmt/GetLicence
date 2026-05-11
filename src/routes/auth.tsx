@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { KeyRound } from "lucide-react";
 import { toast } from "sonner";
-import authHero from "@/assets/auth-hero.png";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "Entrar — LicençaHub" }] }),
@@ -27,16 +26,10 @@ function AuthPage() {
   }, [user, loading, navigate]);
 
   return (
-    <div className="relative min-h-screen w-full">
-      <img
-        src={authHero}
-        alt="LicençaHub"
-        className="absolute inset-0 h-full w-full object-cover object-center"
-      />
-      {/* Card de login posicionado sobre o espaço roxo vazio da imagem */}
-      <div className="relative z-10 flex min-h-screen items-center justify-end px-4 py-12 md:px-24">
-        <div className="w-full max-w-md rounded-2xl border border-white/20 bg-white/10 p-8 shadow-elevated backdrop-blur-xl">
-        <Link to="/" className="mb-6 flex items-center gap-2 text-white">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-hero px-4 py-12">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_oklch(1_0_0_/_0.15),_transparent_60%)]" />
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-white/20 bg-white/10 p-8 shadow-elevated backdrop-blur-xl">
+        <Link to="/auth" className="mb-6 flex items-center gap-2 text-white">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15 backdrop-blur">
             <KeyRound className="h-5 w-5" />
           </div>
@@ -49,7 +42,6 @@ function AuthPage() {
           </p>
         </div>
         <LoginForm />
-        </div>
       </div>
     </div>
   );
