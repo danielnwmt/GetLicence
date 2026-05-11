@@ -246,11 +246,42 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
               <div className="space-y-2"><Label>Nome</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
               <div className="space-y-2"><Label>Descrição</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
               <div className="rounded-md border p-3 space-y-3">
-                <div className="text-sm font-medium">Custos mensais (R$)</div>
+                <div className="text-sm font-medium">Recursos & Custos mensais</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Recursos da VPS</Label>
+                    <Textarea
+                      rows={2}
+                      placeholder="Ex: 4 vCPU, 8GB RAM, 80GB SSD"
+                      value={form.vps_specs}
+                      onChange={(e) => setForm({ ...form, vps_specs: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Armazenamento</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="Qtd"
+                        value={form.storage_amount}
+                        onChange={(e) => setForm({ ...form, storage_amount: e.target.value })}
+                      />
+                      <select
+                        className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
+                        value={form.storage_unit}
+                        onChange={(e) => setForm({ ...form, storage_unit: e.target.value })}
+                      >
+                        <option value="GB">GB</option>
+                        <option value="TB">TB</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-2"><Label>VPS</Label><Input type="number" step="0.01" value={form.cost_vps} onChange={(e) => setForm({ ...form, cost_vps: e.target.value })} /></div>
-                  <div className="space-y-2"><Label>Armazenamento</Label><Input type="number" step="0.01" value={form.cost_storage} onChange={(e) => setForm({ ...form, cost_storage: e.target.value })} /></div>
-                  <div className="space-y-2"><Label>Outros</Label><Input type="number" step="0.01" value={form.cost_other} onChange={(e) => setForm({ ...form, cost_other: e.target.value })} /></div>
+                  <div className="space-y-2"><Label>Custo VPS (R$)</Label><Input type="number" step="0.01" value={form.cost_vps} onChange={(e) => setForm({ ...form, cost_vps: e.target.value })} /></div>
+                  <div className="space-y-2"><Label>Custo Armaz. (R$)</Label><Input type="number" step="0.01" value={form.cost_storage} onChange={(e) => setForm({ ...form, cost_storage: e.target.value })} /></div>
+                  <div className="space-y-2"><Label>Outros (R$)</Label><Input type="number" step="0.01" value={form.cost_other} onChange={(e) => setForm({ ...form, cost_other: e.target.value })} /></div>
                 </div>
                 <div className="text-xs text-muted-foreground">Custo total: {formatBRL(totalCost)}</div>
               </div>
