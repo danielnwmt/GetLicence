@@ -124,7 +124,7 @@ function AdminPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
-        <StatCard icon={Users} label="Clientes" value={profiles.length.toString()} />
+        <StatCard icon={Users} label="Clientes" value={profiles.filter((p) => !adminIds.includes(p.user_id)).length.toString()} />
         <StatCard icon={KeyRound} label="Licenças ativas" value={activeCount.toString()} />
         <StatCard icon={Package} label="Produtos" value={products.length.toString()} />
         <StatCard icon={DollarSign} label="Receita paga" value={formatBRL(totalRevenue)} />
