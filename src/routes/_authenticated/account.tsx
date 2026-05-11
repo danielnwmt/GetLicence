@@ -46,6 +46,22 @@ function AccountPage() {
   const [profile, setProfile] = useState<ProfileForm>(empty);
   const [profileSaving, setProfileSaving] = useState(false);
 
+  const [newEmail, setNewEmail] = useState("");
+  const [emailBusy, setEmailBusy] = useState(false);
+
+  const submitEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+      return toast.error("Informe um e-mail válido");
+    }
+    setEmailBusy(true);
+    const { error } = await supabase.auth.updateUser({ email: newEmail });
+    setEmailBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Enviamos um link de confirmação para o novo e-mail.");
+    setNewEmail("");
+  };
+
   useEffect(() => {
     if (!user) return;
     (async () => {
@@ -124,8 +140,27 @@ function AccountPage() {
       </div>
 
       <Card className="p-6 mb-6">
-        <h2 className="text-sm font-medium text-muted-foreground mb-1">E-mail</h2>
-        <p className="font-medium">{user?.email}</p>
+        <h2 className="text-sm font-medium text-muted-foreground mb-1">E-mail atual</h2>
+        <p className="font-medium mb-4">{user?.email}</p>
+        <form onSubmit={submitEmail} className="space-y-3 border-t border-border pt-4">
+          <Label htmlFor="new-email">Alterar e-mail</Label>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input
+              id="new-email"
+              type="email"
+              placeholder="novo@email.com"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              required
+            />
+            <Button type="submit" disabled={emailBusy}>
+              {emailBusy ? "Enviando..." : "Atualizar e-mail"}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Você receberá um link de confirmação no novo endereço.
+          </p>
+        </form>
       </Card>
 
       <Card className="p-6 mb-6">
