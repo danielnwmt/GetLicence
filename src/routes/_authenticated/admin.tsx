@@ -254,12 +254,24 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label>Recursos da VPS</Label>
-                    <Textarea
-                      rows={2}
-                      placeholder="Ex: 4 vCPU, 8GB RAM"
+                    <select
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
                       value={form.vps_specs}
                       onChange={(e) => setForm({ ...form, vps_specs: e.target.value })}
-                    />
+                    >
+                      <option value="">Selecione...</option>
+                      <option value="1 vCPU, 1GB RAM">1 vCPU, 1GB RAM</option>
+                      <option value="1 vCPU, 2GB RAM">1 vCPU, 2GB RAM</option>
+                      <option value="2 vCPU, 2GB RAM">2 vCPU, 2GB RAM</option>
+                      <option value="2 vCPU, 4GB RAM">2 vCPU, 4GB RAM</option>
+                      <option value="4 vCPU, 4GB RAM">4 vCPU, 4GB RAM</option>
+                      <option value="4 vCPU, 8GB RAM">4 vCPU, 8GB RAM</option>
+                      <option value="6 vCPU, 12GB RAM">6 vCPU, 12GB RAM</option>
+                      <option value="8 vCPU, 16GB RAM">8 vCPU, 16GB RAM</option>
+                      <option value="8 vCPU, 32GB RAM">8 vCPU, 32GB RAM</option>
+                      <option value="16 vCPU, 32GB RAM">16 vCPU, 32GB RAM</option>
+                      <option value="16 vCPU, 64GB RAM">16 vCPU, 64GB RAM</option>
+                    </select>
                     <div className="flex gap-2">
                       <Input
                         type="number"
