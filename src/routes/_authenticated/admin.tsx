@@ -93,8 +93,8 @@ function AdminPage() {
       <Link to="/dashboard" className={linkCls}>Minhas licenças</Link>
       <TabsTrigger value="integrations" className={triggerCls}>Integrações</TabsTrigger>
       <TabsTrigger value="payments" className={triggerCls}>Financeiro</TabsTrigger>
-      <Link to="/account" className={linkCls}>Conta</Link>
-      <TabsTrigger value="products" className={triggerCls + " hidden"}>Produtos</TabsTrigger>
+      <TabsTrigger value="products" className={triggerCls}>Produtos</TabsTrigger>
+      <Link to="/account" className={linkCls}>Configuração</Link>
     </TabsList>
   );
 

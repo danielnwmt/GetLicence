@@ -29,7 +29,7 @@ export function SiteHeader() {
               <Link to="/dashboard" className={pathname === "/dashboard" ? activeLinkCls : linkCls}>Minhas licenças</Link>
               <Link to="/admin" className={linkCls}>Integrações</Link>
               <Link to="/admin" className={linkCls}>Financeiro</Link>
-              <Link to="/account" className={pathname === "/account" ? activeLinkCls : linkCls}>Conta</Link>
+              <Link to="/account" className={pathname === "/account" ? activeLinkCls : linkCls}>Configuração</Link>
             </div>
           )}
         </div>
@@ -42,7 +42,7 @@ export function SiteHeader() {
                     <Link to="/dashboard">Minhas licenças</Link>
                   </Button>
                   <Button asChild variant="ghost" size="sm">
-                    <Link to="/account">Conta</Link>
+                    <Link to="/account">Configuração</Link>
                   </Button>
                 </>
               )}
