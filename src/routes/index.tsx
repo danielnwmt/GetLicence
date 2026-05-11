@@ -37,7 +37,7 @@ function Index() {
             </div>
             <h1 className="mt-6 text-5xl font-bold tracking-tight text-white md:text-6xl">
               Gerencie licenças <br />
-              <span className="text-white/80">e pagamentos</span> sem dor.
+              <span className="text-white/80">e pagamentos</span> com GetLicence.
             </h1>
             <p className="mt-6 max-w-xl text-lg text-white/80">
               Emita chaves de licença, controle expiração, renove assinaturas e
