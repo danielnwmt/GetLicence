@@ -633,14 +633,14 @@ function IntegrationsTab() {
 
         <ProviderCredCard
           title="Asaas"
-          ok={secretStatus.asaas}
+          ok={false}
           fields={[
             { name: "ASAAS_API_KEY", help: "Token gerado em Asaas → Integrações → API Asaas" },
           ]}
         />
         <ProviderCredCard
           title="Sicredi"
-          ok={secretStatus.sicredi}
+          ok={false}
           fields={[
             { name: "SICREDI_CLIENT_ID", help: "Client ID da API Cobrança Sicredi" },
             { name: "SICREDI_CLIENT_SECRET", help: "Client Secret" },
@@ -650,7 +650,7 @@ function IntegrationsTab() {
         />
         <ProviderCredCard
           title="Sicoob"
-          ok={secretStatus.sicoob}
+          ok={false}
           fields={[
             { name: "SICOOB_CLIENT_ID", help: "Client ID do Portal Desenvolvedor Sicoob" },
             { name: "SICOOB_ACCESS_TOKEN", help: "Access Token (Bearer)" },
