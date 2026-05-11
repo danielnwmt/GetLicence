@@ -519,39 +519,49 @@ interface SettingsRow {
 }
 
 function IntegrationsTab() {
-  const getFn = useServerFn(getPaymentSettings);
-  const updateFn = useServerFn(updatePaymentSettings);
   const [settings, setSettings] = useState<SettingsRow | null>(null);
-  const [secretStatus, setSecretStatus] = useState({ asaas: false, sicredi: false, sicoob: false });
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
-    try {
-      const res = await getFn();
-      setSettings(res.settings as SettingsRow | null);
-      setSecretStatus(res.secretStatus);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao carregar");
+    const { data, error } = await supabase
+      .from("payment_settings")
+      .select("id, active_provider, asaas_env, webhook_token, notes")
+      .limit(1)
+      .maybeSingle();
+    if (error) {
+      toast.error(error.message);
+      return;
     }
-  }, [getFn]);
+    if (!data) {
+      const { data: created, error: insErr } = await supabase
+        .from("payment_settings")
+        .insert({})
+        .select("id, active_provider, asaas_env, webhook_token, notes")
+        .single();
+      if (insErr) { toast.error(insErr.message); return; }
+      setSettings(created as SettingsRow);
+    } else {
+      setSettings(data as SettingsRow);
+    }
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
   const save = async () => {
     if (!settings) return;
     setSaving(true);
-    try {
-      await updateFn({ data: {
-        id: settings.id,
+    const { error } = await supabase
+      .from("payment_settings")
+      .update({
         active_provider: settings.active_provider,
-        asaas_env: settings.asaas_env as "sandbox" | "production",
+        asaas_env: settings.asaas_env,
         notes: settings.notes,
-      }});
-      toast.success("Configurações salvas");
-      load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao salvar");
-    } finally { setSaving(false); }
+      })
+      .eq("id", settings.id);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Configurações salvas");
+    load();
   };
 
   if (!settings) return <div className="text-muted-foreground">Carregando...</div>;
