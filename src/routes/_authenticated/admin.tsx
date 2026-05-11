@@ -19,8 +19,15 @@ import { Plus, Package, KeyRound, CreditCard, Users, DollarSign, Pencil, Trash2,
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { toast } from "sonner";
 
+type AdminTab = "licenses" | "customers" | "payments" | "products" | "integrations";
+const ADMIN_TABS: AdminTab[] = ["licenses", "customers", "payments", "products", "integrations"];
+
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — GetLicence" }] }),
+  validateSearch: (s: Record<string, unknown>): { tab?: AdminTab } => {
+    const t = s.tab;
+    return { tab: typeof t === "string" && (ADMIN_TABS as string[]).includes(t) ? (t as AdminTab) : undefined };
+  },
   component: AdminPage,
 });
 
