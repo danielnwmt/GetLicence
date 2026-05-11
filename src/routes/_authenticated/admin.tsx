@@ -82,18 +82,18 @@ function AdminPage() {
     setHeaderSlot(document.getElementById("site-header-center"));
   }, []);
 
-  const triggerCls = "rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border data-[state=active]:border-primary";
-  const linkCls = "inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground";
+  const triggerCls = "inline-flex items-center rounded-md border border-transparent px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border-primary";
+  const linkCls = "inline-flex items-center rounded-md border border-transparent px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground";
 
   const tabsList = (
     <TabsList className="h-auto gap-1 bg-transparent p-0">
-      <Link to="/admin" className={linkCls + " border border-primary text-foreground"}>Dashboard</Link>
+      <Link to="/admin" className={linkCls + " border-primary text-foreground"}>Dashboard</Link>
       <TabsTrigger value="customers" className={triggerCls}>Clientes</TabsTrigger>
       <TabsTrigger value="licenses" className={triggerCls}>Licenças</TabsTrigger>
       <Link to="/dashboard" className={linkCls}>Minhas licenças</Link>
       <TabsTrigger value="integrations" className={triggerCls}>Integrações</TabsTrigger>
+      <TabsTrigger value="payments" className={triggerCls}>Financeiro</TabsTrigger>
       <Link to="/account" className={linkCls}>Conta</Link>
-      <TabsTrigger value="payments" className={triggerCls + " hidden"}>Pagamentos</TabsTrigger>
       <TabsTrigger value="products" className={triggerCls + " hidden"}>Produtos</TabsTrigger>
     </TabsList>
   );
