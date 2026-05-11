@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { createCustomer } from "@/lib/customers.functions";
-import { getPaymentSettings, updatePaymentSettings } from "@/lib/payment-settings.functions";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -520,39 +519,49 @@ interface SettingsRow {
 }
 
 function IntegrationsTab() {
-  const getFn = useServerFn(getPaymentSettings);
-  const updateFn = useServerFn(updatePaymentSettings);
   const [settings, setSettings] = useState<SettingsRow | null>(null);
-  const [secretStatus, setSecretStatus] = useState({ asaas: false, sicredi: false, sicoob: false });
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
-    try {
-      const res = await getFn();
-      setSettings(res.settings as SettingsRow | null);
-      setSecretStatus(res.secretStatus);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao carregar");
+    const { data, error } = await supabase
+      .from("payment_settings")
+      .select("id, active_provider, asaas_env, webhook_token, notes")
+      .limit(1)
+      .maybeSingle();
+    if (error) {
+      toast.error(error.message);
+      return;
     }
-  }, [getFn]);
+    if (!data) {
+      const { data: created, error: insErr } = await supabase
+        .from("payment_settings")
+        .insert({})
+        .select("id, active_provider, asaas_env, webhook_token, notes")
+        .single();
+      if (insErr) { toast.error(insErr.message); return; }
+      setSettings(created as SettingsRow);
+    } else {
+      setSettings(data as SettingsRow);
+    }
+  }, []);
 
   useEffect(() => { load(); }, [load]);
 
   const save = async () => {
     if (!settings) return;
     setSaving(true);
-    try {
-      await updateFn({ data: {
-        id: settings.id,
+    const { error } = await supabase
+      .from("payment_settings")
+      .update({
         active_provider: settings.active_provider,
-        asaas_env: settings.asaas_env as "sandbox" | "production",
+        asaas_env: settings.asaas_env,
         notes: settings.notes,
-      }});
-      toast.success("Configurações salvas");
-      load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao salvar");
-    } finally { setSaving(false); }
+      })
+      .eq("id", settings.id);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Configurações salvas");
+    load();
   };
 
   if (!settings) return <div className="text-muted-foreground">Carregando...</div>;
@@ -624,14 +633,14 @@ function IntegrationsTab() {
 
         <ProviderCredCard
           title="Asaas"
-          ok={secretStatus.asaas}
+          ok={false}
           fields={[
             { name: "ASAAS_API_KEY", help: "Token gerado em Asaas → Integrações → API Asaas" },
           ]}
         />
         <ProviderCredCard
           title="Sicredi"
-          ok={secretStatus.sicredi}
+          ok={false}
           fields={[
             { name: "SICREDI_CLIENT_ID", help: "Client ID da API Cobrança Sicredi" },
             { name: "SICREDI_CLIENT_SECRET", help: "Client Secret" },
@@ -641,7 +650,7 @@ function IntegrationsTab() {
         />
         <ProviderCredCard
           title="Sicoob"
-          ok={secretStatus.sicoob}
+          ok={false}
           fields={[
             { name: "SICOOB_CLIENT_ID", help: "Client ID do Portal Desenvolvedor Sicoob" },
             { name: "SICOOB_ACCESS_TOKEN", help: "Access Token (Bearer)" },
@@ -668,14 +677,12 @@ function IntegrationsTab() {
   );
 }
 
-function ProviderCredCard({ title, ok, fields }: { title: string; ok: boolean; fields: { name: string; help: string }[] }) {
+function ProviderCredCard({ title, fields }: { title: string; ok?: boolean; fields: { name: string; help: string }[] }) {
   return (
     <div className="rounded-lg border border-border p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="font-semibold">{title}</div>
-        <Badge variant="outline" className={ok ? "bg-success/15 text-success border-success/30" : "bg-warning/15 text-warning-foreground border-warning/30"}>
-          {ok ? "Configurado" : "Faltando credenciais"}
-        </Badge>
+        <Badge variant="outline">Cadastre em Cloud → Secrets</Badge>
       </div>
       <ul className="space-y-1.5 text-sm">
         {fields.map((f) => (
