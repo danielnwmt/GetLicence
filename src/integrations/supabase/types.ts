@@ -221,6 +221,8 @@ export type Database = {
           storage_unit: string
           updated_at: string
           vps_specs: string | null
+          vps_storage_amount: number
+          vps_storage_unit: string
         }
         Insert: {
           active?: boolean
@@ -238,6 +240,8 @@ export type Database = {
           storage_unit?: string
           updated_at?: string
           vps_specs?: string | null
+          vps_storage_amount?: number
+          vps_storage_unit?: string
         }
         Update: {
           active?: boolean
@@ -255,6 +259,8 @@ export type Database = {
           storage_unit?: string
           updated_at?: string
           vps_specs?: string | null
+          vps_storage_amount?: number
+          vps_storage_unit?: string
         }
         Relationships: []
       }

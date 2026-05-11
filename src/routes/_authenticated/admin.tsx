@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-interface Product { id: string; name: string; description: string | null; price_monthly: number; price_yearly: number; active: boolean; cost_vps?: number; cost_storage?: number; cost_other?: number; profit_margin?: number; vps_specs?: string | null; storage_amount?: number; storage_unit?: string; }
+interface Product { id: string; name: string; description: string | null; price_monthly: number; price_yearly: number; active: boolean; cost_vps?: number; cost_storage?: number; cost_other?: number; profit_margin?: number; vps_specs?: string | null; storage_amount?: number; storage_unit?: string; vps_storage_amount?: number; vps_storage_unit?: string; }
 interface Profile { user_id: string; full_name: string | null; email: string | null; }
 interface LicenseRow {
   id: string; license_key: string; plan: string; status: string;
@@ -174,7 +174,7 @@ const statusBadge: Record<string, string> = {
 function ProductsTab({ products, onChange }: { products: Product[]; onChange: () => void }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
-  const emptyForm = { name: "", description: "", vps_specs: "", storage_amount: "0", storage_unit: "GB", cost_vps: "0", cost_storage: "0", cost_other: "0", profit_margin: "30", price_monthly: "0", price_yearly: "0" };
+  const emptyForm = { name: "", description: "", vps_specs: "", vps_storage_amount: "0", vps_storage_unit: "GB", storage_amount: "0", storage_unit: "GB", cost_vps: "0", cost_storage: "0", cost_other: "0", profit_margin: "30", price_monthly: "0", price_yearly: "0" };
   const [form, setForm] = useState(emptyForm);
 
   const totalCost = (Number(form.cost_vps) || 0) + (Number(form.cost_storage) || 0) + (Number(form.cost_other) || 0);
@@ -189,6 +189,8 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
       name: p.name,
       description: p.description ?? "",
       vps_specs: p.vps_specs ?? "",
+      vps_storage_amount: String(p.vps_storage_amount ?? 0),
+      vps_storage_unit: p.vps_storage_unit ?? "GB",
       storage_amount: String(p.storage_amount ?? 0),
       storage_unit: p.storage_unit ?? "GB",
       cost_vps: String(p.cost_vps ?? 0),
@@ -207,6 +209,8 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
       name: form.name.trim(),
       description: form.description.trim() || null,
       vps_specs: form.vps_specs.trim(),
+      vps_storage_amount: Number(form.vps_storage_amount) || 0,
+      vps_storage_unit: form.vps_storage_unit,
       storage_amount: Number(form.storage_amount) || 0,
       storage_unit: form.storage_unit,
       cost_vps: Number(form.cost_vps) || 0,
@@ -252,13 +256,30 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                     <Label>Recursos da VPS</Label>
                     <Textarea
                       rows={2}
-                      placeholder="Ex: 4 vCPU, 8GB RAM, 80GB SSD"
+                      placeholder="Ex: 4 vCPU, 8GB RAM"
                       value={form.vps_specs}
                       onChange={(e) => setForm({ ...form, vps_specs: e.target.value })}
                     />
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="Armaz. da VPS"
+                        value={form.vps_storage_amount}
+                        onChange={(e) => setForm({ ...form, vps_storage_amount: e.target.value })}
+                      />
+                      <select
+                        className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
+                        value={form.vps_storage_unit}
+                        onChange={(e) => setForm({ ...form, vps_storage_unit: e.target.value })}
+                      >
+                        <option value="GB">GB</option>
+                        <option value="TB">TB</option>
+                      </select>
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Armazenamento</Label>
+                    <Label>Armazenamento extra</Label>
                     <div className="flex gap-2">
                       <Input
                         type="number"
