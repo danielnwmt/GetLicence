@@ -131,10 +131,10 @@ function AdminPage() {
       </div>
 
         <TabsContent value="licenses" className="mt-6">
-          <LicensesTab licenses={licenses} products={products} profiles={profiles} onChange={reload} />
+          <LicensesTab licenses={licenses} products={products} profiles={profiles.filter((p) => !adminIds.includes(p.user_id))} onChange={reload} />
         </TabsContent>
         <TabsContent value="payments" className="mt-6">
-          <PaymentsTab payments={payments} licenses={licenses} profiles={profiles} onChange={reload} />
+          <PaymentsTab payments={payments} licenses={licenses} profiles={profiles.filter((p) => !adminIds.includes(p.user_id))} onChange={reload} />
         </TabsContent>
         <TabsContent value="products" className="mt-6">
           <ProductsTab products={products} onChange={reload} />
