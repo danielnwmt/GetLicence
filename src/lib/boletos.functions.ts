@@ -123,3 +123,50 @@ export const issueAsaasBoleto = createServerFn({ method: "POST" })
       barcode: charge.identificationField,
     };
   });
+
+export const cancelAsaasBoleto = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => schema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+    if (!isAdmin) throw new Response("Forbidden", { status: 403 });
+
+    const { data: settings, error: sErr } = await supabase
+      .from("payment_settings")
+      .select("asaas_env, asaas_api_key")
+      .limit(1)
+      .maybeSingle();
+    if (sErr) throw new Error(sErr.message);
+    if (!settings?.asaas_api_key) throw new Error("Configure a API Key do Asaas em Integrações.");
+
+    const { data: payment, error: pErr } = await supabase
+      .from("payments")
+      .select("id, provider_charge_id, status")
+      .eq("id", data.payment_id)
+      .single();
+    if (pErr || !payment) throw new Error(pErr?.message || "Pagamento não encontrado");
+    if (!payment.provider_charge_id) throw new Error("Boleto não emitido para este pagamento.");
+    if (payment.status === "paid") throw new Error("Não é possível cancelar um boleto já pago.");
+
+    const env = settings.asaas_env || "sandbox";
+    await asaasFetch(env, settings.asaas_api_key, `/v3/payments/${payment.provider_charge_id}`, {
+      method: "DELETE",
+    });
+
+    const { error: uErr } = await supabase
+      .from("payments")
+      .update({
+        status: "failed",
+        boleto_url: null,
+        invoice_url: null,
+        barcode: null,
+        provider_charge_id: null,
+        notes: "Boleto cancelado",
+      })
+      .eq("id", payment.id);
+    if (uErr) throw new Error(uErr.message);
+
+    return { ok: true };
+  });

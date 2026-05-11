@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { createCustomer } from "@/lib/customers.functions";
-import { issueAsaasBoleto } from "@/lib/boletos.functions";
+import { issueAsaasBoleto, cancelAsaasBoleto } from "@/lib/boletos.functions";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Package, KeyRound, CreditCard, Users, DollarSign, Pencil, Trash2, CheckCircle2, Landmark, Copy, FileText, ExternalLink } from "lucide-react";
+import { Plus, Package, KeyRound, CreditCard, Users, DollarSign, Pencil, Trash2, CheckCircle2, Landmark, Copy, FileText, ExternalLink, XCircle } from "lucide-react";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -382,7 +382,9 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
 // ---------- Payments ----------
 function PaymentsTab({ payments, onChange }: { payments: PaymentRow[]; onChange: () => void }) {
   const issueBoleto = useServerFn(issueAsaasBoleto);
+  const cancelBoleto = useServerFn(cancelAsaasBoleto);
   const [issuingId, setIssuingId] = useState<string | null>(null);
+  const [cancelingId, setCancelingId] = useState<string | null>(null);
 
   const markPaid = async (id: string) => {
     const { error } = await supabase.from("payments").update({ status: "paid" as const, paid_at: new Date().toISOString() }).eq("id", id);
@@ -412,6 +414,20 @@ function PaymentsTab({ payments, onChange }: { payments: PaymentRow[]; onChange:
       toast.error(e instanceof Error ? e.message : "Falha ao emitir boleto");
     } finally {
       setIssuingId(null);
+    }
+  };
+
+  const cancelar = async (id: string) => {
+    if (!confirm("Cancelar este boleto no Asaas? Esta ação não pode ser desfeita.")) return;
+    setCancelingId(id);
+    try {
+      await cancelBoleto({ data: { payment_id: id } });
+      toast.success("Boleto cancelado");
+      onChange();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao cancelar boleto");
+    } finally {
+      setCancelingId(null);
     }
   };
 
@@ -454,6 +470,11 @@ function PaymentsTab({ payments, onChange }: { payments: PaymentRow[]; onChange:
                 {!p.boleto_url && p.status !== "paid" && (
                   <Button size="sm" variant="outline" onClick={() => emitir(p.id)} disabled={issuingId === p.id}>
                     <FileText className="mr-1 h-3.5 w-3.5" /> {issuingId === p.id ? "Emitindo..." : "Emitir boleto"}
+                  </Button>
+                )}
+                {p.boleto_url && p.status !== "paid" && (
+                  <Button size="sm" variant="outline" onClick={() => cancelar(p.id)} disabled={cancelingId === p.id}>
+                    <XCircle className="mr-1 h-3.5 w-3.5" /> {cancelingId === p.id ? "Cancelando..." : "Cancelar boleto"}
                   </Button>
                 )}
                 {p.status !== "paid" && (
