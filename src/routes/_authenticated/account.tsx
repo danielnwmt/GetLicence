@@ -43,10 +43,14 @@ function AccountPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader />
-      <main className="container mx-auto max-w-2xl px-4 py-10">
-        <div className="mb-8">
+    <div className="mx-auto max-w-2xl">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold tracking-tight">Minha conta</h1>
+        <p className="text-muted-foreground">Gerencie suas credenciais de acesso</p>
+      </div>
+
+      <div>
+        <></>
           <h1 className="text-3xl font-bold tracking-tight">Minha conta</h1>
           <p className="text-muted-foreground">Gerencie suas credenciais de acesso</p>
         </div>
