@@ -118,7 +118,7 @@ function AdminPage() {
           <LicensesTab licenses={licenses} products={products} profiles={profiles} onChange={reload} />
         </TabsContent>
         <TabsContent value="payments" className="mt-6">
-          <PaymentsTab payments={payments} onChange={reload} />
+          <PaymentsTab payments={payments} licenses={licenses} profiles={profiles} onChange={reload} />
         </TabsContent>
         <TabsContent value="products" className="mt-6">
           <ProductsTab products={products} onChange={reload} />
