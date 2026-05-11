@@ -25,11 +25,17 @@ export function SiteHeader() {
           {user ? (
             <>
               {!isAdmin && role === "admin" && (
-                <Button asChild variant="ghost" size="sm">
-                  <Link to="/admin">Dashboard</Link>
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Link to="/admin" className={linkCls}>Dashboard</Link>
+                  <Link to="/admin" className={linkCls}>Clientes</Link>
+                  <Link to="/admin" className={linkCls}>Licenças</Link>
+                  <Link to="/dashboard" className={pathname === "/dashboard" ? activeLinkCls : linkCls}>Minhas licenças</Link>
+                  <Link to="/admin" className={linkCls}>Integrações</Link>
+                  <Link to="/admin" className={linkCls}>Financeiro</Link>
+                  <Link to="/account" className={pathname === "/account" ? activeLinkCls : linkCls}>Conta</Link>
+                </div>
               )}
-              {!isAdmin && (
+              {!isAdmin && role !== "admin" && (
                 <>
                   <Button asChild variant="ghost" size="sm">
                     <Link to="/dashboard">Minhas licenças</Link>
