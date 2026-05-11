@@ -94,6 +94,7 @@ function AdminPage() {
           <TabsTrigger value="payments">Pagamentos</TabsTrigger>
           <TabsTrigger value="products">Produtos</TabsTrigger>
           <TabsTrigger value="customers">Clientes</TabsTrigger>
+          <TabsTrigger value="integrations">Integrações</TabsTrigger>
         </TabsList>
 
         <TabsContent value="licenses" className="mt-6">
@@ -107,6 +108,9 @@ function AdminPage() {
         </TabsContent>
         <TabsContent value="customers" className="mt-6">
           <CustomersTab profiles={profiles} licenses={licenses} onChange={reload} />
+        </TabsContent>
+        <TabsContent value="integrations" className="mt-6">
+          <IntegrationsTab />
         </TabsContent>
       </Tabs>
     </div>
