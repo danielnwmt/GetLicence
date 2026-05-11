@@ -575,6 +575,7 @@ function PaymentsTab({ payments, licenses, profiles, onChange }: { payments: Pay
         </tbody>
       </table>
     </Card>
+    </div>
   );
 }
 
