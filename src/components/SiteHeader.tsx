@@ -22,17 +22,21 @@ export function SiteHeader() {
         <nav className="flex items-center gap-2">
           {user ? (
             <>
-              {role === "admin" && (
+              {!isAdmin && role === "admin" && (
                 <Button asChild variant="ghost" size="sm">
                   <Link to="/admin">Dashboard</Link>
                 </Button>
               )}
-              <Button asChild variant="ghost" size="sm">
-                <Link to="/dashboard">Minhas licenças</Link>
-              </Button>
-              <Button asChild variant="ghost" size="sm">
-                <Link to="/account">Conta</Link>
-              </Button>
+              {!isAdmin && (
+                <>
+                  <Button asChild variant="ghost" size="sm">
+                    <Link to="/dashboard">Minhas licenças</Link>
+                  </Button>
+                  <Button asChild variant="ghost" size="sm">
+                    <Link to="/account">Conta</Link>
+                  </Button>
+                </>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -45,11 +49,9 @@ export function SiteHeader() {
               </Button>
             </>
           ) : (
-            <>
-              <Button asChild size="sm">
-                <Link to="/auth">Entrar</Link>
-              </Button>
-            </>
+            <Button asChild size="sm">
+              <Link to="/auth">Entrar</Link>
+            </Button>
           )}
         </nav>
       </div>
