@@ -116,10 +116,6 @@ function LoginCard() {
         </div>
         <span className="text-xl font-semibold">GetLicence</span>
       </Link>
-      <div className="mb-6 text-white">
-        <h2 className="text-2xl font-semibold">Entrar</h2>
-        <p className="text-sm text-white/80">Acesse sua conta para gerenciar licenças</p>
-      </div>
       <form onSubmit={submit} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="li-email" className="text-white">E-mail</Label>
