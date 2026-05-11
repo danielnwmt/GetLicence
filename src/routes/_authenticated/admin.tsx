@@ -478,8 +478,48 @@ function PaymentsTab({ payments, licenses, profiles, onChange }: { payments: Pay
   };
 
   return (
-    <Card className="overflow-hidden">
-      <table className="w-full text-sm">
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Dialog open={newOpen} onOpenChange={setNewOpen}>
+          <DialogTrigger asChild>
+            <Button><Plus className="mr-2 h-4 w-4" /> Novo boleto</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Emitir novo boleto</DialogTitle></DialogHeader>
+            <div className="space-y-3 py-2">
+              <div className="space-y-2"><Label>Cliente</Label>
+                <Select value={newForm.user_id} onValueChange={(v) => setNewForm({ ...newForm, user_id: v, license_id: "" })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                  <SelectContent>{profiles.map((p) => (
+                    <SelectItem key={p.user_id} value={p.user_id}>{p.full_name || p.email}</SelectItem>
+                  ))}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2"><Label>Licença</Label>
+                <Select value={newForm.license_id} onValueChange={(v) => setNewForm({ ...newForm, license_id: v })} disabled={!newForm.user_id}>
+                  <SelectTrigger><SelectValue placeholder={newForm.user_id ? "Selecione..." : "Escolha o cliente primeiro"} /></SelectTrigger>
+                  <SelectContent>{clientLicenses.map((l) => (
+                    <SelectItem key={l.id} value={l.id}>{l.product?.name ?? "Licença"} — {l.license_key}</SelectItem>
+                  ))}</SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2"><Label>Valor (R$)</Label>
+                  <Input type="number" step="0.01" value={newForm.amount} onChange={(e) => setNewForm({ ...newForm, amount: e.target.value })} />
+                </div>
+                <div className="space-y-2"><Label>Vencimento</Label>
+                  <Input type="date" value={newForm.due_date} onChange={(e) => setNewForm({ ...newForm, due_date: e.target.value })} />
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={createBoleto} disabled={creating}>{creating ? "Emitindo..." : "Emitir boleto"}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+      <Card className="overflow-hidden">
+        <table className="w-full text-sm">
         <thead className="bg-muted/50 text-left"><tr>
           <th className="p-3 font-medium">Data</th><th className="p-3 font-medium">Licença</th>
           <th className="p-3 font-medium">Valor</th><th className="p-3 font-medium">Pago em</th>
