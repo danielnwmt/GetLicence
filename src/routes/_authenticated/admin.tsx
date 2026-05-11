@@ -649,40 +649,83 @@ function IntegrationsTab() {
 
       <Card className="p-6 space-y-4">
         <div>
-          <h3 className="text-lg font-semibold">Chaves de API (Secrets)</h3>
+          <h3 className="text-lg font-semibold">Credenciais do banco</h3>
           <p className="text-sm text-muted-foreground">
-            As credenciais ficam guardadas em segurança no cofre do Lovable Cloud.
-            Para adicionar/editar, abra <strong>Cloud → Secrets</strong> no menu superior do editor e cadastre os nomes abaixo.
+            Cole abaixo as chaves de API / tokens do provedor selecionado. Apenas administradores enxergam estes dados.
           </p>
         </div>
 
-        <ProviderCredCard
-          title="Asaas"
-          ok={false}
-          fields={[
-            { name: "ASAAS_API_KEY", help: "Token gerado em Asaas → Integrações → API Asaas" },
-          ]}
-        />
-        <ProviderCredCard
-          title="Sicredi"
-          ok={false}
-          fields={[
-            { name: "SICREDI_CLIENT_ID", help: "Client ID da API Cobrança Sicredi" },
-            { name: "SICREDI_CLIENT_SECRET", help: "Client Secret" },
-            { name: "SICREDI_CERT_PEM", help: "Certificado mTLS em PEM (cole o conteúdo do .pem)" },
-            { name: "SICREDI_CERT_KEY", help: "Chave privada do certificado (.key)" },
-          ]}
-        />
-        <ProviderCredCard
-          title="Sicoob"
-          ok={false}
-          fields={[
-            { name: "SICOOB_CLIENT_ID", help: "Client ID do Portal Desenvolvedor Sicoob" },
-            { name: "SICOOB_ACCESS_TOKEN", help: "Access Token (Bearer)" },
-            { name: "SICOOB_CERT_PEM", help: "Certificado mTLS em PEM" },
-            { name: "SICOOB_CERT_KEY", help: "Chave privada do certificado" },
-          ]}
-        />
+        {settings.active_provider === "asaas" && (
+          <div className="rounded-lg border border-border p-4 space-y-3">
+            <div className="font-semibold">Asaas</div>
+            <div className="space-y-2">
+              <Label>API Key</Label>
+              <Input
+                type="password"
+                value={settings.asaas_api_key ?? ""}
+                onChange={(e) => update("asaas_api_key", e.target.value)}
+                placeholder="$aact_..."
+              />
+              <p className="text-xs text-muted-foreground">Gerada em Asaas → Integrações → API Asaas.</p>
+            </div>
+          </div>
+        )}
+
+        {settings.active_provider === "sicredi" && (
+          <div className="rounded-lg border border-border p-4 space-y-3">
+            <div className="font-semibold">Sicredi</div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Client ID</Label>
+                <Input value={settings.sicredi_client_id ?? ""} onChange={(e) => update("sicredi_client_id", e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Client Secret</Label>
+                <Input type="password" value={settings.sicredi_client_secret ?? ""} onChange={(e) => update("sicredi_client_secret", e.target.value)} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Certificado mTLS (.pem)</Label>
+              <Textarea rows={4} className="font-mono text-xs" value={settings.sicredi_cert_pem ?? ""} onChange={(e) => update("sicredi_cert_pem", e.target.value)} placeholder="-----BEGIN CERTIFICATE-----" />
+            </div>
+            <div className="space-y-2">
+              <Label>Chave privada (.key)</Label>
+              <Textarea rows={4} className="font-mono text-xs" value={settings.sicredi_cert_key ?? ""} onChange={(e) => update("sicredi_cert_key", e.target.value)} placeholder="-----BEGIN PRIVATE KEY-----" />
+            </div>
+          </div>
+        )}
+
+        {settings.active_provider === "sicoob" && (
+          <div className="rounded-lg border border-border p-4 space-y-3">
+            <div className="font-semibold">Sicoob</div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Client ID</Label>
+                <Input value={settings.sicoob_client_id ?? ""} onChange={(e) => update("sicoob_client_id", e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Access Token</Label>
+                <Input type="password" value={settings.sicoob_access_token ?? ""} onChange={(e) => update("sicoob_access_token", e.target.value)} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Certificado mTLS (.pem)</Label>
+              <Textarea rows={4} className="font-mono text-xs" value={settings.sicoob_cert_pem ?? ""} onChange={(e) => update("sicoob_cert_pem", e.target.value)} placeholder="-----BEGIN CERTIFICATE-----" />
+            </div>
+            <div className="space-y-2">
+              <Label>Chave privada (.key)</Label>
+              <Textarea rows={4} className="font-mono text-xs" value={settings.sicoob_cert_key ?? ""} onChange={(e) => update("sicoob_cert_key", e.target.value)} placeholder="-----BEGIN PRIVATE KEY-----" />
+            </div>
+          </div>
+        )}
+
+        {settings.active_provider === "manual" && (
+          <p className="text-sm text-muted-foreground">Modo manual selecionado — nenhuma credencial necessária.</p>
+        )}
+
+        <div className="flex justify-end">
+          <Button onClick={save} disabled={saving}>{saving ? "Salvando..." : "Salvar credenciais"}</Button>
+        </div>
       </Card>
 
       <Card className="p-6 space-y-3">
@@ -698,25 +741,6 @@ function IntegrationsTab() {
           Token de validação: <code className="font-mono">{settings.webhook_token}</code>
         </p>
       </Card>
-    </div>
-  );
-}
-
-function ProviderCredCard({ title, fields }: { title: string; ok?: boolean; fields: { name: string; help: string }[] }) {
-  return (
-    <div className="rounded-lg border border-border p-4">
-      <div className="flex items-center justify-between mb-3">
-        <div className="font-semibold">{title}</div>
-        <Badge variant="outline">Cadastre em Cloud → Secrets</Badge>
-      </div>
-      <ul className="space-y-1.5 text-sm">
-        {fields.map((f) => (
-          <li key={f.name} className="flex items-start gap-2">
-            <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">{f.name}</code>
-            <span className="text-muted-foreground text-xs pt-0.5">{f.help}</span>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
