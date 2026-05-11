@@ -677,14 +677,12 @@ function IntegrationsTab() {
   );
 }
 
-function ProviderCredCard({ title, ok, fields }: { title: string; ok: boolean; fields: { name: string; help: string }[] }) {
+function ProviderCredCard({ title, fields }: { title: string; ok?: boolean; fields: { name: string; help: string }[] }) {
   return (
     <div className="rounded-lg border border-border p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="font-semibold">{title}</div>
-        <Badge variant="outline" className={ok ? "bg-success/15 text-success border-success/30" : "bg-warning/15 text-warning-foreground border-warning/30"}>
-          {ok ? "Configurado" : "Faltando credenciais"}
-        </Badge>
+        <Badge variant="outline">Cadastre em Cloud → Secrets</Badge>
       </div>
       <ul className="space-y-1.5 text-sm">
         {fields.map((f) => (
