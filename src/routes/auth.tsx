@@ -6,9 +6,9 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { KeyRound } from "lucide-react";
+import { KeyRound, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import authHero from "@/assets/auth-hero.png";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "Entrar — LicençaHub" }] }),
@@ -27,21 +27,49 @@ function AuthPage() {
   }, [user, loading, navigate]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-hero px-4 py-12">
-      <div className="w-full max-w-md">
-        <Link to="/" className="mb-6 flex items-center justify-center gap-2 text-white">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15 backdrop-blur">
-            <KeyRound className="h-5 w-5" />
-          </div>
-          <span className="text-xl font-semibold">LicençaHub</span>
-        </Link>
-        <Card className="p-6 shadow-elevated">
-          <div className="mb-4">
-            <h1 className="text-xl font-semibold">Entrar</h1>
-            <p className="text-sm text-muted-foreground">Acesse sua conta para gerenciar licenças</p>
-          </div>
-          <LoginForm />
-        </Card>
+    <div
+      className="relative flex min-h-screen items-center justify-end bg-cover bg-center px-4 py-12 md:px-16"
+      style={{ backgroundImage: `url(${authHero})` }}
+    >
+      {/* overlay para reforçar o roxo */}
+      <div className="absolute inset-0 bg-gradient-hero opacity-90" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_oklch(1_0_0_/_0.15),_transparent_60%)]" />
+
+      {/* Marca canto superior esquerdo */}
+      <Link
+        to="/"
+        className="absolute left-6 top-6 z-10 flex items-center gap-2 text-white"
+      >
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15 backdrop-blur">
+          <KeyRound className="h-5 w-5" />
+        </div>
+        <span className="text-xl font-semibold">LicençaHub</span>
+      </Link>
+
+      {/* Conteúdo lado esquerdo (texto) */}
+      <div className="relative z-10 hidden flex-1 pr-12 text-white lg:block">
+        <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium backdrop-blur">
+          <Sparkles className="h-3 w-3" /> Sistema completo de licenciamento
+        </div>
+        <h1 className="mt-6 text-5xl font-bold leading-tight tracking-tight md:text-6xl">
+          Gerencie licenças <br />
+          <span className="text-white/80">e pagamentos</span> sem dor.
+        </h1>
+        <p className="mt-6 max-w-xl text-lg text-white/80">
+          Emita chaves de licença, controle expiração, renove assinaturas e
+          acompanhe pagamentos em um painel limpo e poderoso.
+        </p>
+      </div>
+
+      {/* Card de login no espaço roxo vazio (direita) */}
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-white/20 bg-white/10 p-8 shadow-elevated backdrop-blur-xl">
+        <div className="mb-6 text-white">
+          <h2 className="text-2xl font-semibold">Entrar</h2>
+          <p className="text-sm text-white/80">
+            Acesse sua conta para gerenciar licenças
+          </p>
+        </div>
+        <LoginForm />
       </div>
     </div>
   );
@@ -70,14 +98,28 @@ function LoginForm() {
   return (
     <form onSubmit={submit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="li-email">E-mail</Label>
-        <Input id="li-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <Label htmlFor="li-email" className="text-white">E-mail</Label>
+        <Input
+          id="li-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          className="border-white/30 bg-white/10 text-white placeholder:text-white/60"
+        />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="li-pwd">Senha</Label>
-        <Input id="li-pwd" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        <Label htmlFor="li-pwd" className="text-white">Senha</Label>
+        <Input
+          id="li-pwd"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          className="border-white/30 bg-white/10 text-white placeholder:text-white/60"
+        />
       </div>
-      <Button type="submit" className="w-full" disabled={busy}>
+      <Button type="submit" variant="secondary" className="w-full" disabled={busy}>
         {busy ? "Entrando..." : "Entrar"}
       </Button>
     </form>
