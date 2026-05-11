@@ -19,7 +19,7 @@ import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin")({
-  head: () => ({ meta: [{ title: "Admin — LicençaHub" }] }),
+  head: () => ({ meta: [{ title: "Admin — GetLicence" }] }),
   component: AdminPage,
 });
 

@@ -13,7 +13,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "LicençaHub — Gerencie licenças e pagamentos" },
+      { title: "GetLicence — Gerencie licenças e pagamentos" },
       { name: "description", content: "Plataforma para emitir, controlar e cobrar licenças de software com renovação automática e portal do cliente." },
     ],
   }),
@@ -76,7 +76,7 @@ function Index() {
       </section>
 
       <footer className="border-t border-border/60 py-8 text-center text-sm text-muted-foreground">
-        LicençaHub — feito com Lovable
+        GetLicence — feito com Lovable
       </footer>
     </div>
   );
@@ -114,7 +114,7 @@ function LoginCard() {
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15 backdrop-blur">
           <KeyRound className="h-5 w-5" />
         </div>
-        <span className="text-xl font-semibold">LicençaHub</span>
+        <span className="text-xl font-semibold">GetLicence</span>
       </Link>
       <div className="mb-6 text-white">
         <h2 className="text-2xl font-semibold">Entrar</h2>
