@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { KeyRound, User } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/account")({
-  head: () => ({ meta: [{ title: "Minha conta — LicençaHub" }] }),
+  head: () => ({ meta: [{ title: "Minha conta — GetLicence" }] }),
   component: AccountPage,
 });
 
