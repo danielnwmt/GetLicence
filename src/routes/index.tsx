@@ -38,14 +38,6 @@ function Index() {
               Emita chaves de licença, controle expiração, renove assinaturas e
               acompanhe pagamentos em um painel limpo e poderoso.
             </p>
-            <div className="mt-10 flex flex-wrap gap-3">
-              <Button asChild size="lg" variant="secondary" className="shadow-elevated">
-                <Link to="/auth">Entrar</Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white">
-                <Link to="/dashboard">Acessar painel</Link>
-              </Button>
-            </div>
           </div>
         </div>
       </section>
