@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { KeyRound, LogOut } from "lucide-react";
@@ -6,6 +6,8 @@ import { KeyRound, LogOut } from "lucide-react";
 export function SiteHeader() {
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const isAdmin = pathname === "/admin";
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl">
