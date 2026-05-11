@@ -8,6 +8,8 @@ export function SiteHeader() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isAdmin = pathname === "/admin";
+  const linkCls = "inline-flex items-center rounded-md border border-transparent px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground";
+  const activeLinkCls = linkCls + " border-primary text-foreground";
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl">
