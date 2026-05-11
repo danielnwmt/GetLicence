@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-interface Product { id: string; name: string; description: string | null; price_monthly: number; price_yearly: number; active: boolean; cost_vps?: number; cost_storage?: number; cost_other?: number; profit_margin?: number; }
+interface Product { id: string; name: string; description: string | null; price_monthly: number; price_yearly: number; active: boolean; cost_vps?: number; cost_storage?: number; cost_other?: number; profit_margin?: number; vps_specs?: string | null; storage_amount?: number; storage_unit?: string; }
 interface Profile { user_id: string; full_name: string | null; email: string | null; }
 interface LicenseRow {
   id: string; license_key: string; plan: string; status: string;
@@ -174,7 +174,7 @@ const statusBadge: Record<string, string> = {
 function ProductsTab({ products, onChange }: { products: Product[]; onChange: () => void }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
-  const emptyForm = { name: "", description: "", cost_vps: "0", cost_storage: "0", cost_other: "0", profit_margin: "30", price_monthly: "0", price_yearly: "0" };
+  const emptyForm = { name: "", description: "", vps_specs: "", storage_amount: "0", storage_unit: "GB", cost_vps: "0", cost_storage: "0", cost_other: "0", profit_margin: "30", price_monthly: "0", price_yearly: "0" };
   const [form, setForm] = useState(emptyForm);
 
   const totalCost = (Number(form.cost_vps) || 0) + (Number(form.cost_storage) || 0) + (Number(form.cost_other) || 0);
@@ -188,6 +188,9 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
     setForm({
       name: p.name,
       description: p.description ?? "",
+      vps_specs: p.vps_specs ?? "",
+      storage_amount: String(p.storage_amount ?? 0),
+      storage_unit: p.storage_unit ?? "GB",
       cost_vps: String(p.cost_vps ?? 0),
       cost_storage: String(p.cost_storage ?? 0),
       cost_other: String(p.cost_other ?? 0),
@@ -203,6 +206,9 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
     const payload = {
       name: form.name.trim(),
       description: form.description.trim() || null,
+      vps_specs: form.vps_specs.trim(),
+      storage_amount: Number(form.storage_amount) || 0,
+      storage_unit: form.storage_unit,
       cost_vps: Number(form.cost_vps) || 0,
       cost_storage: Number(form.cost_storage) || 0,
       cost_other: Number(form.cost_other) || 0,
@@ -240,11 +246,42 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
               <div className="space-y-2"><Label>Nome</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
               <div className="space-y-2"><Label>Descrição</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
               <div className="rounded-md border p-3 space-y-3">
-                <div className="text-sm font-medium">Custos mensais (R$)</div>
+                <div className="text-sm font-medium">Recursos & Custos mensais</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Recursos da VPS</Label>
+                    <Textarea
+                      rows={2}
+                      placeholder="Ex: 4 vCPU, 8GB RAM, 80GB SSD"
+                      value={form.vps_specs}
+                      onChange={(e) => setForm({ ...form, vps_specs: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Armazenamento</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="Qtd"
+                        value={form.storage_amount}
+                        onChange={(e) => setForm({ ...form, storage_amount: e.target.value })}
+                      />
+                      <select
+                        className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
+                        value={form.storage_unit}
+                        onChange={(e) => setForm({ ...form, storage_unit: e.target.value })}
+                      >
+                        <option value="GB">GB</option>
+                        <option value="TB">TB</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-2"><Label>VPS</Label><Input type="number" step="0.01" value={form.cost_vps} onChange={(e) => setForm({ ...form, cost_vps: e.target.value })} /></div>
-                  <div className="space-y-2"><Label>Armazenamento</Label><Input type="number" step="0.01" value={form.cost_storage} onChange={(e) => setForm({ ...form, cost_storage: e.target.value })} /></div>
-                  <div className="space-y-2"><Label>Outros</Label><Input type="number" step="0.01" value={form.cost_other} onChange={(e) => setForm({ ...form, cost_other: e.target.value })} /></div>
+                  <div className="space-y-2"><Label>Custo VPS (R$)</Label><Input type="number" step="0.01" value={form.cost_vps} onChange={(e) => setForm({ ...form, cost_vps: e.target.value })} /></div>
+                  <div className="space-y-2"><Label>Custo Armaz. (R$)</Label><Input type="number" step="0.01" value={form.cost_storage} onChange={(e) => setForm({ ...form, cost_storage: e.target.value })} /></div>
+                  <div className="space-y-2"><Label>Outros (R$)</Label><Input type="number" step="0.01" value={form.cost_other} onChange={(e) => setForm({ ...form, cost_other: e.target.value })} /></div>
                 </div>
                 <div className="text-xs text-muted-foreground">Custo total: {formatBRL(totalCost)}</div>
               </div>

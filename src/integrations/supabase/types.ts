@@ -217,7 +217,10 @@ export type Database = {
           price_monthly: number
           price_yearly: number
           profit_margin: number
+          storage_amount: number
+          storage_unit: string
           updated_at: string
+          vps_specs: string | null
         }
         Insert: {
           active?: boolean
@@ -231,7 +234,10 @@ export type Database = {
           price_monthly?: number
           price_yearly?: number
           profit_margin?: number
+          storage_amount?: number
+          storage_unit?: string
           updated_at?: string
+          vps_specs?: string | null
         }
         Update: {
           active?: boolean
@@ -245,7 +251,10 @@ export type Database = {
           price_monthly?: number
           price_yearly?: number
           profit_margin?: number
+          storage_amount?: number
+          storage_unit?: string
           updated_at?: string
+          vps_specs?: string | null
         }
         Relationships: []
       }
