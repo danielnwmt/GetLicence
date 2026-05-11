@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { createCustomer } from "@/lib/customers.functions";
 import { issueAsaasBoleto, cancelAsaasBoleto } from "@/lib/boletos.functions";
@@ -82,13 +82,19 @@ function AdminPage() {
     setHeaderSlot(document.getElementById("site-header-center"));
   }, []);
 
+  const triggerCls = "rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border data-[state=active]:border-primary";
+  const linkCls = "inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground";
+
   const tabsList = (
     <TabsList className="h-auto gap-1 bg-transparent p-0">
-      <TabsTrigger value="licenses" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border data-[state=active]:border-primary">Licenças</TabsTrigger>
-      <TabsTrigger value="payments" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border data-[state=active]:border-primary">Pagamentos</TabsTrigger>
-      <TabsTrigger value="products" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border data-[state=active]:border-primary">Produtos</TabsTrigger>
-      <TabsTrigger value="customers" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border data-[state=active]:border-primary">Clientes</TabsTrigger>
-      <TabsTrigger value="integrations" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border data-[state=active]:border-primary">Integrações</TabsTrigger>
+      <Link to="/admin" className={linkCls + " border border-primary text-foreground"}>Dashboard</Link>
+      <TabsTrigger value="customers" className={triggerCls}>Clientes</TabsTrigger>
+      <TabsTrigger value="licenses" className={triggerCls}>Licenças</TabsTrigger>
+      <Link to="/dashboard" className={linkCls}>Minhas licenças</Link>
+      <TabsTrigger value="integrations" className={triggerCls}>Integrações</TabsTrigger>
+      <Link to="/account" className={linkCls}>Conta</Link>
+      <TabsTrigger value="payments" className={triggerCls + " hidden"}>Pagamentos</TabsTrigger>
+      <TabsTrigger value="products" className={triggerCls + " hidden"}>Produtos</TabsTrigger>
     </TabsList>
   );
 

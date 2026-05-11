@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { KeyRound, LogOut } from "lucide-react";
@@ -6,6 +6,8 @@ import { KeyRound, LogOut } from "lucide-react";
 export function SiteHeader() {
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const isAdmin = pathname === "/admin";
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/80 backdrop-blur-xl">
@@ -20,17 +22,21 @@ export function SiteHeader() {
         <nav className="flex items-center gap-2">
           {user ? (
             <>
-              {role === "admin" && (
+              {!isAdmin && role === "admin" && (
                 <Button asChild variant="ghost" size="sm">
                   <Link to="/admin">Dashboard</Link>
                 </Button>
               )}
-              <Button asChild variant="ghost" size="sm">
-                <Link to="/dashboard">Minhas licenças</Link>
-              </Button>
-              <Button asChild variant="ghost" size="sm">
-                <Link to="/account">Conta</Link>
-              </Button>
+              {!isAdmin && (
+                <>
+                  <Button asChild variant="ghost" size="sm">
+                    <Link to="/dashboard">Minhas licenças</Link>
+                  </Button>
+                  <Button asChild variant="ghost" size="sm">
+                    <Link to="/account">Conta</Link>
+                  </Button>
+                </>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -43,11 +49,9 @@ export function SiteHeader() {
               </Button>
             </>
           ) : (
-            <>
-              <Button asChild size="sm">
-                <Link to="/auth">Entrar</Link>
-              </Button>
-            </>
+            <Button asChild size="sm">
+              <Link to="/auth">Entrar</Link>
+            </Button>
           )}
         </nav>
       </div>
