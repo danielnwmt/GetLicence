@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { createCustomer } from "@/lib/customers.functions";
+import { createSystemUser } from "@/lib/system-users.functions";
 import { issueAsaasBoleto, cancelAsaasBoleto } from "@/lib/boletos.functions";
 import { useEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
@@ -19,8 +20,8 @@ import { Plus, Package, KeyRound, CreditCard, Users, DollarSign, Pencil, Trash2,
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { toast } from "sonner";
 
-type AdminTab = "licenses" | "customers" | "payments" | "products" | "integrations";
-const ADMIN_TABS: AdminTab[] = ["licenses", "customers", "payments", "products", "integrations"];
+type AdminTab = "licenses" | "customers" | "payments" | "products" | "integrations" | "users";
+const ADMIN_TABS: AdminTab[] = ["licenses", "customers", "payments", "products", "integrations", "users"];
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — GetLicence" }] }),
@@ -64,18 +65,21 @@ function AdminPage() {
   const [licenses, setLicenses] = useState<LicenseRow[]>([]);
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [adminIds, setAdminIds] = useState<string[]>([]);
 
   const reload = useCallback(async () => {
-    const [p, l, pay, pr] = await Promise.all([
+    const [p, l, pay, pr, ur] = await Promise.all([
       supabase.from("products").select("*").order("created_at", { ascending: false }),
       supabase.from("licenses").select("*, product:products(name)").order("created_at", { ascending: false }),
       supabase.from("payments").select("*, license:licenses(license_key)").order("created_at", { ascending: false }),
       supabase.from("profiles").select("user_id, full_name, email"),
+      supabase.from("user_roles").select("user_id, role").eq("role", "admin"),
     ]);
     setProducts((p.data as Product[]) || []);
     setLicenses((l.data as unknown as LicenseRow[]) || []);
     setPayments((pay.data as unknown as PaymentRow[]) || []);
     setProfiles((pr.data as Profile[]) || []);
+    setAdminIds(((ur.data as { user_id: string }[]) || []).map((r) => r.user_id));
   }, []);
 
   useEffect(() => { if (role === "admin") reload(); }, [role, reload]);
@@ -103,6 +107,7 @@ function AdminPage() {
       <TabsTrigger value="licenses" className={triggerCls}>Licenças</TabsTrigger>
       <Link to="/dashboard" className={linkCls}>Minhas licenças</Link>
       <TabsTrigger value="integrations" className={triggerCls}>Integrações</TabsTrigger>
+      <TabsTrigger value="users" className={triggerCls}>Usuários</TabsTrigger>
       <TabsTrigger value="payments" className={triggerCls}>Financeiro</TabsTrigger>
       <TabsTrigger value="products" className={triggerCls}>Produtos</TabsTrigger>
       <Link to="/account" className={linkCls}>Configuração</Link>
@@ -119,7 +124,7 @@ function AdminPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
-        <StatCard icon={Users} label="Clientes" value={profiles.length.toString()} />
+        <StatCard icon={Users} label="Clientes" value={profiles.filter((p) => !adminIds.includes(p.user_id)).length.toString()} />
         <StatCard icon={KeyRound} label="Licenças ativas" value={activeCount.toString()} />
         <StatCard icon={Package} label="Produtos" value={products.length.toString()} />
         <StatCard icon={DollarSign} label="Receita paga" value={formatBRL(totalRevenue)} />
@@ -135,10 +140,13 @@ function AdminPage() {
           <ProductsTab products={products} onChange={reload} />
         </TabsContent>
         <TabsContent value="customers" className="mt-6">
-          <CustomersTab profiles={profiles} licenses={licenses} onChange={reload} />
+          <CustomersTab profiles={profiles.filter((p) => !adminIds.includes(p.user_id))} licenses={licenses} onChange={reload} />
         </TabsContent>
         <TabsContent value="integrations" className="mt-6">
           <IntegrationsTab />
+        </TabsContent>
+        <TabsContent value="users" className="mt-6">
+          <SystemUsersTab profiles={profiles.filter((p) => adminIds.includes(p.user_id))} onChange={reload} />
         </TabsContent>
     </Tabs>
   );
@@ -1043,3 +1051,76 @@ function IntegrationsTab() {
   );
 }
 
+
+// ---------- System Users (admins) ----------
+function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange: () => void }) {
+  const createSystemUserFn = useServerFn(createSystemUser);
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ full_name: "", email: "", password: "" });
+
+  const save = async () => {
+    if (!form.full_name.trim() || !form.email.trim() || form.password.length < 6) {
+      return toast.error("Preencha nome, e-mail e senha (mín. 6 caracteres)");
+    }
+    setSaving(true);
+    try {
+      await createSystemUserFn({ data: { ...form, role: "admin" } });
+      toast.success("Usuário do sistema cadastrado");
+      setOpen(false);
+      setForm({ full_name: "", email: "", password: "" });
+      onChange();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao cadastrar");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold">Usuários do sistema</h2>
+          <p className="text-sm text-muted-foreground">Administradores com acesso ao painel. Não aparecem como clientes.</p>
+        </div>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Novo usuário</Button></DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>Cadastrar usuário do sistema</DialogTitle></DialogHeader>
+            <div className="space-y-3 py-2">
+              <div className="space-y-2"><Label>Nome completo *</Label>
+                <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+              </div>
+              <div className="space-y-2"><Label>E-mail *</Label>
+                <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              </div>
+              <div className="space-y-2"><Label>Senha inicial *</Label>
+                <Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="mín. 6 caracteres" />
+              </div>
+              <p className="text-xs text-muted-foreground">O usuário será criado com perfil de administrador.</p>
+            </div>
+            <DialogFooter><Button onClick={save} disabled={saving}>{saving ? "Salvando..." : "Cadastrar"}</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+      <Card className="overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/50 text-left"><tr>
+            <th className="p-3 font-medium">Nome</th><th className="p-3 font-medium">E-mail</th><th className="p-3 font-medium">Função</th>
+          </tr></thead>
+          <tbody>
+            {profiles.map((p) => (
+              <tr key={p.user_id} className="border-t border-border">
+                <td className="p-3 font-medium">{p.full_name || "—"}</td>
+                <td className="p-3">{p.email}</td>
+                <td className="p-3"><Badge variant="outline">admin</Badge></td>
+              </tr>
+            ))}
+            {profiles.length === 0 && <tr><td colSpan={3} className="p-6 text-center text-muted-foreground">Nenhum usuário do sistema.</td></tr>}
+          </tbody>
+        </table>
+      </Card>
+    </div>
+  );
+}

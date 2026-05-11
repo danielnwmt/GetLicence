@@ -48,7 +48,9 @@ export const createCustomer = createServerFn({ method: "POST" })
 
     const newUserId = created.user?.id;
     if (newUserId) {
-      await admin.from("profiles").update({
+      await admin.from("profiles").upsert({
+        user_id: newUserId,
+        email: data.email,
         full_name: data.full_name,
         cpf_cnpj: data.cpf_cnpj.replace(/\D/g, ""),
         phone: data.phone ?? null,
@@ -59,7 +61,11 @@ export const createCustomer = createServerFn({ method: "POST" })
         address_neighborhood: data.address_neighborhood ?? null,
         address_city: data.address_city ?? null,
         address_state: data.address_state ?? null,
-      }).eq("user_id", newUserId);
+      }, { onConflict: "user_id" });
+      await admin.from("user_roles").upsert(
+        { user_id: newUserId, role: "client" },
+        { onConflict: "user_id,role" }
+      );
     }
     return { user_id: newUserId };
   });
