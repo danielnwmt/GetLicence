@@ -1051,3 +1051,76 @@ function IntegrationsTab() {
   );
 }
 
+
+// ---------- System Users (admins) ----------
+function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange: () => void }) {
+  const createSystemUserFn = useServerFn(createSystemUser);
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ full_name: "", email: "", password: "" });
+
+  const save = async () => {
+    if (!form.full_name.trim() || !form.email.trim() || form.password.length < 6) {
+      return toast.error("Preencha nome, e-mail e senha (mín. 6 caracteres)");
+    }
+    setSaving(true);
+    try {
+      await createSystemUserFn({ data: { ...form, role: "admin" } });
+      toast.success("Usuário do sistema cadastrado");
+      setOpen(false);
+      setForm({ full_name: "", email: "", password: "" });
+      onChange();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao cadastrar");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold">Usuários do sistema</h2>
+          <p className="text-sm text-muted-foreground">Administradores com acesso ao painel. Não aparecem como clientes.</p>
+        </div>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Novo usuário</Button></DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>Cadastrar usuário do sistema</DialogTitle></DialogHeader>
+            <div className="space-y-3 py-2">
+              <div className="space-y-2"><Label>Nome completo *</Label>
+                <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+              </div>
+              <div className="space-y-2"><Label>E-mail *</Label>
+                <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              </div>
+              <div className="space-y-2"><Label>Senha inicial *</Label>
+                <Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="mín. 6 caracteres" />
+              </div>
+              <p className="text-xs text-muted-foreground">O usuário será criado com perfil de administrador.</p>
+            </div>
+            <DialogFooter><Button onClick={save} disabled={saving}>{saving ? "Salvando..." : "Cadastrar"}</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+      <Card className="overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/50 text-left"><tr>
+            <th className="p-3 font-medium">Nome</th><th className="p-3 font-medium">E-mail</th><th className="p-3 font-medium">Função</th>
+          </tr></thead>
+          <tbody>
+            {profiles.map((p) => (
+              <tr key={p.user_id} className="border-t border-border">
+                <td className="p-3 font-medium">{p.full_name || "—"}</td>
+                <td className="p-3">{p.email}</td>
+                <td className="p-3"><Badge variant="outline">admin</Badge></td>
+              </tr>
+            ))}
+            {profiles.length === 0 && <tr><td colSpan={3} className="p-6 text-center text-muted-foreground">Nenhum usuário do sistema.</td></tr>}
+          </tbody>
+        </table>
+      </Card>
+    </div>
+  );
+}
