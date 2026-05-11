@@ -21,25 +21,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
+      if (!mounted) return;
       setSession(sess);
       setUser(sess?.user ?? null);
       if (sess?.user) {
         // Defer role fetch
-        setTimeout(() => fetchRole(sess.user.id), 0);
+        setTimeout(() => { if (mounted) fetchRole(sess.user.id); }, 0);
       } else {
         setRole(null);
       }
-    });
-
-    supabase.auth.getSession().then(({ data: { session: sess } }) => {
-      setSession(sess);
-      setUser(sess?.user ?? null);
-      if (sess?.user) fetchRole(sess.user.id);
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => { mounted = false; subscription.unsubscribe(); };
   }, []);
 
   const fetchRole = async (userId: string) => {
