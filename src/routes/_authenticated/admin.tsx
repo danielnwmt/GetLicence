@@ -381,6 +381,9 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
 
 // ---------- Payments ----------
 function PaymentsTab({ payments, onChange }: { payments: PaymentRow[]; onChange: () => void }) {
+  const issueBoleto = useServerFn(issueAsaasBoleto);
+  const [issuingId, setIssuingId] = useState<string | null>(null);
+
   const markPaid = async (id: string) => {
     const { error } = await supabase.from("payments").update({ status: "paid" as const, paid_at: new Date().toISOString() }).eq("id", id);
     if (error) return toast.error(error.message);
@@ -398,13 +401,27 @@ function PaymentsTab({ payments, onChange }: { payments: PaymentRow[]; onChange:
     onChange();
   };
 
+  const emitir = async (id: string) => {
+    setIssuingId(id);
+    try {
+      const r = await issueBoleto({ data: { payment_id: id } });
+      toast.success("Boleto emitido");
+      if (r.boleto_url) window.open(r.boleto_url, "_blank");
+      onChange();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao emitir boleto");
+    } finally {
+      setIssuingId(null);
+    }
+  };
+
   return (
     <Card className="overflow-hidden">
       <table className="w-full text-sm">
         <thead className="bg-muted/50 text-left"><tr>
           <th className="p-3 font-medium">Data</th><th className="p-3 font-medium">Licença</th>
           <th className="p-3 font-medium">Valor</th><th className="p-3 font-medium">Pago em</th>
-          <th className="p-3 font-medium">Status</th><th className="p-3"></th>
+          <th className="p-3 font-medium">Status</th><th className="p-3 font-medium">Boleto</th><th className="p-3"></th>
         </tr></thead>
         <tbody>
           {payments.map((p) => (
@@ -424,16 +441,30 @@ function PaymentsTab({ payments, onChange }: { payments: PaymentRow[]; onChange:
                   </SelectContent>
                 </Select>
               </td>
-              <td className="p-3 text-right">
+              <td className="p-3">
+                {p.boleto_url ? (
+                  <a href={p.boleto_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline text-xs">
+                    <FileText className="h-3.5 w-3.5" /> Abrir
+                  </a>
+                ) : (
+                  <span className="text-xs text-muted-foreground">—</span>
+                )}
+              </td>
+              <td className="p-3 text-right space-x-1">
+                {!p.boleto_url && p.status !== "paid" && (
+                  <Button size="sm" variant="outline" onClick={() => emitir(p.id)} disabled={issuingId === p.id}>
+                    <FileText className="mr-1 h-3.5 w-3.5" /> {issuingId === p.id ? "Emitindo..." : "Emitir boleto"}
+                  </Button>
+                )}
                 {p.status !== "paid" && (
-                  <Button size="sm" variant="outline" onClick={() => markPaid(p.id)}>
-                    <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Marcar como pago
+                  <Button size="sm" variant="ghost" onClick={() => markPaid(p.id)}>
+                    <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Pago
                   </Button>
                 )}
               </td>
             </tr>
           ))}
-          {payments.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Nenhum pagamento.</td></tr>}
+          {payments.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Nenhum pagamento.</td></tr>}
         </tbody>
       </table>
     </Card>
@@ -445,18 +476,31 @@ function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; l
   const createCustomerFn = useServerFn(createCustomer);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ full_name: "", email: "", password: "" });
+  const [form, setForm] = useState({
+    full_name: "", email: "", password: "",
+    cpf_cnpj: "", phone: "",
+    address_zip: "", address_street: "", address_number: "",
+    address_complement: "", address_neighborhood: "", address_city: "", address_state: "",
+  });
 
   const save = async () => {
     if (!form.full_name.trim() || !form.email.trim() || form.password.length < 6) {
       return toast.error("Preencha nome, e-mail e senha (mín. 6 caracteres)");
+    }
+    if (form.cpf_cnpj.replace(/\D/g, "").length < 11) {
+      return toast.error("Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido");
     }
     setSaving(true);
     try {
       await createCustomerFn({ data: form });
       toast.success("Cliente cadastrado");
       setOpen(false);
-      setForm({ full_name: "", email: "", password: "" });
+      setForm({
+        full_name: "", email: "", password: "",
+        cpf_cnpj: "", phone: "",
+        address_zip: "", address_street: "", address_number: "",
+        address_complement: "", address_neighborhood: "", address_city: "", address_state: "",
+      });
       onChange();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao cadastrar");
@@ -470,17 +514,50 @@ function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; l
       <div className="flex justify-end">
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Novo cliente</Button></DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-2xl">
             <DialogHeader><DialogTitle>Cadastrar cliente</DialogTitle></DialogHeader>
-            <div className="space-y-3 py-2">
-              <div className="space-y-2"><Label>Nome completo</Label>
-                <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+            <div className="space-y-3 py-2 max-h-[70vh] overflow-y-auto pr-1">
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="space-y-2"><Label>Nome completo / Razão social *</Label>
+                  <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+                </div>
+                <div className="space-y-2"><Label>CPF / CNPJ *</Label>
+                  <Input value={form.cpf_cnpj} onChange={(e) => setForm({ ...form, cpf_cnpj: e.target.value })} placeholder="Somente números" />
+                </div>
+                <div className="space-y-2"><Label>E-mail *</Label>
+                  <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                </div>
+                <div className="space-y-2"><Label>Telefone</Label>
+                  <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="(11) 99999-0000" />
+                </div>
+                <div className="space-y-2 md:col-span-2"><Label>Senha inicial *</Label>
+                  <Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="mín. 6 caracteres" />
+                </div>
               </div>
-              <div className="space-y-2"><Label>E-mail</Label>
-                <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-              </div>
-              <div className="space-y-2"><Label>Senha inicial</Label>
-                <Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="mín. 6 caracteres" />
+
+              <div className="pt-2 text-xs uppercase tracking-wide text-muted-foreground">Endereço</div>
+              <div className="grid gap-3 md:grid-cols-3">
+                <div className="space-y-2"><Label>CEP</Label>
+                  <Input value={form.address_zip} onChange={(e) => setForm({ ...form, address_zip: e.target.value })} />
+                </div>
+                <div className="space-y-2 md:col-span-2"><Label>Rua / Logradouro</Label>
+                  <Input value={form.address_street} onChange={(e) => setForm({ ...form, address_street: e.target.value })} />
+                </div>
+                <div className="space-y-2"><Label>Número</Label>
+                  <Input value={form.address_number} onChange={(e) => setForm({ ...form, address_number: e.target.value })} />
+                </div>
+                <div className="space-y-2"><Label>Complemento</Label>
+                  <Input value={form.address_complement} onChange={(e) => setForm({ ...form, address_complement: e.target.value })} />
+                </div>
+                <div className="space-y-2"><Label>Bairro</Label>
+                  <Input value={form.address_neighborhood} onChange={(e) => setForm({ ...form, address_neighborhood: e.target.value })} />
+                </div>
+                <div className="space-y-2 md:col-span-2"><Label>Cidade</Label>
+                  <Input value={form.address_city} onChange={(e) => setForm({ ...form, address_city: e.target.value })} />
+                </div>
+                <div className="space-y-2"><Label>UF</Label>
+                  <Input maxLength={2} value={form.address_state} onChange={(e) => setForm({ ...form, address_state: e.target.value.toUpperCase() })} />
+                </div>
               </div>
             </div>
             <DialogFooter><Button onClick={save} disabled={saving}>{saving ? "Salvando..." : "Cadastrar"}</Button></DialogFooter>
