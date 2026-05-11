@@ -83,12 +83,12 @@ function AdminPage() {
   }, []);
 
   const tabsList = (
-    <TabsList>
-      <TabsTrigger value="licenses">Licenças</TabsTrigger>
-      <TabsTrigger value="payments">Pagamentos</TabsTrigger>
-      <TabsTrigger value="products">Produtos</TabsTrigger>
-      <TabsTrigger value="customers">Clientes</TabsTrigger>
-      <TabsTrigger value="integrations">Integrações</TabsTrigger>
+    <TabsList className="h-auto gap-1 bg-transparent p-0">
+      <TabsTrigger value="licenses" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border data-[state=active]:border-primary">Licenças</TabsTrigger>
+      <TabsTrigger value="payments" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border data-[state=active]:border-primary">Pagamentos</TabsTrigger>
+      <TabsTrigger value="products" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border data-[state=active]:border-primary">Produtos</TabsTrigger>
+      <TabsTrigger value="customers" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border data-[state=active]:border-primary">Clientes</TabsTrigger>
+      <TabsTrigger value="integrations" className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border data-[state=active]:border-primary">Integrações</TabsTrigger>
     </TabsList>
   );
 
