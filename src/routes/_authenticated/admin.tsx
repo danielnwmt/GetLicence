@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { createCustomer } from "@/lib/customers.functions";
 import { issueAsaasBoleto, cancelAsaasBoleto } from "@/lib/boletos.functions";
 import { useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
@@ -76,19 +77,24 @@ function AdminPage() {
   const totalRevenue = payments.filter((p) => p.status === "paid").reduce((sum, p) => sum + Number(p.amount), 0);
   const activeCount = licenses.filter((l) => l.status === "active").length;
 
+  const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setHeaderSlot(document.getElementById("site-header-center"));
+  }, []);
+
+  const tabsList = (
+    <TabsList>
+      <TabsTrigger value="licenses">Licenças</TabsTrigger>
+      <TabsTrigger value="payments">Pagamentos</TabsTrigger>
+      <TabsTrigger value="products">Produtos</TabsTrigger>
+      <TabsTrigger value="customers">Clientes</TabsTrigger>
+      <TabsTrigger value="integrations">Integrações</TabsTrigger>
+    </TabsList>
+  );
+
   return (
     <Tabs defaultValue="licenses" className="space-y-8">
-      <div className="sticky top-16 z-30 -mx-4 border-b border-border/60 bg-background/80 px-4 py-3 backdrop-blur-xl">
-        <div className="container mx-auto flex justify-center">
-          <TabsList>
-            <TabsTrigger value="licenses">Licenças</TabsTrigger>
-            <TabsTrigger value="payments">Pagamentos</TabsTrigger>
-            <TabsTrigger value="products">Produtos</TabsTrigger>
-            <TabsTrigger value="customers">Clientes</TabsTrigger>
-            <TabsTrigger value="integrations">Integrações</TabsTrigger>
-          </TabsList>
-        </div>
-      </div>
+      {headerSlot ? createPortal(tabsList, headerSlot) : <div className="flex justify-center">{tabsList}</div>}
 
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Painel administrativo</h1>
