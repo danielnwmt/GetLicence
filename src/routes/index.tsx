@@ -110,7 +110,7 @@ function LoginCard() {
 
   return (
     <div className="rounded-2xl border border-white/20 bg-white/10 p-8 shadow-elevated backdrop-blur-xl">
-      <Link to="/" className="mb-6 flex items-center gap-2 text-white">
+      <Link to="/" className="mb-6 flex items-center justify-center gap-2 text-white">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15 backdrop-blur">
           <KeyRound className="h-5 w-5" />
         </div>
