@@ -49,51 +49,28 @@ function AccountPage() {
         <p className="text-muted-foreground">Gerencie suas credenciais de acesso</p>
       </div>
 
-      <div>
-        <></>
-          <h1 className="text-3xl font-bold tracking-tight">Minha conta</h1>
-          <p className="text-muted-foreground">Gerencie suas credenciais de acesso</p>
+      <Card className="p-6 mb-6">
+        <h2 className="text-sm font-medium text-muted-foreground mb-1">E-mail</h2>
+        <p className="font-medium">{user?.email}</p>
+      </Card>
+
+      <Card className="p-6">
+        <div className="mb-4 flex items-center gap-2">
+          <KeyRound className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-semibold">Alterar senha</h2>
         </div>
-
-        <Card className="p-6 mb-6">
-          <h2 className="text-sm font-medium text-muted-foreground mb-1">E-mail</h2>
-          <p className="font-medium">{user?.email}</p>
-        </Card>
-
-        <Card className="p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <KeyRound className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">Alterar senha</h2>
+        <form onSubmit={submit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="new-pwd">Nova senha</Label>
+            <Input id="new-pwd" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
           </div>
-          <form onSubmit={submit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="new-pwd">Nova senha</Label>
-              <Input
-                id="new-pwd"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirm-pwd">Confirmar nova senha</Label>
-              <Input
-                id="confirm-pwd"
-                type="password"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                required
-                minLength={6}
-              />
-            </div>
-            <Button type="submit" disabled={busy}>
-              {busy ? "Salvando..." : "Atualizar senha"}
-            </Button>
-          </form>
-        </Card>
-      </main>
+          <div className="space-y-2">
+            <Label htmlFor="confirm-pwd">Confirmar nova senha</Label>
+            <Input id="confirm-pwd" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required minLength={6} />
+          </div>
+          <Button type="submit" disabled={busy}>{busy ? "Salvando..." : "Atualizar senha"}</Button>
+        </form>
+      </Card>
     </div>
   );
 }
