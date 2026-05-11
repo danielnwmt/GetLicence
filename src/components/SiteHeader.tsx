@@ -23,12 +23,13 @@ export function SiteHeader() {
         <div id="site-header-center" className="flex flex-1 justify-center px-4">
           {user && !isAdmin && role === "admin" && (
             <div className="flex items-center gap-1">
-              <Link to="/admin" className={linkCls}>Dashboard</Link>
-              <Link to="/admin" className={linkCls}>Clientes</Link>
-              <Link to="/admin" className={linkCls}>Licenças</Link>
+              <Link to="/admin" search={{}} className={linkCls}>Dashboard</Link>
+              <Link to="/admin" search={{ tab: "customers" }} className={linkCls}>Clientes</Link>
+              <Link to="/admin" search={{ tab: "licenses" }} className={linkCls}>Licenças</Link>
               <Link to="/dashboard" className={pathname === "/dashboard" ? activeLinkCls : linkCls}>Minhas licenças</Link>
-              <Link to="/admin" className={linkCls}>Integrações</Link>
-              <Link to="/admin" className={linkCls}>Financeiro</Link>
+              <Link to="/admin" search={{ tab: "integrations" }} className={linkCls}>Integrações</Link>
+              <Link to="/admin" search={{ tab: "payments" }} className={linkCls}>Financeiro</Link>
+              <Link to="/admin" search={{ tab: "products" }} className={linkCls}>Produtos</Link>
               <Link to="/account" className={pathname === "/account" ? activeLinkCls : linkCls}>Configuração</Link>
             </div>
           )}
