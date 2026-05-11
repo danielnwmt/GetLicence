@@ -49,6 +49,9 @@ interface PaymentRow {
 function AdminPage() {
   const { user, role, loading } = useAuth();
   const navigate = useNavigate();
+  const search = Route.useSearch();
+  const currentTab: AdminTab = search.tab ?? "licenses";
+  const setTab = (t: string) => navigate({ to: "/admin", search: { tab: t as AdminTab }, replace: true });
 
   useEffect(() => {
     if (!loading && role && role !== "admin") {
