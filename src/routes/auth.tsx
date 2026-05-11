@@ -49,6 +49,7 @@ function AuthPage() {
           </p>
         </div>
         <LoginForm />
+        </div>
       </div>
     </div>
   );
