@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { createCustomer } from "@/lib/customers.functions";
+import { issueAsaasBoleto } from "@/lib/boletos.functions";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -13,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Package, KeyRound, CreditCard, Users, DollarSign, Pencil, Trash2, CheckCircle2, Landmark, Copy } from "lucide-react";
+import { Plus, Package, KeyRound, CreditCard, Users, DollarSign, Pencil, Trash2, CheckCircle2, Landmark, Copy, FileText, ExternalLink } from "lucide-react";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -32,6 +33,8 @@ interface LicenseRow {
 interface PaymentRow {
   id: string; amount: number; status: string; method: string | null;
   paid_at: string | null; created_at: string; license_id: string; user_id: string;
+  boleto_url: string | null; invoice_url: string | null; barcode: string | null;
+  provider_charge_id: string | null;
   license: { license_key: string } | null;
 }
 
