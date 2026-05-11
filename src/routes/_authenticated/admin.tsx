@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { createCustomer } from "@/lib/customers.functions";
-import { issueAsaasBoleto } from "@/lib/boletos.functions";
+import { issueAsaasBoleto, cancelAsaasBoleto } from "@/lib/boletos.functions";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
