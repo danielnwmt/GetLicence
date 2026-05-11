@@ -516,7 +516,19 @@ interface SettingsRow {
   asaas_env: string;
   webhook_token: string;
   notes: string | null;
+  asaas_api_key: string | null;
+  sicredi_client_id: string | null;
+  sicredi_client_secret: string | null;
+  sicredi_cert_pem: string | null;
+  sicredi_cert_key: string | null;
+  sicoob_client_id: string | null;
+  sicoob_access_token: string | null;
+  sicoob_cert_pem: string | null;
+  sicoob_cert_key: string | null;
 }
+
+const SETTINGS_COLS =
+  "id, active_provider, asaas_env, webhook_token, notes, asaas_api_key, sicredi_client_id, sicredi_client_secret, sicredi_cert_pem, sicredi_cert_key, sicoob_client_id, sicoob_access_token, sicoob_cert_pem, sicoob_cert_key";
 
 function IntegrationsTab() {
   const [settings, setSettings] = useState<SettingsRow | null>(null);
@@ -525,7 +537,7 @@ function IntegrationsTab() {
   const load = useCallback(async () => {
     const { data, error } = await supabase
       .from("payment_settings")
-      .select("id, active_provider, asaas_env, webhook_token, notes")
+      .select(SETTINGS_COLS)
       .limit(1)
       .maybeSingle();
     if (error) {
@@ -536,16 +548,20 @@ function IntegrationsTab() {
       const { data: created, error: insErr } = await supabase
         .from("payment_settings")
         .insert({})
-        .select("id, active_provider, asaas_env, webhook_token, notes")
+        .select(SETTINGS_COLS)
         .single();
       if (insErr) { toast.error(insErr.message); return; }
-      setSettings(created as SettingsRow);
+      setSettings(created as unknown as SettingsRow);
     } else {
-      setSettings(data as SettingsRow);
+      setSettings(data as unknown as SettingsRow);
     }
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  const update = <K extends keyof SettingsRow>(key: K, value: SettingsRow[K]) => {
+    setSettings((s) => (s ? { ...s, [key]: value } : s));
+  };
 
   const save = async () => {
     if (!settings) return;
@@ -556,6 +572,15 @@ function IntegrationsTab() {
         active_provider: settings.active_provider,
         asaas_env: settings.asaas_env,
         notes: settings.notes,
+        asaas_api_key: settings.asaas_api_key,
+        sicredi_client_id: settings.sicredi_client_id,
+        sicredi_client_secret: settings.sicredi_client_secret,
+        sicredi_cert_pem: settings.sicredi_cert_pem,
+        sicredi_cert_key: settings.sicredi_cert_key,
+        sicoob_client_id: settings.sicoob_client_id,
+        sicoob_access_token: settings.sicoob_access_token,
+        sicoob_cert_pem: settings.sicoob_cert_pem,
+        sicoob_cert_key: settings.sicoob_cert_key,
       })
       .eq("id", settings.id);
     setSaving(false);
