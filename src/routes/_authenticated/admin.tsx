@@ -394,11 +394,43 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
 }
 
 // ---------- Payments ----------
-function PaymentsTab({ payments, onChange }: { payments: PaymentRow[]; onChange: () => void }) {
+function PaymentsTab({ payments, licenses, profiles, onChange }: { payments: PaymentRow[]; licenses: LicenseRow[]; profiles: Profile[]; onChange: () => void }) {
   const issueBoleto = useServerFn(issueAsaasBoleto);
   const cancelBoleto = useServerFn(cancelAsaasBoleto);
   const [issuingId, setIssuingId] = useState<string | null>(null);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
+  const [newOpen, setNewOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newForm, setNewForm] = useState({ user_id: "", license_id: "", amount: "", due_date: "" });
+
+  const clientLicenses = licenses.filter((l) => l.user_id === newForm.user_id);
+
+  const createBoleto = async () => {
+    if (!newForm.user_id || !newForm.license_id) return toast.error("Selecione cliente e licença");
+    const amount = Number(newForm.amount);
+    if (!amount || amount <= 0) return toast.error("Informe um valor válido");
+    setCreating(true);
+    try {
+      const { data: pay, error } = await supabase.from("payments").insert({
+        user_id: newForm.user_id,
+        license_id: newForm.license_id,
+        amount,
+        status: "pending" as const,
+        due_date: newForm.due_date || null,
+      }).select().single();
+      if (error) throw new Error(error.message);
+      const r = await issueBoleto({ data: { payment_id: pay.id } });
+      toast.success("Boleto emitido");
+      if (r.boleto_url) window.open(r.boleto_url, "_blank");
+      setNewOpen(false);
+      setNewForm({ user_id: "", license_id: "", amount: "", due_date: "" });
+      onChange();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao emitir boleto");
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const markPaid = async (id: string) => {
     const { error } = await supabase.from("payments").update({ status: "paid" as const, paid_at: new Date().toISOString() }).eq("id", id);
