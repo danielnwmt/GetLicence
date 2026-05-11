@@ -42,7 +42,7 @@ export function SiteHeader() {
                     <Link to="/dashboard">Minhas licenças</Link>
                   </Button>
                   <Button asChild variant="ghost" size="sm">
-                    <Link to="/account">Conta</Link>
+                    <Link to="/account">Configuração</Link>
                   </Button>
                 </>
               )}
