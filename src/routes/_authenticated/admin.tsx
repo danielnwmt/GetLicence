@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-interface Product { id: string; name: string; description: string | null; price_monthly: number; price_yearly: number; active: boolean; }
+interface Product { id: string; name: string; description: string | null; price_monthly: number; price_yearly: number; active: boolean; cost_vps?: number; cost_storage?: number; cost_other?: number; profit_margin?: number; }
 interface Profile { user_id: string; full_name: string | null; email: string | null; }
 interface LicenseRow {
   id: string; license_key: string; plan: string; status: string;
@@ -163,12 +163,27 @@ const statusBadge: Record<string, string> = {
 function ProductsTab({ products, onChange }: { products: Product[]; onChange: () => void }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
-  const [form, setForm] = useState({ name: "", description: "", price_monthly: "0", price_yearly: "0" });
+  const emptyForm = { name: "", description: "", cost_vps: "0", cost_storage: "0", cost_other: "0", profit_margin: "30", price_monthly: "0", price_yearly: "0" };
+  const [form, setForm] = useState(emptyForm);
 
-  const openNew = () => { setEditing(null); setForm({ name: "", description: "", price_monthly: "0", price_yearly: "0" }); setOpen(true); };
+  const totalCost = (Number(form.cost_vps) || 0) + (Number(form.cost_storage) || 0) + (Number(form.cost_other) || 0);
+  const margin = Number(form.profit_margin) || 0;
+  const computedMonthly = +(totalCost * (1 + margin / 100)).toFixed(2);
+  const computedYearly = +(computedMonthly * 12 * 0.9).toFixed(2);
+
+  const openNew = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
   const openEdit = (p: Product) => {
     setEditing(p);
-    setForm({ name: p.name, description: p.description ?? "", price_monthly: String(p.price_monthly), price_yearly: String(p.price_yearly) });
+    setForm({
+      name: p.name,
+      description: p.description ?? "",
+      cost_vps: String(p.cost_vps ?? 0),
+      cost_storage: String(p.cost_storage ?? 0),
+      cost_other: String(p.cost_other ?? 0),
+      profit_margin: String(p.profit_margin ?? 30),
+      price_monthly: String(p.price_monthly),
+      price_yearly: String(p.price_yearly),
+    });
     setOpen(true);
   };
 
@@ -177,8 +192,12 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
     const payload = {
       name: form.name.trim(),
       description: form.description.trim() || null,
-      price_monthly: Number(form.price_monthly) || 0,
-      price_yearly: Number(form.price_yearly) || 0,
+      cost_vps: Number(form.cost_vps) || 0,
+      cost_storage: Number(form.cost_storage) || 0,
+      cost_other: Number(form.cost_other) || 0,
+      profit_margin: margin,
+      price_monthly: computedMonthly,
+      price_yearly: computedYearly,
     };
     const { error } = editing
       ? await supabase.from("products").update(payload).eq("id", editing.id)
@@ -204,14 +223,24 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
           <DialogTrigger asChild>
             <Button onClick={openNew}><Plus className="mr-2 h-4 w-4" /> Novo produto</Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editing ? "Editar produto" : "Novo produto"}</DialogTitle></DialogHeader>
             <div className="space-y-3 py-2">
               <div className="space-y-2"><Label>Nome</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
               <div className="space-y-2"><Label>Descrição</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2"><Label>Preço mensal (R$)</Label><Input type="number" step="0.01" value={form.price_monthly} onChange={(e) => setForm({ ...form, price_monthly: e.target.value })} /></div>
-                <div className="space-y-2"><Label>Preço anual (R$)</Label><Input type="number" step="0.01" value={form.price_yearly} onChange={(e) => setForm({ ...form, price_yearly: e.target.value })} /></div>
+              <div className="rounded-md border p-3 space-y-3">
+                <div className="text-sm font-medium">Custos mensais (R$)</div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-2"><Label>VPS</Label><Input type="number" step="0.01" value={form.cost_vps} onChange={(e) => setForm({ ...form, cost_vps: e.target.value })} /></div>
+                  <div className="space-y-2"><Label>Armazenamento</Label><Input type="number" step="0.01" value={form.cost_storage} onChange={(e) => setForm({ ...form, cost_storage: e.target.value })} /></div>
+                  <div className="space-y-2"><Label>Outros</Label><Input type="number" step="0.01" value={form.cost_other} onChange={(e) => setForm({ ...form, cost_other: e.target.value })} /></div>
+                </div>
+                <div className="text-xs text-muted-foreground">Custo total: {formatBRL(totalCost)}</div>
+              </div>
+              <div className="space-y-2"><Label>Margem de lucro (%)</Label><Input type="number" step="0.1" value={form.profit_margin} onChange={(e) => setForm({ ...form, profit_margin: e.target.value })} /></div>
+              <div className="rounded-md bg-muted/50 p-3 space-y-1 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Preço mensal calculado</span><span className="font-semibold">{formatBRL(computedMonthly)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Preço anual (10% desc.)</span><span className="font-semibold">{formatBRL(computedYearly)}</span></div>
               </div>
             </div>
             <DialogFooter><Button onClick={save}>Salvar</Button></DialogFooter>

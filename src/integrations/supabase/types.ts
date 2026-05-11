@@ -207,32 +207,44 @@ export type Database = {
       products: {
         Row: {
           active: boolean
+          cost_other: number
+          cost_storage: number
+          cost_vps: number
           created_at: string
           description: string | null
           id: string
           name: string
           price_monthly: number
           price_yearly: number
+          profit_margin: number
           updated_at: string
         }
         Insert: {
           active?: boolean
+          cost_other?: number
+          cost_storage?: number
+          cost_vps?: number
           created_at?: string
           description?: string | null
           id?: string
           name: string
           price_monthly?: number
           price_yearly?: number
+          profit_margin?: number
           updated_at?: string
         }
         Update: {
           active?: boolean
+          cost_other?: number
+          cost_storage?: number
+          cost_vps?: number
           created_at?: string
           description?: string | null
           id?: string
           name?: string
           price_monthly?: number
           price_yearly?: number
+          profit_margin?: number
           updated_at?: string
         }
         Relationships: []

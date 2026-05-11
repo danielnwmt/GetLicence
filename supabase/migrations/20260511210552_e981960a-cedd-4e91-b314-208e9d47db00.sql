@@ -1,0 +1,5 @@
+ALTER TABLE public.products
+  ADD COLUMN IF NOT EXISTS cost_vps numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS cost_storage numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS cost_other numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS profit_margin numeric NOT NULL DEFAULT 0;
