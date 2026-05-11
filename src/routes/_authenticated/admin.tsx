@@ -145,6 +145,9 @@ function AdminPage() {
         <TabsContent value="integrations" className="mt-6">
           <IntegrationsTab />
         </TabsContent>
+        <TabsContent value="users" className="mt-6">
+          <SystemUsersTab profiles={profiles.filter((p) => adminIds.includes(p.user_id))} onChange={reload} />
+        </TabsContent>
     </Tabs>
   );
 }
