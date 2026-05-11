@@ -509,3 +509,183 @@ function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; l
   );
 }
 
+// ---------- Integrations (bancos / pagamentos) ----------
+type Provider = "asaas" | "sicredi" | "sicoob" | "manual";
+interface SettingsRow {
+  id: string;
+  active_provider: Provider;
+  asaas_env: string;
+  webhook_token: string;
+  notes: string | null;
+}
+
+function IntegrationsTab() {
+  const getFn = useServerFn(getPaymentSettings);
+  const updateFn = useServerFn(updatePaymentSettings);
+  const [settings, setSettings] = useState<SettingsRow | null>(null);
+  const [secretStatus, setSecretStatus] = useState({ asaas: false, sicredi: false, sicoob: false });
+  const [saving, setSaving] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await getFn();
+      setSettings(res.settings as SettingsRow | null);
+      setSecretStatus(res.secretStatus);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao carregar");
+    }
+  }, [getFn]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const save = async () => {
+    if (!settings) return;
+    setSaving(true);
+    try {
+      await updateFn({ data: {
+        id: settings.id,
+        active_provider: settings.active_provider,
+        asaas_env: settings.asaas_env as "sandbox" | "production",
+        notes: settings.notes,
+      }});
+      toast.success("Configurações salvas");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar");
+    } finally { setSaving(false); }
+  };
+
+  if (!settings) return <div className="text-muted-foreground">Carregando...</div>;
+
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const webhookUrl = `${origin}/api/public/webhooks/${settings.active_provider}?token=${settings.webhook_token}`;
+
+  const copy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Copiado");
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card className="p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <Landmark className="h-5 w-5 text-primary" />
+          <div>
+            <h3 className="text-lg font-semibold">Provedor de pagamento ativo</h3>
+            <p className="text-sm text-muted-foreground">Escolha qual banco/gateway será usado para emitir cobranças.</p>
+          </div>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Provedor</Label>
+            <Select value={settings.active_provider} onValueChange={(v) => setSettings({ ...settings, active_provider: v as Provider })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="manual">Manual (sem integração)</SelectItem>
+                <SelectItem value="asaas">Asaas</SelectItem>
+                <SelectItem value="sicredi">Sicredi</SelectItem>
+                <SelectItem value="sicoob">Sicoob</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {settings.active_provider === "asaas" && (
+            <div className="space-y-2">
+              <Label>Ambiente Asaas</Label>
+              <Select value={settings.asaas_env} onValueChange={(v) => setSettings({ ...settings, asaas_env: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sandbox">Sandbox (testes)</SelectItem>
+                  <SelectItem value="production">Produção</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label>Observações internas</Label>
+          <Textarea value={settings.notes ?? ""} onChange={(e) => setSettings({ ...settings, notes: e.target.value })} placeholder="Anotações sobre a conta bancária, contato do gerente, etc." />
+        </div>
+
+        <div className="flex justify-end">
+          <Button onClick={save} disabled={saving}>{saving ? "Salvando..." : "Salvar configurações"}</Button>
+        </div>
+      </Card>
+
+      <Card className="p-6 space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold">Chaves de API (Secrets)</h3>
+          <p className="text-sm text-muted-foreground">
+            As credenciais ficam guardadas em segurança no cofre do Lovable Cloud.
+            Para adicionar/editar, abra <strong>Cloud → Secrets</strong> no menu superior do editor e cadastre os nomes abaixo.
+          </p>
+        </div>
+
+        <ProviderCredCard
+          title="Asaas"
+          ok={secretStatus.asaas}
+          fields={[
+            { name: "ASAAS_API_KEY", help: "Token gerado em Asaas → Integrações → API Asaas" },
+          ]}
+        />
+        <ProviderCredCard
+          title="Sicredi"
+          ok={secretStatus.sicredi}
+          fields={[
+            { name: "SICREDI_CLIENT_ID", help: "Client ID da API Cobrança Sicredi" },
+            { name: "SICREDI_CLIENT_SECRET", help: "Client Secret" },
+            { name: "SICREDI_CERT_PEM", help: "Certificado mTLS em PEM (cole o conteúdo do .pem)" },
+            { name: "SICREDI_CERT_KEY", help: "Chave privada do certificado (.key)" },
+          ]}
+        />
+        <ProviderCredCard
+          title="Sicoob"
+          ok={secretStatus.sicoob}
+          fields={[
+            { name: "SICOOB_CLIENT_ID", help: "Client ID do Portal Desenvolvedor Sicoob" },
+            { name: "SICOOB_ACCESS_TOKEN", help: "Access Token (Bearer)" },
+            { name: "SICOOB_CERT_PEM", help: "Certificado mTLS em PEM" },
+            { name: "SICOOB_CERT_KEY", help: "Chave privada do certificado" },
+          ]}
+        />
+      </Card>
+
+      <Card className="p-6 space-y-3">
+        <div>
+          <h3 className="text-lg font-semibold">URL do Webhook</h3>
+          <p className="text-sm text-muted-foreground">Configure esta URL no painel do provedor para receber confirmações de pagamento.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Input readOnly value={webhookUrl} className="font-mono text-xs" />
+          <Button variant="outline" size="icon" onClick={() => copy(webhookUrl)}><Copy className="h-4 w-4" /></Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Token de validação: <code className="font-mono">{settings.webhook_token}</code>
+        </p>
+      </Card>
+    </div>
+  );
+}
+
+function ProviderCredCard({ title, ok, fields }: { title: string; ok: boolean; fields: { name: string; help: string }[] }) {
+  return (
+    <div className="rounded-lg border border-border p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="font-semibold">{title}</div>
+        <Badge variant="outline" className={ok ? "bg-success/15 text-success border-success/30" : "bg-warning/15 text-warning-foreground border-warning/30"}>
+          {ok ? "Configurado" : "Faltando credenciais"}
+        </Badge>
+      </div>
+      <ul className="space-y-1.5 text-sm">
+        {fields.map((f) => (
+          <li key={f.name} className="flex items-start gap-2">
+            <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">{f.name}</code>
+            <span className="text-muted-foreground text-xs pt-0.5">{f.help}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
