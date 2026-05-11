@@ -19,8 +19,15 @@ import { Plus, Package, KeyRound, CreditCard, Users, DollarSign, Pencil, Trash2,
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { toast } from "sonner";
 
+type AdminTab = "licenses" | "customers" | "payments" | "products" | "integrations";
+const ADMIN_TABS: AdminTab[] = ["licenses", "customers", "payments", "products", "integrations"];
+
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — GetLicence" }] }),
+  validateSearch: (s: Record<string, unknown>): { tab?: AdminTab } => {
+    const t = s.tab;
+    return { tab: typeof t === "string" && (ADMIN_TABS as string[]).includes(t) ? (t as AdminTab) : undefined };
+  },
   component: AdminPage,
 });
 
@@ -42,6 +49,9 @@ interface PaymentRow {
 function AdminPage() {
   const { user, role, loading } = useAuth();
   const navigate = useNavigate();
+  const search = Route.useSearch();
+  const currentTab: AdminTab = search.tab ?? "licenses";
+  const setTab = (t: string) => navigate({ to: "/admin", search: { tab: t as AdminTab }, replace: true });
 
   useEffect(() => {
     if (!loading && role && role !== "admin") {
@@ -85,9 +95,10 @@ function AdminPage() {
   const triggerCls = "inline-flex items-center rounded-md border border-transparent px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border-primary";
   const linkCls = "inline-flex items-center rounded-md border border-transparent px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground";
 
+  const activeLinkCls = linkCls + " border-primary text-foreground bg-background";
   const tabsList = (
     <TabsList className="h-auto gap-1 bg-transparent p-0">
-      <Link to="/admin" className={linkCls + " border-primary text-foreground"}>Dashboard</Link>
+      <Link to="/admin" search={{}} className={linkCls}>Dashboard</Link>
       <TabsTrigger value="customers" className={triggerCls}>Clientes</TabsTrigger>
       <TabsTrigger value="licenses" className={triggerCls}>Licenças</TabsTrigger>
       <Link to="/dashboard" className={linkCls}>Minhas licenças</Link>
@@ -99,7 +110,7 @@ function AdminPage() {
   );
 
   return (
-    <Tabs defaultValue="licenses" className="space-y-8">
+    <Tabs value={currentTab} onValueChange={setTab} className="space-y-8">
       {headerSlot ? createPortal(tabsList, headerSlot) : <div className="flex justify-center">{tabsList}</div>}
 
       <div>
