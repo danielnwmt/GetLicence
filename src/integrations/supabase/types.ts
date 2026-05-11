@@ -133,10 +133,12 @@ export type Database = {
       payments: {
         Row: {
           amount: number
+          barcode: string | null
           boleto_url: string | null
           created_at: string
           due_date: string | null
           id: string
+          invoice_url: string | null
           license_id: string
           method: string | null
           notes: string | null
@@ -152,10 +154,12 @@ export type Database = {
         }
         Insert: {
           amount: number
+          barcode?: string | null
           boleto_url?: string | null
           created_at?: string
           due_date?: string | null
           id?: string
+          invoice_url?: string | null
           license_id: string
           method?: string | null
           notes?: string | null
@@ -171,10 +175,12 @@ export type Database = {
         }
         Update: {
           amount?: number
+          barcode?: string | null
           boleto_url?: string | null
           created_at?: string
           due_date?: string | null
           id?: string
+          invoice_url?: string | null
           license_id?: string
           method?: string | null
           notes?: string | null
@@ -233,26 +239,53 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address_city: string | null
+          address_complement: string | null
+          address_neighborhood: string | null
+          address_number: string | null
+          address_state: string | null
+          address_street: string | null
+          address_zip: string | null
+          cpf_cnpj: string | null
           created_at: string
           email: string | null
           full_name: string | null
           id: string
+          phone: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          address_city?: string | null
+          address_complement?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zip?: string | null
+          cpf_cnpj?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
+          phone?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          address_city?: string | null
+          address_complement?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zip?: string | null
+          cpf_cnpj?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
+          phone?: string | null
           updated_at?: string
           user_id?: string
         }
