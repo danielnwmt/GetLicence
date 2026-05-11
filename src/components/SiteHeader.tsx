@@ -30,6 +30,7 @@ export function SiteHeader() {
               <Link to="/admin" search={{ tab: "integrations" }} className={linkCls}>Integrações</Link>
               <Link to="/admin" search={{ tab: "payments" }} className={linkCls}>Financeiro</Link>
               <Link to="/admin" search={{ tab: "products" }} className={linkCls}>Produtos</Link>
+              <Link to="/admin" search={{ tab: "users" }} className={linkCls}>Usuários</Link>
               <Link to="/account" className={pathname === "/account" ? activeLinkCls : linkCls}>Configuração</Link>
             </div>
           )}
