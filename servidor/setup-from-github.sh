@@ -12,7 +12,7 @@ if [[ $EUID -ne 0 ]]; then
   echo "Execute como root: sudo bash setup-from-github.sh"; exit 1
 fi
 
-REPO_URL="${REPO_URL:-https://github.com/danielnwmt/axis-licencas.git}"
+REPO_URL="${REPO_URL:-https://github.com/danielnwmt/GetLicence.git}"
 BRANCH="${BRANCH:-main}"
 CLONE_DIR="${CLONE_DIR:-/opt/axis-licencas-src}"
 APP_DIR="/opt/axis-licencas"
