@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { createCustomer, listAdminProfiles } from "@/lib/customers.functions";
-import { createSystemUser } from "@/lib/system-users.functions";
+import { createSystemUser, updateSystemUser } from "@/lib/system-users.functions";
 import { issueAsaasBoleto, cancelAsaasBoleto } from "@/lib/boletos.functions";
 import { useEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
@@ -1080,9 +1080,14 @@ function IntegrationsTab() {
 // ---------- System Users (admins) ----------
 function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange: () => void }) {
   const createSystemUserFn = useServerFn(createSystemUser);
+  const updateSystemUserFn = useServerFn(updateSystemUser);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ full_name: "", email: "", password: "" });
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [editing, setEditing] = useState<Profile | null>(null);
+  const [editForm, setEditForm] = useState({ full_name: "", email: "", password: "" });
 
   const save = async () => {
     if (!form.full_name.trim() || !form.email.trim() || form.password.length < 6) {
@@ -1097,6 +1102,41 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
       onChange();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao cadastrar");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openEdit = (p: Profile) => {
+    setEditing(p);
+    setEditForm({ full_name: p.full_name ?? "", email: p.email ?? "", password: "" });
+    setEditOpen(true);
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    if (!editForm.full_name.trim() || !editForm.email.trim()) {
+      return toast.error("Preencha nome e e-mail");
+    }
+    if (editForm.password && editForm.password.length < 6) {
+      return toast.error("Senha deve ter no mínimo 6 caracteres");
+    }
+    setSaving(true);
+    try {
+      await updateSystemUserFn({
+        data: {
+          user_id: editing.user_id,
+          full_name: editForm.full_name,
+          email: editForm.email,
+          ...(editForm.password ? { password: editForm.password } : {}),
+        },
+      });
+      toast.success("Usuário atualizado");
+      setEditOpen(false);
+      setEditing(null);
+      onChange();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao atualizar");
     } finally {
       setSaving(false);
     }
@@ -1129,10 +1169,32 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
           </DialogContent>
         </Dialog>
       </div>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Editar usuário do sistema</DialogTitle></DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-2"><Label>Nome completo *</Label>
+              <Input value={editForm.full_name} onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })} />
+            </div>
+            <div className="space-y-2"><Label>E-mail *</Label>
+              <Input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
+            </div>
+            <div className="space-y-2"><Label>Nova senha</Label>
+              <Input type="text" value={editForm.password} onChange={(e) => setEditForm({ ...editForm, password: e.target.value })} placeholder="deixe vazio para não alterar" />
+            </div>
+          </div>
+          <DialogFooter><Button onClick={saveEdit} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Card className="overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left"><tr>
-            <th className="p-3 font-medium">Nome</th><th className="p-3 font-medium">E-mail</th><th className="p-3 font-medium">Função</th>
+            <th className="p-3 font-medium">Nome</th>
+            <th className="p-3 font-medium">E-mail</th>
+            <th className="p-3 font-medium">Função</th>
+            <th className="p-3 font-medium w-24">Ações</th>
           </tr></thead>
           <tbody>
             {profiles.map((p) => (
@@ -1140,9 +1202,14 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
                 <td className="p-3 font-medium">{p.full_name || "—"}</td>
                 <td className="p-3">{p.email}</td>
                 <td className="p-3"><Badge variant="outline">admin</Badge></td>
+                <td className="p-3">
+                  <Button variant="ghost" size="sm" onClick={() => openEdit(p)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </td>
               </tr>
             ))}
-            {profiles.length === 0 && <tr><td colSpan={3} className="p-6 text-center text-muted-foreground">Nenhum usuário do sistema.</td></tr>}
+            {profiles.length === 0 && <tr><td colSpan={4} className="p-6 text-center text-muted-foreground">Nenhum usuário do sistema.</td></tr>}
           </tbody>
         </table>
       </Card>
