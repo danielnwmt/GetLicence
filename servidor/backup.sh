@@ -3,7 +3,7 @@
 #   0 3 * * * /opt/getlicence/backup.sh
 set -euo pipefail
 
-BACKUP_DIR="/var/backups/axis"
+BACKUP_DIR="/var/backups/getlicence"
 DB_NAME="getlicence_db"
 DB_USER="getlicence_user"
 RETENTION_DAYS=30

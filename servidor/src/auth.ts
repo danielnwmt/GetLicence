@@ -8,7 +8,7 @@ if (JWT_SECRET.length < 32) {
   process.exit(1);
 }
 
-export const COOKIE_NAME = "axis_session";
+export const COOKIE_NAME = "getlicence_session";
 const TOKEN_TTL = "7d";
 
 export async function hashPassword(plain: string): Promise<string> {

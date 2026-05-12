@@ -61,10 +61,10 @@ O `.env` e o banco são **preservados**.
 ## Backup automático
 
 ```bash
-sudo cp /opt/getlicence/backup.sh /etc/cron.daily/axis-backup
-sudo chmod +x /etc/cron.daily/axis-backup
+sudo cp /opt/getlicence/backup.sh /etc/cron.daily/getlicence-backup
+sudo chmod +x /etc/cron.daily/getlicence-backup
 ```
-Backups em `/var/backups/axis/`, retenção de 30 dias.
+Backups em `/var/backups/getlicence/`, retenção de 30 dias.
 
 ## Pagamentos (opcional)
 
@@ -77,7 +77,7 @@ Depois: `sudo systemctl restart getlicence`.
 
 ## Endpoints da API
 
-Autenticação por cookie (`axis_session`) ou header `Authorization: Bearer <token>`.
+Autenticação por cookie (`getlicence_session`) ou header `Authorization: Bearer <token>`.
 
 | Método | Caminho | Permissão | Descrição |
 |---|---|---|---|

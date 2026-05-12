@@ -24,7 +24,7 @@ services:
 
   auth:
     image: supabase/gotrue:v2.158.1
-    container_name: axis-auth
+    container_name: getlicence-auth
     restart: unless-stopped
     depends_on:
       db: { condition: service_healthy }
@@ -51,7 +51,7 @@ services:
 
   rest:
     image: postgrest/postgrest:v12.2.3
-    container_name: axis-rest
+    container_name: getlicence-rest
     restart: unless-stopped
     depends_on:
       db: { condition: service_healthy }
@@ -65,7 +65,7 @@ services:
 
   proxy:
     image: nginx:1.27-alpine
-    container_name: axis-proxy
+    container_name: getlicence-proxy
     restart: unless-stopped
     depends_on: [auth, rest]
     ports:
