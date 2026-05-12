@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Instalador Axis Licenças (Ubuntu 22.04 / 24.04)
+# Instalador GetLicence (Ubuntu 22.04 / 24.04)
 # Uso: sudo ./install.sh
 set -euo pipefail
 
@@ -7,10 +7,10 @@ if [[ $EUID -ne 0 ]]; then
   echo "Execute como root: sudo ./install.sh"; exit 1
 fi
 
-APP_DIR="/opt/axis-licencas"
-SERVICE_NAME="axis-licencas"
-DB_NAME="axis_db"
-DB_USER="axis_user"
+APP_DIR="/opt/getlicence"
+SERVICE_NAME="getlicence"
+DB_NAME="getlicence_db"
+DB_USER="getlicence_user"
 NODE_MAJOR=20
 
 # Pasta atual deve ter este script
@@ -35,7 +35,7 @@ if ! command -v psql >/dev/null 2>&1; then
 fi
 
 echo "==> Configurando banco ${DB_NAME}..."
-DB_PASS_FILE="/root/.axis-db-pass"
+DB_PASS_FILE="/root/.getlicence-db-pass"
 if [[ ! -f "$DB_PASS_FILE" ]]; then
   openssl rand -hex 24 > "$DB_PASS_FILE"
   chmod 600 "$DB_PASS_FILE"
@@ -111,7 +111,7 @@ echo "==> Criando admin inicial (se ainda não existe)..."
 node dist/seed-admin.js || true
 
 echo "==> Instalando serviço systemd..."
-install -m 0644 "${APP_DIR}/axis-licencas.service" "/etc/systemd/system/${SERVICE_NAME}.service"
+install -m 0644 "${APP_DIR}/getlicence.service" "/etc/systemd/system/${SERVICE_NAME}.service"
 systemctl daemon-reload
 systemctl enable --now "${SERVICE_NAME}"
 

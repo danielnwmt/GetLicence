@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Instalador Axis Licenças — clona do GitHub e instala tudo
+# Instalador GetLicence — clona do GitHub e instala tudo
 # Uso (Ubuntu 22.04 / 24.04, como root):
 #   curl -fsSL https://raw.githubusercontent.com/danielnwmt/GetLicence/main/servidor/setup-from-github.sh | sudo bash
 # Ou:
@@ -14,11 +14,11 @@ fi
 
 REPO_URL="${REPO_URL:-https://github.com/danielnwmt/GetLicence.git}"
 BRANCH="${BRANCH:-main}"
-CLONE_DIR="${CLONE_DIR:-/opt/axis-licencas-src}"
-APP_DIR="/opt/axis-licencas"
+CLONE_DIR="${CLONE_DIR:-/opt/getlicence-src}"
+APP_DIR="/opt/getlicence"
 
 echo "============================================================"
-echo " Axis Licenças — instalação a partir do GitHub"
+echo " GetLicence — instalação a partir do GitHub"
 echo " Repo:   ${REPO_URL}"
 echo " Branch: ${BRANCH}"
 echo "============================================================"

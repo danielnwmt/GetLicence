@@ -1,13 +1,13 @@
 [Unit]
-Description=Axis Licenças (self-hosted)
+Description=GetLicence (self-hosted)
 After=network.target postgresql.service
 Wants=postgresql.service
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/axis-licencas
-EnvironmentFile=/opt/axis-licencas/.env
-ExecStart=/usr/bin/node /opt/axis-licencas/dist/server.js
+WorkingDirectory=/opt/getlicence
+EnvironmentFile=/opt/getlicence/.env
+ExecStart=/usr/bin/node /opt/getlicence/dist/server.js
 Restart=on-failure
 RestartSec=5
 User=root

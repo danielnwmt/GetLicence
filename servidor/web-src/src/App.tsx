@@ -52,7 +52,7 @@ function Shell() {
     <div className="min-h-screen flex flex-col">
       <header className="border-b bg-white">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link to="/" className="font-bold text-slate-800">Axis Licenças</Link>
+          <Link to="/" className="font-bold text-slate-800">GetLicence</Link>
           <nav className="flex gap-4 text-sm">
             {isAdmin && <Link className="hover:text-blue-600" to="/admin">Admin</Link>}
             <Link className="hover:text-blue-600" to="/dashboard">Painel</Link>

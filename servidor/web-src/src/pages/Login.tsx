@@ -30,7 +30,7 @@ export function LoginPage() {
   return (
     <div className="min-h-screen grid place-items-center bg-slate-50 p-4">
       <form onSubmit={onSubmit} className="w-full max-w-sm bg-white border rounded-lg p-6 space-y-4">
-        <h1 className="text-2xl font-bold text-slate-800">Axis Licenças</h1>
+        <h1 className="text-2xl font-bold text-slate-800">GetLicence</h1>
         <p className="text-sm text-slate-500">Entre com seu email e senha.</p>
         <Field label="Email"><Input type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
         <Field label="Senha"><Input type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} /></Field>

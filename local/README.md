@@ -1,4 +1,4 @@
-# Axis Licenças — stack 100% local (Supabase self-hosted)
+# GetLicence — stack 100% local (Supabase self-hosted)
 
 Esta pasta roda **localmente no Ubuntu** o mesmo backend que o Lovable Cloud usa
 (Postgres + GoTrue + PostgREST), em containers Docker. Assim, o **app React
@@ -14,8 +14,8 @@ o Supabase local em vez do Cloud.
 ## Instalação (uma linha)
 
 ```bash
-git clone https://github.com/danielnwmt/axis-licencas.git /opt/axis
-sudo bash /opt/axis/local/install.sh
+git clone https://github.com/danielnwmt/getlicence.git /opt/getlicence
+sudo bash /opt/getlicence/local/install.sh
 ```
 
 O instalador:
@@ -50,7 +50,7 @@ funciona como hoje.
 
 | Ação | Comando |
 | --- | --- |
-| Ver status | `cd /opt/axis/local && docker compose ps` |
+| Ver status | `cd /opt/getlicence/local && docker compose ps` |
 | Logs | `docker compose logs -f auth rest db` |
 | Parar | `docker compose down` |
 | Subir | `docker compose up -d` |

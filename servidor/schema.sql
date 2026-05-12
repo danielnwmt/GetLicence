@@ -1,4 +1,4 @@
--- Schema completo Axis Licenças (Postgres 14+)
+-- Schema completo GetLicence (Postgres 14+)
 -- Equivalente ao schema da versão Lovable Cloud, sem RLS (single-tenant local).
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;

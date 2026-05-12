@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Atualiza Axis Licenças mantendo banco e .env intactos.
+# Atualiza GetLicence mantendo banco e .env intactos.
 # Uso: sudo ./update.sh
 set -euo pipefail
 if [[ $EUID -ne 0 ]]; then echo "Use sudo"; exit 1; fi
 
-APP_DIR="/opt/axis-licencas"
-SERVICE_NAME="axis-licencas"
+APP_DIR="/opt/getlicence"
+SERVICE_NAME="getlicence"
 SRC_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo "==> Parando serviço..."
