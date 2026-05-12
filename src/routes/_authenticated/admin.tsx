@@ -20,8 +20,8 @@ import { Plus, Package, KeyRound, CreditCard, Users, DollarSign, Pencil, Trash2,
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { toast } from "sonner";
 
-type AdminTab = "licenses" | "customers" | "payments" | "products" | "integrations" | "users";
-const ADMIN_TABS: AdminTab[] = ["licenses", "customers", "payments", "products", "integrations", "users"];
+type AdminTab = "licenses" | "customers" | "payments" | "products" | "settings";
+const ADMIN_TABS: AdminTab[] = ["licenses", "customers", "payments", "products", "settings"];
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — GetLicence" }] }),
@@ -106,11 +106,11 @@ function AdminPage() {
       <TabsTrigger value="customers" className={triggerCls}>Clientes</TabsTrigger>
       <TabsTrigger value="licenses" className={triggerCls}>Licenças</TabsTrigger>
       <Link to="/dashboard" className={linkCls}>Minhas licenças</Link>
-      <TabsTrigger value="integrations" className={triggerCls}>Integrações</TabsTrigger>
-      <TabsTrigger value="users" className={triggerCls}>Usuários</TabsTrigger>
+      <TabsTrigger value="integrations" className={triggerCls + " hidden"} />
+      <TabsTrigger value="users" className={triggerCls + " hidden"} />
       <TabsTrigger value="payments" className={triggerCls}>Financeiro</TabsTrigger>
       <TabsTrigger value="products" className={triggerCls}>Produtos</TabsTrigger>
-      <Link to="/account" className={linkCls}>Configuração</Link>
+      <TabsTrigger value="settings" className={triggerCls}>Configurações</TabsTrigger>
     </TabsList>
   );
 
@@ -142,11 +142,19 @@ function AdminPage() {
         <TabsContent value="customers" className="mt-6">
           <CustomersTab profiles={profiles.filter((p) => !adminIds.includes(p.user_id))} licenses={licenses} onChange={reload} />
         </TabsContent>
-        <TabsContent value="integrations" className="mt-6">
-          <IntegrationsTab />
-        </TabsContent>
-        <TabsContent value="users" className="mt-6">
-          <SystemUsersTab profiles={profiles.filter((p) => adminIds.includes(p.user_id))} onChange={reload} />
+        <TabsContent value="settings" className="mt-6">
+          <Tabs defaultValue="users" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="users">Usuários</TabsTrigger>
+              <TabsTrigger value="integrations">Integrações</TabsTrigger>
+            </TabsList>
+            <TabsContent value="users">
+              <SystemUsersTab profiles={profiles.filter((p) => adminIds.includes(p.user_id))} onChange={reload} />
+            </TabsContent>
+            <TabsContent value="integrations">
+              <IntegrationsTab />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
     </Tabs>
   );
