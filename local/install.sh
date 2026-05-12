@@ -31,8 +31,16 @@ if [[ -n "$DOMAIN" ]]; then
   SITE_URL_DEFAULT="https://${DOMAIN}"
   HTTP_PORT_DEFAULT="8000"   # Docker escuta em localhost:8000, nginx host faz SSL → :8000
 else
-  IPADDR=$(hostname -I 2>/dev/null | awk '{print $1}')
+  # Detecta IP público automaticamente; faz fallback p/ IP local
+  IPADDR=$(curl -s --max-time 5 https://api.ipify.org 2>/dev/null || true)
+  if [[ -z "$IPADDR" ]]; then
+    IPADDR=$(curl -s --max-time 5 https://ifconfig.me 2>/dev/null || true)
+  fi
+  if [[ -z "$IPADDR" ]]; then
+    IPADDR=$(hostname -I 2>/dev/null | awk '{print $1}')
+  fi
   IPADDR="${IPADDR:-localhost}"
+  echo "==> IP detectado: ${IPADDR}"
   SITE_URL_DEFAULT="http://${IPADDR}:8000"
   HTTP_PORT_DEFAULT="8000"
 fi
