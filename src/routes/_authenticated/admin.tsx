@@ -1219,9 +1219,20 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
                 <td className="p-3">{p.email}</td>
                 <td className="p-3"><Badge variant="outline">admin</Badge></td>
                 <td className="p-3">
-                  <Button variant="ghost" size="sm" onClick={() => openEdit(p)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => openEdit(p)} title="Editar">
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(p)}
+                      disabled={p.user_id === currentUser?.id}
+                      title={p.user_id === currentUser?.id ? "Não é possível excluir o próprio usuário" : "Excluir"}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
