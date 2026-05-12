@@ -148,6 +148,82 @@ function AdminPage() {
   );
 }
 
+function DashboardCharts({ licenses, payments, profiles, products }: { licenses: LicenseRow[]; payments: PaymentRow[]; profiles: Profile[]; products: Product[] }) {
+  // Top products by license count
+  const productCounts = new Map<string, number>();
+  for (const l of licenses) {
+    const name = l.product?.name ?? "—";
+    productCounts.set(name, (productCounts.get(name) ?? 0) + 1);
+  }
+  const topProducts = Array.from(productCounts.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
+
+  // Revenue by month (last 6 months) from paid payments
+  const months: { key: string; label: string; total: number }[] = [];
+  const now = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const label = d.toLocaleDateString("pt-BR", { month: "short" });
+    months.push({ key, label, total: 0 });
+  }
+  const monthIndex = new Map(months.map((m, i) => [m.key, i]));
+  for (const p of payments) {
+    if (p.status !== "paid") continue;
+    const dateStr = p.paid_at ?? p.created_at;
+    const d = new Date(dateStr);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const idx = monthIndex.get(key);
+    if (idx !== undefined) months[idx].total += Number(p.amount);
+  }
+
+  const totalClients = profiles.length;
+  const totalLicenses = licenses.length;
+  const totalRevenue = payments.filter((p) => p.status === "paid").reduce((s, p) => s + Number(p.amount), 0);
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Total de clientes</div><div className="mt-1 text-2xl font-bold">{totalClients}</div></Card>
+        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Total de licenças</div><div className="mt-1 text-2xl font-bold">{totalLicenses}</div></Card>
+        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Faturamento total</div><div className="mt-1 text-2xl font-bold">{formatBRL(totalRevenue)}</div></Card>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="p-5">
+          <div className="mb-4 font-semibold">Licenças mais vendidas</div>
+          {topProducts.length === 0 ? (
+            <div className="py-12 text-center text-sm text-muted-foreground">Sem licenças emitidas.</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={topProducts}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                <Tooltip />
+                <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </Card>
+        <Card className="p-5">
+          <div className="mb-4 font-semibold">Faturamento (últimos 6 meses)</div>
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={months}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+              <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `R$${v}`} />
+              <Tooltip formatter={(v: number) => formatBRL(Number(v))} />
+              <Line type="monotone" dataKey="total" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
 function StatCard({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string }) {
   return (
     <Card className="bg-gradient-card p-5">
