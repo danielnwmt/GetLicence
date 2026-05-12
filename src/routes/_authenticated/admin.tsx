@@ -400,7 +400,7 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
       user_id: form.user_id,
       product_id: form.product_id,
       plan: form.plan as "monthly" | "yearly",
-      status: form.status as "active" | "pending" | "expired" | "cancelled",
+      status: form.status as "active" | "pending" | "expired" | "cancelled" | "blocked",
       expires_at: expires.toISOString(),
     }).select().single();
     if (error) return toast.error(error.message);
