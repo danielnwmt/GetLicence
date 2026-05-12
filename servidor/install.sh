@@ -114,12 +114,67 @@ install -m 0644 "${APP_DIR}/getlicence.service" "/etc/systemd/system/${SERVICE_N
 systemctl daemon-reload
 systemctl enable --now "${SERVICE_NAME}"
 
+echo "==> Configurando Nginx + SSL (Let's Encrypt)..."
+DOMAIN="${DOMAIN:-}"
+SSL_EMAIL="${SSL_EMAIL:-}"
+
+if [[ -z "$DOMAIN" ]]; then
+  read -rp "Domínio para o GetLicence (ex: app.seudominio.com) [pular SSL]: " DOMAIN || true
+fi
+
+if [[ -n "$DOMAIN" ]]; then
+  if [[ -z "$SSL_EMAIL" ]]; then
+    read -rp "Email para Let's Encrypt [admin@${DOMAIN}]: " SSL_EMAIL || true
+    SSL_EMAIL="${SSL_EMAIL:-admin@${DOMAIN}}"
+  fi
+
+  echo "==> Instalando nginx e certbot..."
+  apt-get install -y nginx certbot python3-certbot-nginx
+
+  NGINX_CONF="/etc/nginx/sites-available/getlicence"
+  cat > "$NGINX_CONF" <<NGINX
+server {
+    listen 80;
+    server_name ${DOMAIN};
+
+    client_max_body_size 25m;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+NGINX
+  ln -sf "$NGINX_CONF" /etc/nginx/sites-enabled/getlicence
+  rm -f /etc/nginx/sites-enabled/default
+  nginx -t && systemctl reload nginx
+
+  echo "==> Liberando portas 80/443 no firewall..."
+  ufw allow 'Nginx Full' || true
+
+  echo "==> Emitindo certificado SSL para ${DOMAIN}..."
+  certbot --nginx -d "${DOMAIN}" --non-interactive --agree-tos -m "${SSL_EMAIL}" --redirect || \
+    echo "!! Falha ao emitir SSL. Verifique se o DNS de ${DOMAIN} aponta para este servidor e rode novamente: certbot --nginx -d ${DOMAIN}"
+
+  systemctl enable --now certbot.timer || true
+  PUBLIC_URL="https://${DOMAIN}"
+else
+  echo "!! Nenhum domínio informado — SSL não foi instalado."
+  PUBLIC_URL="http://$(hostname -I | awk '{print $1}'):3000"
+fi
+
 echo
 echo "================================================================"
 echo " Instalação concluída."
 echo " Serviço: systemctl status ${SERVICE_NAME}"
 echo " Logs:    journalctl -u ${SERVICE_NAME} -f"
-echo " URL:     http://$(hostname -I | awk '{print $1}'):3000"
-echo " Health:  curl http://127.0.0.1:3000/api/health"
+echo " URL:     ${PUBLIC_URL}"
+echo " Health:  curl ${PUBLIC_URL}/api/health"
 echo " Login:   ${ADMIN_EMAIL:-admin@getlicence}  /  ${ADMIN_PASSWORD:-admin1234}"
 echo "================================================================"
