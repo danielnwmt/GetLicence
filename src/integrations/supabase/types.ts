@@ -354,6 +354,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      refresh_license_statuses: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "client"
