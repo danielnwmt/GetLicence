@@ -8,7 +8,17 @@ Versão standalone do sistema rodando **100% local** em Postgres, sem depender d
 - 1 GB de RAM, 10 GB de disco (mínimo)
 - Porta 3000 disponível (ou ajustável no `.env`)
 
-## Instalação em 1 comando
+## Instalação em 1 comando (recomendado — direto do GitHub)
+
+No servidor Ubuntu, como root:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/danielnwmt/axis-licencas/main/selfhost/setup-from-github.sh | sudo bash
+```
+
+O script clona o repositório em `/opt/axis-licencas-src`, executa o `install.sh` oficial e deixa o sistema rodando.
+
+## Instalação manual (sem GitHub)
 
 ```bash
 # 1. Copie a pasta selfhost/ para o servidor
