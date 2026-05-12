@@ -13,7 +13,7 @@ Versão standalone do sistema rodando **100% local** em Postgres, sem depender d
 No servidor Ubuntu, como root:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/danielnwmt/axis-licencas/main/selfhost/setup-from-github.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/danielnwmt/axis-licencas/main/servidor/setup-from-github.sh | sudo bash
 ```
 
 O script clona o repositório em `/opt/axis-licencas-src`, executa o `install.sh` oficial e deixa o sistema rodando.
@@ -21,12 +21,12 @@ O script clona o repositório em `/opt/axis-licencas-src`, executa o `install.sh
 ## Instalação manual (sem GitHub)
 
 ```bash
-# 1. Copie a pasta selfhost/ para o servidor
-scp -r selfhost ubuntu@SEU-SERVIDOR:/tmp/
+# 1. Copie a pasta servidor/ para o servidor
+scp -r servidor ubuntu@SEU-SERVIDOR:/tmp/
 
 # 2. No servidor, execute o instalador
 ssh ubuntu@SEU-SERVIDOR
-cd /tmp/selfhost
+cd /tmp/servidor
 sudo bash install.sh
 ```
 
@@ -53,7 +53,7 @@ curl http://127.0.0.1:3000/api/health    # checar saúde + banco
 ## Atualizar
 
 ```bash
-# Coloque a nova pasta selfhost/ no servidor e:
+# Coloque a nova pasta servidor/ no servidor e:
 sudo bash update.sh
 ```
 O `.env` e o banco são **preservados**.
@@ -109,12 +109,12 @@ Páginas incluídas:
 - `/dashboard` — minhas licenças e pagamentos (cliente)
 - `/account` — atualizar perfil e trocar senha
 
-Para desenvolver localmente: `cd selfhost/web-src && npm install && npm run dev` (proxy do `/api` aponta para o backend em `127.0.0.1:3000`).
+Para desenvolver localmente: `cd servidor/web-src && npm install && npm run dev` (proxy do `/api` aponta para o backend em `127.0.0.1:3000`).
 
 ## Estrutura
 
 ```
-selfhost/
+servidor/
 ├── install.sh            # instalação completa Ubuntu
 ├── update.sh             # atualização preservando dados
 ├── backup.sh             # pg_dump diário

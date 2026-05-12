@@ -2,9 +2,9 @@
 # ============================================================
 # Instalador Axis Licenças — clona do GitHub e instala tudo
 # Uso (Ubuntu 22.04 / 24.04, como root):
-#   curl -fsSL https://raw.githubusercontent.com/danielnwmt/axis-licencas/main/selfhost/setup-from-github.sh | sudo bash
+#   curl -fsSL https://raw.githubusercontent.com/danielnwmt/axis-licencas/main/servidor/setup-from-github.sh | sudo bash
 # Ou:
-#   wget -O- https://raw.githubusercontent.com/danielnwmt/axis-licencas/main/selfhost/setup-from-github.sh | sudo bash
+#   wget -O- https://raw.githubusercontent.com/danielnwmt/axis-licencas/main/servidor/setup-from-github.sh | sudo bash
 # ============================================================
 set -euo pipefail
 
@@ -36,17 +36,17 @@ else
   git clone --depth 1 --branch "${BRANCH}" "${REPO_URL}" "${CLONE_DIR}"
 fi
 
-SELFHOST_DIR="${CLONE_DIR}/selfhost"
-if [[ ! -f "${SELFHOST_DIR}/install.sh" ]]; then
-  echo "ERRO: ${SELFHOST_DIR}/install.sh não encontrado no repositório."
-  echo "Confira se a pasta 'selfhost/' existe na branch '${BRANCH}'."
+SERVIDOR_DIR="${CLONE_DIR}/selfhost"
+if [[ ! -f "${SERVIDOR_DIR}/install.sh" ]]; then
+  echo "ERRO: ${SERVIDOR_DIR}/install.sh não encontrado no repositório."
+  echo "Confira se a pasta 'servidor/' existe na branch '${BRANCH}'."
   exit 1
 fi
 
-chmod +x "${SELFHOST_DIR}/install.sh" "${SELFHOST_DIR}/update.sh" "${SELFHOST_DIR}/backup.sh" 2>/dev/null || true
+chmod +x "${SERVIDOR_DIR}/install.sh" "${SERVIDOR_DIR}/update.sh" "${SERVIDOR_DIR}/backup.sh" 2>/dev/null || true
 
 echo "==> Executando install.sh oficial..."
-cd "${SELFHOST_DIR}"
+cd "${SERVIDOR_DIR}"
 bash ./install.sh
 
 echo
@@ -56,5 +56,5 @@ echo " Código-fonte em: ${CLONE_DIR}"
 echo " App em:          ${APP_DIR}"
 echo
 echo " Para atualizar no futuro:"
-echo "   cd ${CLONE_DIR} && sudo git pull && cd selfhost && sudo bash update.sh"
+echo "   cd ${CLONE_DIR} && sudo git pull && cd servidor && sudo bash update.sh"
 echo "============================================================"
