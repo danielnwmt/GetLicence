@@ -14,9 +14,11 @@ create table if not exists public.profiles (
   full_name text, email text, cpf_cnpj text, phone text,
   address_zip text, address_street text, address_number text, address_complement text,
   address_neighborhood text, address_city text, address_state text,
+  must_change_password boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+alter table public.profiles add column if not exists must_change_password boolean not null default false;
 
 create table if not exists public.user_roles (
   id uuid primary key default gen_random_uuid(),
