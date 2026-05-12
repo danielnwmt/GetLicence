@@ -212,7 +212,7 @@ After=network.target getlicence-postgrest.service getlicence-auth.service
 [Service]
 WorkingDirectory=${APP_DIR}
 EnvironmentFile=${APP_DIR}/.env
-ExecStart=/usr/local/bin/bun run dev --port 3000 --host 127.0.0.1
+ExecStart=/usr/local/bin/bun run start
 Restart=always
 User=${APP_USER}
 [Install]
