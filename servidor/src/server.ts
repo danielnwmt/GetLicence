@@ -61,7 +61,7 @@ if (fs.existsSync(webDir)) {
       .type("text/plain")
       .send(
         "Axis Licenças — backend rodando.\n\n" +
-          "Frontend ainda não foi copiado para selfhost/web/.\n" +
+          "Frontend ainda não foi copiado para servidor/web/.\n" +
           "API disponível em /api/*. Use /api/health para verificar.\n",
       );
   });
