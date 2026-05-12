@@ -1081,6 +1081,22 @@ function IntegrationsTab() {
 function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange: () => void }) {
   const createSystemUserFn = useServerFn(createSystemUser);
   const updateSystemUserFn = useServerFn(updateSystemUser);
+  const deleteSystemUserFn = useServerFn(deleteSystemUser);
+  const { user: currentUser } = useAuth();
+
+  const handleDelete = async (p: Profile) => {
+    if (p.user_id === currentUser?.id) {
+      return toast.error("Você não pode excluir o próprio usuário");
+    }
+    if (!confirm(`Excluir o usuário ${p.email}? Esta ação não pode ser desfeita.`)) return;
+    try {
+      await deleteSystemUserFn({ data: { user_id: p.user_id } });
+      toast.success("Usuário excluído");
+      onChange();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao excluir");
+    }
+  };
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ full_name: "", email: "", password: "" });
