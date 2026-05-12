@@ -273,10 +273,10 @@ RESP=$(curl -s -X POST "http://127.0.0.1:9999/admin/users" \
   -H "Authorization: Bearer ${SERVICE_KEY}" \
   -H "Content-Type: application/json" \
   -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASS}\",\"email_confirm\":true}" || true)
-UID=$(echo "$RESP" | jq -r '.id // empty')
-if [[ -n "$UID" ]]; then
+ADMIN_UID=$(echo "$RESP" | jq -r '.id // empty')
+if [[ -n "$ADMIN_UID" ]]; then
   sudo -u postgres psql -d "$DB_NAME" -c \
-    "insert into public.user_roles(user_id, role) values ('${UID}','admin') on conflict do nothing;" >/dev/null
+    "insert into public.user_roles(user_id, role) values ('${ADMIN_UID}','admin') on conflict do nothing;" >/dev/null
   ok "Admin criado (${ADMIN_EMAIL})"
 else
   warn "Admin já existia ou GoTrue ainda iniciando"
