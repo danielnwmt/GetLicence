@@ -69,16 +69,14 @@ sudo -u postgres psql -v ON_ERROR_STOP=1 -tc \
 sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" -c \
   "ALTER USER postgres WITH PASSWORD '${PG_PASS}';" >/dev/null
 
-log "Carregando schema do banco"
-for f in "$SCRIPT_DIR/db/init"/*.sql; do
-  sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" -f "$f" >/dev/null
-done
+log "Carregando schema base do banco"
+sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" -f "$SCRIPT_DIR/db/init/01_roles_and_auth.sql" >/dev/null
 
 # senhas dos roles internos
 sudo -u postgres psql -d "$DB_NAME" -c \
   "ALTER USER supabase_auth_admin WITH PASSWORD '${PG_PASS}';
    ALTER USER authenticator WITH PASSWORD '${PG_PASS}';" >/dev/null
-ok "Banco ${DB_NAME} pronto"
+ok "Banco base pronto"
 
 # ---------- 4. PostgREST ----------
 if [[ ! -x /usr/local/bin/postgrest ]]; then
@@ -112,7 +110,7 @@ WantedBy=multi-user.target
 EOF
 
 # ---------- 5. GoTrue (auth) ----------
-if [[ ! -x /usr/local/bin/gotrue ]]; then
+if [[ ! -x /usr/local/bin/gotrue || ! -d "$AUTH_MIGRATIONS_DIR" || -z "$(ls -A "$AUTH_MIGRATIONS_DIR" 2>/dev/null)" ]]; then
   log "Baixando GoTrue ${GOTRUE_VERSION}"
   ARCH=$(uname -m); [[ "$ARCH" == "x86_64" ]] && GARCH="x86" || GARCH="arm64"
   TMP=$(mktemp -d)
@@ -145,6 +143,16 @@ GOTRUE_SMTP_ADMIN_EMAIL=admin@getlicence.com
 GOTRUE_LOG_LEVEL=info
 EOF
 chmod 600 /etc/getlicence-auth.env
+
+log "Migrando autenticação"
+set -a
+source /etc/getlicence-auth.env
+set +a
+/usr/local/bin/gotrue migrate >/dev/null
+
+log "Carregando schema da aplicação"
+sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" -f "$SCRIPT_DIR/db/init/02_app_schema.sql" >/dev/null
+ok "Banco ${DB_NAME} pronto"
 
 cat >/etc/systemd/system/getlicence-auth.service <<EOF
 [Unit]
