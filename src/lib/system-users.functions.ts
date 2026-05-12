@@ -74,3 +74,45 @@ export const listSystemUsers = createServerFn({ method: "GET" })
       role: roles?.find((r) => r.user_id === p.user_id)?.role ?? "admin",
     }));
   });
+
+const updateSchema = z.object({
+  user_id: z.string().uuid(),
+  email: z.string().email().optional(),
+  password: z.string().min(6).optional(),
+  full_name: z.string().min(1).optional(),
+});
+
+export const updateSystemUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => updateSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Response("Forbidden", { status: 403 });
+
+    const admin = createClient<Database>(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false, autoRefreshToken: false } }
+    );
+
+    const attrs: { email?: string; password?: string } = {};
+    if (data.email) attrs.email = data.email;
+    if (data.password) attrs.password = data.password;
+    if (Object.keys(attrs).length > 0) {
+      const { error } = await admin.auth.admin.updateUserById(data.user_id, attrs);
+      if (error) throw new Response(error.message, { status: 400 });
+    }
+
+    if (data.email || data.full_name) {
+      const patch: { email?: string; full_name?: string } = {};
+      if (data.email) patch.email = data.email;
+      if (data.full_name) patch.full_name = data.full_name;
+      await admin.from("profiles").update(patch).eq("user_id", data.user_id);
+    }
+
+    return { ok: true };
+  });
