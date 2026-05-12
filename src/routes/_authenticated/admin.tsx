@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Package, KeyRound, CreditCard, Users, DollarSign, Pencil, Trash2, CheckCircle2, Landmark, Copy, FileText, ExternalLink, XCircle } from "lucide-react";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
+import { fetchCep } from "@/lib/cep";
 import { toast } from "sonner";
 
 type AdminTab = "licenses" | "customers" | "payments" | "products" | "settings";
