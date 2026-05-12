@@ -191,7 +191,9 @@ ok "Chaves JWT geradas"
 # ---------- 7. app (frontend) ----------
 log "Copiando aplicação para ${APP_DIR}"
 mkdir -p "$APP_DIR"
-rsync -a --delete --exclude node_modules --exclude .git "$SRC_DIR"/ "$APP_DIR"/
+if [[ "$(realpath "$SRC_DIR")" != "$(realpath "$APP_DIR")" ]]; then
+  rsync -a --delete --exclude node_modules --exclude .git "$SRC_DIR"/ "$APP_DIR"/
+fi
 chown -R "$APP_USER:$APP_USER" "$APP_DIR"
 
 cat >"$APP_DIR/.env" <<EOF
