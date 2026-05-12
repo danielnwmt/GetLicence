@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Package, KeyRound, CreditCard, Users, DollarSign, Pencil, Trash2, CheckCircle2, Landmark, Copy, FileText, ExternalLink, XCircle } from "lucide-react";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { fetchCep } from "@/lib/cep";
-import { formatCpfCnpj } from "@/lib/mask";
+import { formatCpfCnpj, isValidCpfCnpj } from "@/lib/mask";
 import { toast } from "sonner";
 
 type AdminTab = "licenses" | "customers" | "payments" | "products" | "settings";
@@ -724,8 +724,8 @@ function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; l
     if (!form.full_name.trim() || !form.email.trim() || form.password.length < 6) {
       return toast.error("Preencha nome, e-mail e senha (mín. 6 caracteres)");
     }
-    if (form.cpf_cnpj.replace(/\D/g, "").length < 11) {
-      return toast.error("Informe um CPF (11 dígitos) ou CNPJ (14 dígitos) válido");
+    if (!isValidCpfCnpj(form.cpf_cnpj)) {
+      return toast.error("CPF ou CNPJ inválido — verifique os dígitos");
     }
     setSaving(true);
     try {
