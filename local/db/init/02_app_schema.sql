@@ -2,7 +2,8 @@
 create extension if not exists pgcrypto;
 
 do $$ begin create type public.app_role as enum ('admin','client'); exception when duplicate_object then null; end $$;
-do $$ begin create type public.license_status as enum ('pending','active','expired','cancelled'); exception when duplicate_object then null; end $$;
+do $$ begin create type public.license_status as enum ('pending','active','expired','cancelled','blocked'); exception when duplicate_object then null; end $$;
+do $$ begin alter type public.license_status add value if not exists 'blocked'; exception when others then null; end $$;
 do $$ begin create type public.license_plan as enum ('monthly','yearly'); exception when duplicate_object then null; end $$;
 do $$ begin create type public.payment_status as enum ('pending','paid','failed','refunded'); exception when duplicate_object then null; end $$;
 do $$ begin create type public.payment_provider as enum ('asaas','sicredi','sicoob','manual'); exception when duplicate_object then null; end $$;
