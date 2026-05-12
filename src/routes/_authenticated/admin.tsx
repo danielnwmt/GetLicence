@@ -101,33 +101,8 @@ function AdminPage() {
   const totalRevenue = payments.filter((p) => p.status === "paid").reduce((sum, p) => sum + Number(p.amount), 0);
   const activeCount = licenses.filter((l) => l.status === "active").length;
 
-  const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
-  useEffect(() => {
-    setHeaderSlot(document.getElementById("site-header-center"));
-  }, []);
-
-  const triggerCls = "inline-flex items-center rounded-md border border-transparent px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border-primary";
-  const linkCls = "inline-flex items-center rounded-md border border-transparent px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground";
-
-  const activeLinkCls = linkCls + " border-primary text-foreground bg-background";
-  const tabsList = (
-    <TabsList className="h-auto gap-1 bg-transparent p-0">
-      <Link to="/admin" search={{}} className={linkCls}>Dashboard</Link>
-      <TabsTrigger value="customers" className={triggerCls}>Clientes</TabsTrigger>
-      <TabsTrigger value="licenses" className={triggerCls}>Licenças</TabsTrigger>
-      <Link to="/dashboard" className={linkCls}>Minhas licenças</Link>
-      <TabsTrigger value="integrations" className={triggerCls + " hidden"} />
-      <TabsTrigger value="users" className={triggerCls + " hidden"} />
-      <TabsTrigger value="payments" className={triggerCls}>Financeiro</TabsTrigger>
-      <TabsTrigger value="products" className={triggerCls}>Produtos</TabsTrigger>
-      <TabsTrigger value="settings" className={triggerCls}>Configurações</TabsTrigger>
-    </TabsList>
-  );
-
   return (
     <Tabs value={currentTab} onValueChange={setTab} className="space-y-8">
-      {headerSlot ? createPortal(tabsList, headerSlot) : <div className="flex justify-center">{tabsList}</div>}
-
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Painel administrativo</h1>
         <p className="text-muted-foreground">Gerencie produtos, licenças, pagamentos e clientes.</p>
