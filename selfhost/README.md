@@ -120,13 +120,28 @@ selfhost/
     ├── middleware.ts     # requireAuth / requireAdmin
     ├── migrate.ts
     ├── seed-admin.ts
-    ├── lib/cpf-cnpj.ts
-    └── routes/
-        ├── auth.ts
-        ├── profile.ts
-        ├── customers.ts
-        ├── products.ts
-        ├── licenses.ts
-        ├── payments.ts
-        └── payment-settings.ts
+│   ├── lib/cpf-cnpj.ts
+│   └── routes/
+│       ├── auth.ts
+│       ├── profile.ts
+│       ├── customers.ts
+│       ├── products.ts
+│       ├── licenses.ts
+│       ├── payments.ts
+│       └── payment-settings.ts
+└── web-src/              # frontend React (Vite + Tailwind)
+    ├── package.json
+    ├── vite.config.ts
+    ├── index.html
+    └── src/
+        ├── main.tsx
+        ├── App.tsx
+        ├── api.ts        # cliente fetch para /api/*
+        ├── auth.tsx      # provider de sessão
+        ├── ui.tsx        # componentes (botão, input, modal, badge…)
+        └── pages/
+            ├── Login.tsx
+            ├── Admin.tsx
+            ├── Dashboard.tsx
+            └── Account.tsx
 ```
