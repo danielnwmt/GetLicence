@@ -75,7 +75,7 @@ function AccountPage() {
       if (data) {
         setProfile({
           full_name: data.full_name ?? "",
-          cpf_cnpj: data.cpf_cnpj ?? "",
+          cpf_cnpj: formatCpfCnpj(data.cpf_cnpj ?? ""),
           phone: data.phone ?? "",
           address_zip: data.address_zip ?? "",
           address_street: data.address_street ?? "",
