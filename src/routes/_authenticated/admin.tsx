@@ -20,9 +20,10 @@ import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { fetchCep } from "@/lib/cep";
 import { formatCpfCnpj, isValidCpfCnpj } from "@/lib/mask";
 import { toast } from "sonner";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line } from "recharts";
 
-type AdminTab = "licenses" | "customers" | "payments" | "products" | "settings";
-const ADMIN_TABS: AdminTab[] = ["licenses", "customers", "payments", "products", "settings"];
+type AdminTab = "dashboard" | "licenses" | "customers" | "payments" | "products" | "settings";
+const ADMIN_TABS: AdminTab[] = ["dashboard", "licenses", "customers", "payments", "products", "settings"];
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — GetLicence" }] }),
@@ -34,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 });
 
 interface Product { id: string; name: string; description: string | null; price_monthly: number; price_yearly: number; active: boolean; cost_vps?: number; cost_storage?: number; cost_other?: number; profit_margin?: number; vps_specs?: string | null; storage_amount?: number; storage_unit?: string; vps_storage_amount?: number; vps_storage_unit?: string; }
-interface Profile { user_id: string; full_name: string | null; email: string | null; }
+interface Profile { user_id: string; full_name: string | null; email: string | null; address_city?: string | null; address_state?: string | null; }
 interface LicenseRow {
   id: string; license_key: string; plan: string; status: string;
   starts_at: string; expires_at: string; user_id: string; product_id: string;
@@ -53,7 +54,7 @@ function AdminPage() {
   const listAdminProfilesFn = useServerFn(listAdminProfiles);
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const currentTab: AdminTab = search.tab ?? "licenses";
+  const currentTab: AdminTab = search.tab ?? "dashboard";
   const setTab = (t: string) => navigate({ to: "/admin", search: { tab: t as AdminTab }, replace: true });
 
   useEffect(() => {
@@ -114,6 +115,9 @@ function AdminPage() {
         <StatCard icon={DollarSign} label="Receita paga" value={formatBRL(totalRevenue)} />
       </div>
 
+        <TabsContent value="dashboard" className="mt-6">
+          <DashboardCharts licenses={licenses} payments={payments} profiles={profiles.filter((p) => !adminIds.includes(p.user_id))} products={products} />
+        </TabsContent>
         <TabsContent value="licenses" className="mt-6">
           <LicensesTab licenses={licenses} products={products} profiles={profiles.filter((p) => !adminIds.includes(p.user_id))} onChange={reload} />
         </TabsContent>
@@ -141,6 +145,82 @@ function AdminPage() {
           </Tabs>
         </TabsContent>
     </Tabs>
+  );
+}
+
+function DashboardCharts({ licenses, payments, profiles, products }: { licenses: LicenseRow[]; payments: PaymentRow[]; profiles: Profile[]; products: Product[] }) {
+  // Top products by license count
+  const productCounts = new Map<string, number>();
+  for (const l of licenses) {
+    const name = l.product?.name ?? "—";
+    productCounts.set(name, (productCounts.get(name) ?? 0) + 1);
+  }
+  const topProducts = Array.from(productCounts.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
+
+  // Revenue by month (last 6 months) from paid payments
+  const months: { key: string; label: string; total: number }[] = [];
+  const now = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const label = d.toLocaleDateString("pt-BR", { month: "short" });
+    months.push({ key, label, total: 0 });
+  }
+  const monthIndex = new Map(months.map((m, i) => [m.key, i]));
+  for (const p of payments) {
+    if (p.status !== "paid") continue;
+    const dateStr = p.paid_at ?? p.created_at;
+    const d = new Date(dateStr);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const idx = monthIndex.get(key);
+    if (idx !== undefined) months[idx].total += Number(p.amount);
+  }
+
+  const totalClients = profiles.length;
+  const totalLicenses = licenses.length;
+  const totalRevenue = payments.filter((p) => p.status === "paid").reduce((s, p) => s + Number(p.amount), 0);
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Total de clientes</div><div className="mt-1 text-2xl font-bold">{totalClients}</div></Card>
+        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Total de licenças</div><div className="mt-1 text-2xl font-bold">{totalLicenses}</div></Card>
+        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Faturamento total</div><div className="mt-1 text-2xl font-bold">{formatBRL(totalRevenue)}</div></Card>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card className="p-5">
+          <div className="mb-4 font-semibold">Licenças mais vendidas</div>
+          {topProducts.length === 0 ? (
+            <div className="py-12 text-center text-sm text-muted-foreground">Sem licenças emitidas.</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={topProducts}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                <Tooltip />
+                <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </Card>
+        <Card className="p-5">
+          <div className="mb-4 font-semibold">Faturamento (últimos 6 meses)</div>
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={months}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+              <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `R$${v}`} />
+              <Tooltip formatter={(v) => formatBRL(Number(v))} />
+              <Line type="monotone" dataKey="total" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </Card>
+      </div>
+    </div>
   );
 }
 
@@ -793,7 +873,11 @@ function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; l
       <Card className="overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left"><tr>
-            <th className="p-3 font-medium">Nome</th><th className="p-3 font-medium">E-mail</th><th className="p-3 font-medium">Licenças</th>
+            <th className="p-3 font-medium">Nome</th>
+            <th className="p-3 font-medium">E-mail</th>
+            <th className="p-3 font-medium">Cidade</th>
+            <th className="p-3 font-medium">UF</th>
+            <th className="p-3 font-medium">Licenças</th>
           </tr></thead>
           <tbody>
             {profiles.map((p) => {
@@ -802,11 +886,13 @@ function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; l
                 <tr key={p.user_id} className="border-t border-border">
                   <td className="p-3 font-medium">{p.full_name || "—"}</td>
                   <td className="p-3">{p.email}</td>
+                  <td className="p-3">{p.address_city || "—"}</td>
+                  <td className="p-3">{p.address_state || "—"}</td>
                   <td className="p-3">{count}</td>
                 </tr>
               );
             })}
-            {profiles.length === 0 && <tr><td colSpan={3} className="p-6 text-center text-muted-foreground">Nenhum cliente.</td></tr>}
+            {profiles.length === 0 && <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">Nenhum cliente.</td></tr>}
           </tbody>
         </table>
       </Card>
