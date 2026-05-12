@@ -358,7 +358,7 @@ export type Database = {
     Enums: {
       app_role: "admin" | "client"
       license_plan: "monthly" | "yearly"
-      license_status: "active" | "expired" | "cancelled" | "pending"
+      license_status: "active" | "expired" | "cancelled" | "pending" | "blocked"
       payment_provider: "asaas" | "sicredi" | "sicoob" | "manual"
       payment_status: "pending" | "paid" | "failed" | "refunded"
     }
@@ -490,7 +490,7 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "client"],
       license_plan: ["monthly", "yearly"],
-      license_status: ["active", "expired", "cancelled", "pending"],
+      license_status: ["active", "expired", "cancelled", "pending", "blocked"],
       payment_provider: ["asaas", "sicredi", "sicoob", "manual"],
       payment_status: ["pending", "paid", "failed", "refunded"],
     },
