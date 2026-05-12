@@ -178,7 +178,7 @@ function AccountPage() {
             </div>
             <div className="space-y-2">
               <Label>CPF / CNPJ *</Label>
-              <Input value={profile.cpf_cnpj} onChange={(e) => setProfile({ ...profile, cpf_cnpj: e.target.value })} placeholder="Somente números" />
+              <Input value={profile.cpf_cnpj} onChange={(e) => setProfile({ ...profile, cpf_cnpj: formatCpfCnpj(e.target.value) })} placeholder="000.000.000-00" />
             </div>
             <div className="space-y-2 md:col-span-2">
               <Label>Telefone</Label>
