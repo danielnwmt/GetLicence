@@ -1,7 +1,6 @@
--- Cria roles compatíveis com Supabase (anon, authenticated, service_role)
--- e o schema auth usado pelo GoTrue. As senhas são definidas pelo install.sh.
+-- Roles + schema auth limpo. NÃO cria funções auth.*, isso é feito após
+-- o GoTrue migrar (no 02_app_schema.sql) para evitar conflitos de ownership.
 
--- Roles
 do $$
 begin
   if not exists (select 1 from pg_roles where rolname = 'anon') then
@@ -23,35 +22,10 @@ end $$;
 
 grant anon, authenticated, service_role to authenticator;
 
-create schema if not exists auth authorization supabase_auth_admin;
-alter schema auth owner to supabase_auth_admin;
-grant all on schema auth to supabase_auth_admin;
-grant usage on schema auth to anon, authenticated, service_role;
+-- Recria schema auth do zero para garantir ownership correto a cada install.
+drop schema if exists auth cascade;
+create schema auth authorization supabase_auth_admin;
+grant usage on schema auth to anon, authenticated, service_role, postgres;
 alter default privileges in schema auth grant all on tables to supabase_auth_admin;
 alter default privileges in schema auth grant all on sequences to supabase_auth_admin;
 alter default privileges in schema auth grant all on functions to supabase_auth_admin;
-
--- Se já houve tentativa anterior, as funções podem existir com owner errado.
--- Remove e recria limpo como supabase_auth_admin para o GoTrue conseguir atualizar.
-drop function if exists auth.jwt();
-drop function if exists auth.uid();
-drop function if exists auth.role();
-drop function if exists auth.email();
-
--- Helpers auth.uid() / auth.role() / auth.jwt() criados como supabase_auth_admin
--- (GoTrue tenta CREATE OR REPLACE nessas funções e precisa ser owner)
-set role supabase_auth_admin;
-
-create or replace function auth.jwt() returns jsonb language sql stable as
-$$ select coalesce(current_setting('request.jwt.claims', true)::jsonb, '{}'::jsonb) $$;
-
-create or replace function auth.uid() returns uuid language sql stable as
-$$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
-
-create or replace function auth.role() returns text language sql stable as
-$$ select current_setting('request.jwt.claim.role', true) $$;
-
-create or replace function auth.email() returns text language sql stable as
-$$ select current_setting('request.jwt.claim.email', true) $$;
-
-reset role;
