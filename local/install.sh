@@ -13,7 +13,7 @@ APP_DIR="/opt/getlicence"
 APP_USER="getlicence"
 DB_NAME="getlicence"
 PG_VERSION="16"
-NODE_MAJOR="20"
+NODE_MAJOR="22"
 POSTGREST_VERSION="v12.2.3"
 GOTRUE_VERSION="v2.158.1"
 APP_DOMAIN="${APP_DOMAIN:-}"
@@ -42,7 +42,11 @@ apt-get update -y -qq
 apt-get install -y -qq ca-certificates curl gnupg openssl jq tar xz-utils \
   postgresql postgresql-contrib nginx unzip rsync >/dev/null
 
-if ! command -v node >/dev/null 2>&1; then
+CURRENT_NODE_MAJOR=0
+if command -v node >/dev/null 2>&1; then
+  CURRENT_NODE_MAJOR=$(node -v | sed 's/^v//' | cut -d. -f1)
+fi
+if [[ "$CURRENT_NODE_MAJOR" -lt "$NODE_MAJOR" ]]; then
   log "Instalando Node.js ${NODE_MAJOR}"
   curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - >/dev/null
   apt-get install -y -qq nodejs >/dev/null
@@ -187,7 +191,9 @@ ok "Chaves JWT geradas"
 # ---------- 7. app (frontend) ----------
 log "Copiando aplicação para ${APP_DIR}"
 mkdir -p "$APP_DIR"
-rsync -a --delete --exclude node_modules --exclude .git "$SRC_DIR"/ "$APP_DIR"/
+if [[ "$(realpath "$SRC_DIR")" != "$(realpath "$APP_DIR")" ]]; then
+  rsync -a --delete --exclude node_modules --exclude .git "$SRC_DIR"/ "$APP_DIR"/
+fi
 chown -R "$APP_USER:$APP_USER" "$APP_DIR"
 
 cat >"$APP_DIR/.env" <<EOF
@@ -215,7 +221,7 @@ After=network.target getlicence-postgrest.service getlicence-auth.service
 [Service]
 WorkingDirectory=${APP_DIR}
 EnvironmentFile=${APP_DIR}/.env
-ExecStart=/usr/local/bin/bun run start
+ExecStart=/usr/bin/node local/serve-built.mjs
 Restart=always
 User=${APP_USER}
 [Install]
@@ -264,6 +270,11 @@ systemctl reload nginx
 systemctl daemon-reload
 systemctl enable --now getlicence-postgrest getlicence-auth getlicence-app >/dev/null
 sleep 4
+if ! curl -fsS http://127.0.0.1:3000 >/dev/null; then
+  warn "App não respondeu na porta 3000. Últimos logs:"
+  journalctl -u getlicence-app -n 80 --no-pager || true
+  exit 1
+fi
 
 # ---------- 10. admin inicial ----------
 log "Criando usuário admin"
