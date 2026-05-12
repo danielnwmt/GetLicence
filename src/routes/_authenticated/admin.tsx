@@ -142,11 +142,19 @@ function AdminPage() {
         <TabsContent value="customers" className="mt-6">
           <CustomersTab profiles={profiles.filter((p) => !adminIds.includes(p.user_id))} licenses={licenses} onChange={reload} />
         </TabsContent>
-        <TabsContent value="integrations" className="mt-6">
-          <IntegrationsTab />
-        </TabsContent>
-        <TabsContent value="users" className="mt-6">
-          <SystemUsersTab profiles={profiles.filter((p) => adminIds.includes(p.user_id))} onChange={reload} />
+        <TabsContent value="settings" className="mt-6">
+          <Tabs defaultValue="users" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="users">Usuários</TabsTrigger>
+              <TabsTrigger value="integrations">Integrações</TabsTrigger>
+            </TabsList>
+            <TabsContent value="users">
+              <SystemUsersTab profiles={profiles.filter((p) => adminIds.includes(p.user_id))} onChange={reload} />
+            </TabsContent>
+            <TabsContent value="integrations">
+              <IntegrationsTab />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
     </Tabs>
   );
