@@ -23,6 +23,31 @@ echo " Repo:   ${REPO_URL}"
 echo " Branch: ${BRANCH}"
 echo "============================================================"
 
+# Pergunta o domínio (lendo do terminal mesmo quando rodado via curl|bash)
+if [[ -z "${DOMAIN:-}" ]]; then
+  if [[ -r /dev/tty ]]; then
+    echo
+    read -rp "Domínio para o GetLicence (ex: app.seudominio.com) [vazio = pular SSL]: " DOMAIN < /dev/tty || true
+  fi
+fi
+DOMAIN="${DOMAIN:-}"
+
+if [[ -n "$DOMAIN" && -z "${SSL_EMAIL:-}" ]]; then
+  if [[ -r /dev/tty ]]; then
+    read -rp "Email para Let's Encrypt [admin@${DOMAIN}]: " SSL_EMAIL < /dev/tty || true
+  fi
+  SSL_EMAIL="${SSL_EMAIL:-admin@${DOMAIN}}"
+fi
+
+export DOMAIN SSL_EMAIL
+
+if [[ -n "$DOMAIN" ]]; then
+  echo "==> Domínio: ${DOMAIN}  |  Email SSL: ${SSL_EMAIL}"
+  echo "    (Confirme que o DNS de ${DOMAIN} já aponta para este servidor)"
+else
+  echo "==> Sem domínio — SSL será pulado."
+fi
+
 echo "==> Atualizando apt e instalando git..."
 apt-get update -y
 apt-get install -y git ca-certificates curl
