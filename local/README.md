@@ -23,7 +23,7 @@ sudo APP_DOMAIN=app.exemplo.com bash /opt/getlicence/local/install.sh
 
 O instalador automaticamente:
 
-1. Instala Node.js 20, bun, PostgreSQL 16 e Nginx
+1. Instala Node.js 22, bun, PostgreSQL 16 e Nginx
 2. Cria o banco, carrega o schema e os triggers
 3. Baixa e configura **PostgREST** (API REST) como serviço
 4. Baixa e configura **GoTrue** (autenticação) como serviço
