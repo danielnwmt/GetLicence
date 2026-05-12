@@ -2,29 +2,69 @@ import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, type Customer, type License, type Payment, type Product } from "../api";
 import { Badge, Button, Card, Field, Input, Modal, Select, Textarea, fmtBRL, fmtDate } from "../ui";
+import { Users, KeyRound, Package, DollarSign } from "lucide-react";
 
 type Tab = "customers" | "products" | "licenses" | "payments" | "settings";
 
+function StatCard({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string }) {
+  return (
+    <Card className="bg-gradient-card p-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
+          <div className="mt-1 text-2xl font-bold">{value}</div>
+        </div>
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-primary text-primary-foreground">
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export function AdminPage() {
   const [tab, setTab] = useState<Tab>("customers");
+  const customers = useQuery({ queryKey: ["customers"], queryFn: () => api.get<{ customers: Customer[] }>("/api/customers") });
+  const products = useQuery({ queryKey: ["products"], queryFn: () => api.get<{ products: Product[] }>("/api/products") });
+  const licenses = useQuery({ queryKey: ["licenses"], queryFn: () => api.get<{ licenses: License[] }>("/api/licenses") });
+  const payments = useQuery({ queryKey: ["payments-admin"], queryFn: () => api.get<{ payments: Payment[] }>("/api/payments") });
+
+  const activeLic = (licenses.data?.licenses ?? []).filter((l) => l.status === "active").length;
+  const revenue = (payments.data?.payments ?? []).filter((p) => p.status === "paid").reduce((s, p) => s + Number(p.amount), 0);
+
+  const tabCls = (k: Tab) =>
+    `inline-flex items-center rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${
+      tab === k
+        ? "border-primary bg-background text-foreground"
+        : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
+    }`;
+
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Administração</h1>
-      <div className="flex gap-2 border-b">
-        {[
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Painel administrativo</h1>
+        <p className="text-muted-foreground">Gerencie produtos, licenças, pagamentos e clientes.</p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-4">
+        <StatCard icon={Users} label="Clientes" value={String(customers.data?.customers.length ?? 0)} />
+        <StatCard icon={KeyRound} label="Licenças ativas" value={String(activeLic)} />
+        <StatCard icon={Package} label="Produtos" value={String(products.data?.products.length ?? 0)} />
+        <StatCard icon={DollarSign} label="Receita paga" value={fmtBRL(revenue)} />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-1 border-b border-border pb-2">
+        {([
           ["customers", "Clientes"],
           ["products", "Produtos"],
           ["licenses", "Licenças"],
-          ["payments", "Pagamentos"],
-          ["settings", "Pagamentos · Config"],
-        ].map(([k, label]) => (
-          <button
-            key={k}
-            onClick={() => setTab(k as Tab)}
-            className={`px-3 py-2 text-sm border-b-2 ${tab === k ? "border-blue-600 text-blue-700 font-medium" : "border-transparent text-slate-500 hover:text-slate-800"}`}
-          >{label}</button>
+          ["payments", "Financeiro"],
+          ["settings", "Configurações"],
+        ] as [Tab, string][]).map(([k, label]) => (
+          <button key={k} onClick={() => setTab(k)} className={tabCls(k)}>{label}</button>
         ))}
       </div>
+
       {tab === "customers" && <CustomersTab />}
       {tab === "products" && <ProductsTab />}
       {tab === "licenses" && <LicensesTab />}
@@ -33,6 +73,7 @@ export function AdminPage() {
     </div>
   );
 }
+
 
 /* =================== CLIENTES =================== */
 function CustomersTab() {
