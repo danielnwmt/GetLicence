@@ -1,7 +1,5 @@
 -- Cria roles compatíveis com Supabase (anon, authenticated, service_role)
--- e o schema auth usado pelo GoTrue.
-
-\set pgpass `echo "$POSTGRES_PASSWORD"`
+-- e o schema auth usado pelo GoTrue. As senhas são definidas pelo install.sh.
 
 -- Roles
 do $$
@@ -16,10 +14,10 @@ begin
     create role service_role nologin noinherit bypassrls;
   end if;
   if not exists (select 1 from pg_roles where rolname = 'authenticator') then
-    execute format('create role authenticator login password %L noinherit', :'pgpass');
+    create role authenticator login noinherit;
   end if;
   if not exists (select 1 from pg_roles where rolname = 'supabase_auth_admin') then
-    execute format('create role supabase_auth_admin login password %L createrole', :'pgpass');
+    create role supabase_auth_admin login createrole;
   end if;
 end $$;
 
