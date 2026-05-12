@@ -77,8 +77,8 @@ function Shell() {
           <nav className="flex items-center gap-2">
             {!isAdmin && (
               <>
-                <Button asChild={false} variant="ghost" size="sm" onClick={() => nav("/dashboard")}>Minhas licenças</Button>
-                <Button asChild={false} variant="ghost" size="sm" onClick={() => nav("/account")}>Configuração</Button>
+                <Button variant="ghost" size="sm" onClick={() => nav("/dashboard")}>Minhas licenças</Button>
+                <Button variant="ghost" size="sm" onClick={() => nav("/account")}>Configuração</Button>
               </>
             )}
             <Button
