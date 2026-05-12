@@ -42,7 +42,11 @@ apt-get update -y -qq
 apt-get install -y -qq ca-certificates curl gnupg openssl jq tar xz-utils \
   postgresql postgresql-contrib nginx unzip rsync >/dev/null
 
-if ! command -v node >/dev/null 2>&1; then
+CURRENT_NODE_MAJOR=0
+if command -v node >/dev/null 2>&1; then
+  CURRENT_NODE_MAJOR=$(node -v | sed 's/^v//' | cut -d. -f1)
+fi
+if [[ "$CURRENT_NODE_MAJOR" -lt "$NODE_MAJOR" ]]; then
   log "Instalando Node.js ${NODE_MAJOR}"
   curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - >/dev/null
   apt-get install -y -qq nodejs >/dev/null
