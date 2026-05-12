@@ -54,7 +54,7 @@ function AdminPage() {
   const listAdminProfilesFn = useServerFn(listAdminProfiles);
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const currentTab: AdminTab = search.tab ?? "licenses";
+  const currentTab: AdminTab = search.tab ?? "dashboard";
   const setTab = (t: string) => navigate({ to: "/admin", search: { tab: t as AdminTab }, replace: true });
 
   useEffect(() => {
