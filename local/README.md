@@ -70,9 +70,3 @@ local/
   .env.example
 ```
 
-## Sobre a pasta `servidor/`
-
-A pasta `servidor/` é uma alternativa **mais leve** (Node/Express + Postgres sem
-Docker, com frontend próprio simplificado). Use `local/` quando quiser paridade
-total com o Lovable Cloud; use `servidor/` quando quiser um setup mínimo sem
-Docker.
