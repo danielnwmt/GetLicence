@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, useNavigate, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { SiteHeader } from "@/components/SiteHeader";
+import { AppSidebar } from "@/components/AppSidebar";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -13,6 +13,16 @@ function AuthenticatedLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [checking, setChecking] = useState(true);
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("sidebar:collapsed") === "1";
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("sidebar:collapsed", collapsed ? "1" : "0");
+    }
+  }, [collapsed]);
 
   useEffect(() => {
     if (loading) return;
@@ -39,10 +49,12 @@ function AuthenticatedLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader />
-      <main className="container mx-auto px-4 py-8">
-        <Outlet />
+    <div className="flex min-h-screen w-full bg-background">
+      <AppSidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
+      <main className="flex-1 overflow-x-hidden">
+        <div className="container mx-auto px-4 py-8">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

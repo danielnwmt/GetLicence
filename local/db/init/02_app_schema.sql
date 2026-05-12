@@ -1,5 +1,19 @@
 -- Schema da aplicação (tabelas, RLS, triggers) — equivalente ao Supabase do Lovable.
+-- Roda DEPOIS do `gotrue migrate`, então o schema auth e auth.users já existem.
 create extension if not exists pgcrypto;
+
+-- Helpers auth.uid()/jwt()/role()/email() criados como supabase_auth_admin
+-- (o GoTrue tenta fazer CREATE OR REPLACE neles e precisa ser owner).
+set role supabase_auth_admin;
+create or replace function auth.jwt() returns jsonb language sql stable as
+$$ select coalesce(current_setting('request.jwt.claims', true)::jsonb, '{}'::jsonb) $$;
+create or replace function auth.uid() returns uuid language sql stable as
+$$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+create or replace function auth.role() returns text language sql stable as
+$$ select current_setting('request.jwt.claim.role', true) $$;
+create or replace function auth.email() returns text language sql stable as
+$$ select current_setting('request.jwt.claim.email', true) $$;
+reset role;
 
 do $$ begin create type public.app_role as enum ('admin','client'); exception when duplicate_object then null; end $$;
 do $$ begin create type public.license_status as enum ('pending','active','expired','cancelled','blocked'); exception when duplicate_object then null; end $$;
