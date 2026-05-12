@@ -215,7 +215,7 @@ After=network.target getlicence-postgrest.service getlicence-auth.service
 [Service]
 WorkingDirectory=${APP_DIR}
 EnvironmentFile=${APP_DIR}/.env
-ExecStart=/usr/local/bin/bun run start
+ExecStart=/usr/bin/node local/serve-built.mjs
 Restart=always
 User=${APP_USER}
 [Install]
@@ -264,6 +264,11 @@ systemctl reload nginx
 systemctl daemon-reload
 systemctl enable --now getlicence-postgrest getlicence-auth getlicence-app >/dev/null
 sleep 4
+if ! curl -fsS http://127.0.0.1:3000 >/dev/null; then
+  warn "App não respondeu na porta 3000. Últimos logs:"
+  journalctl -u getlicence-app -n 80 --no-pager || true
+  exit 1
+fi
 
 # ---------- 10. admin inicial ----------
 log "Criando usuário admin"
