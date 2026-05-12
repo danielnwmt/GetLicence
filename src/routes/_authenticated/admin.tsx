@@ -115,6 +115,9 @@ function AdminPage() {
         <StatCard icon={DollarSign} label="Receita paga" value={formatBRL(totalRevenue)} />
       </div>
 
+        <TabsContent value="dashboard" className="mt-6">
+          <DashboardCharts licenses={licenses} payments={payments} profiles={profiles.filter((p) => !adminIds.includes(p.user_id))} products={products} />
+        </TabsContent>
         <TabsContent value="licenses" className="mt-6">
           <LicensesTab licenses={licenses} products={products} profiles={profiles.filter((p) => !adminIds.includes(p.user_id))} onChange={reload} />
         </TabsContent>
