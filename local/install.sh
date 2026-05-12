@@ -20,6 +20,7 @@ APP_DOMAIN="${APP_DOMAIN:-}"
 SSL_EMAIL="${SSL_EMAIL:-admin@${APP_DOMAIN:-localhost}}"
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 SRC_DIR=$(cd "$SCRIPT_DIR/.." && pwd)
+AUTH_MIGRATIONS_DIR="/usr/local/share/getlicence/auth-migrations"
 
 log()  { printf '\033[1;36m▶ %s\033[0m\n' "$*"; }
 ok()   { printf '\033[1;32m✓ %s\033[0m\n' "$*"; }
@@ -39,7 +40,7 @@ log "Instalando dependências do sistema"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y -qq
 apt-get install -y -qq ca-certificates curl gnupg openssl jq tar xz-utils \
-  postgresql postgresql-contrib nginx unzip >/dev/null
+  postgresql postgresql-contrib nginx unzip rsync >/dev/null
 
 if ! command -v node >/dev/null 2>&1; then
   log "Instalando Node.js ${NODE_MAJOR}"
@@ -68,16 +69,14 @@ sudo -u postgres psql -v ON_ERROR_STOP=1 -tc \
 sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" -c \
   "ALTER USER postgres WITH PASSWORD '${PG_PASS}';" >/dev/null
 
-log "Carregando schema do banco"
-for f in "$SCRIPT_DIR/db/init"/*.sql; do
-  sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" -f "$f" >/dev/null
-done
+log "Carregando schema base do banco"
+sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" -f "$SCRIPT_DIR/db/init/01_roles_and_auth.sql" >/dev/null
 
 # senhas dos roles internos
 sudo -u postgres psql -d "$DB_NAME" -c \
   "ALTER USER supabase_auth_admin WITH PASSWORD '${PG_PASS}';
    ALTER USER authenticator WITH PASSWORD '${PG_PASS}';" >/dev/null
-ok "Banco ${DB_NAME} pronto"
+ok "Banco base pronto"
 
 # ---------- 4. PostgREST ----------
 if [[ ! -x /usr/local/bin/postgrest ]]; then
@@ -111,32 +110,49 @@ WantedBy=multi-user.target
 EOF
 
 # ---------- 5. GoTrue (auth) ----------
-if [[ ! -x /usr/local/bin/gotrue ]]; then
+if [[ ! -x /usr/local/bin/gotrue || ! -d "$AUTH_MIGRATIONS_DIR" || -z "$(ls -A "$AUTH_MIGRATIONS_DIR" 2>/dev/null)" ]]; then
   log "Baixando GoTrue ${GOTRUE_VERSION}"
-  ARCH=$(uname -m); [[ "$ARCH" == "x86_64" ]] && GARCH="amd64" || GARCH="arm64"
+  ARCH=$(uname -m); [[ "$ARCH" == "x86_64" ]] && GARCH="x86" || GARCH="arm64"
   TMP=$(mktemp -d)
-  curl -sL "https://github.com/supabase/auth/releases/download/${GOTRUE_VERSION}/auth_${GOTRUE_VERSION#v}_linux_${GARCH}.tar.gz" \
+  curl -fsSL "https://github.com/supabase/auth/releases/download/${GOTRUE_VERSION}/auth-${GOTRUE_VERSION}-${GARCH}.tar.gz" \
     | tar -xz -C "$TMP"
   install -m 755 "$TMP"/auth /usr/local/bin/gotrue
+  mkdir -p "$AUTH_MIGRATIONS_DIR"
+  cp -a "$TMP"/migrations/. "$AUTH_MIGRATIONS_DIR"/
   rm -rf "$TMP"
 fi
 
 cat >/etc/getlicence-auth.env <<EOF
 GOTRUE_API_HOST=127.0.0.1
-GOTRUE_API_PORT=9999
+PORT=9999
+API_EXTERNAL_URL=${SITE_URL}/auth/v1
 GOTRUE_DB_DRIVER=postgres
-GOTRUE_DB_DATABASE_URL=postgres://supabase_auth_admin:${PG_PASS}@127.0.0.1:5432/${DB_NAME}
+DATABASE_URL=postgres://supabase_auth_admin:${PG_PASS}@127.0.0.1:5432/${DB_NAME}
+DB_NAMESPACE=auth
+GOTRUE_DB_MIGRATIONS_PATH=${AUTH_MIGRATIONS_DIR}
 GOTRUE_SITE_URL=${SITE_URL}
 GOTRUE_URI_ALLOW_LIST=${SITE_URL}
 GOTRUE_DISABLE_SIGNUP=false
 GOTRUE_JWT_SECRET=${JWT_SECRET}
 GOTRUE_JWT_EXP=3600
+GOTRUE_JWT_AUD=authenticated
 GOTRUE_JWT_DEFAULT_GROUP_NAME=authenticated
+GOTRUE_JWT_ADMIN_ROLES=service_role
 GOTRUE_MAILER_AUTOCONFIRM=true
 GOTRUE_SMTP_ADMIN_EMAIL=admin@getlicence.com
 GOTRUE_LOG_LEVEL=info
 EOF
 chmod 600 /etc/getlicence-auth.env
+
+log "Migrando autenticação"
+set -a
+source /etc/getlicence-auth.env
+set +a
+/usr/local/bin/gotrue migrate >/dev/null
+
+log "Carregando schema da aplicação"
+sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" -f "$SCRIPT_DIR/db/init/02_app_schema.sql" >/dev/null
+ok "Banco ${DB_NAME} pronto"
 
 cat >/etc/systemd/system/getlicence-auth.service <<EOF
 [Unit]
@@ -196,7 +212,7 @@ After=network.target getlicence-postgrest.service getlicence-auth.service
 [Service]
 WorkingDirectory=${APP_DIR}
 EnvironmentFile=${APP_DIR}/.env
-ExecStart=/usr/local/bin/bun run dev --port 3000 --host 127.0.0.1
+ExecStart=/usr/local/bin/bun run start
 Restart=always
 User=${APP_USER}
 [Install]
