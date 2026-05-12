@@ -17,18 +17,17 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
   }
 });
 
-const authHeaderMiddleware = createMiddleware({ type: "function" }).client(
-  async ({ next }) => {
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
-    return next({
-      sendContext: {},
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-  },
-);
+const authedFetch: typeof fetch = async (input, init) => {
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  const headers = new Headers(init?.headers);
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  return fetch(input, { ...init, headers });
+};
 
 export const startInstance = createStart(() => ({
   requestMiddleware: [errorMiddleware],
-  functionMiddleware: [authHeaderMiddleware],
+  serverFns: { fetch: authedFetch },
 }));
