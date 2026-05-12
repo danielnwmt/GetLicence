@@ -797,7 +797,11 @@ function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; l
       <Card className="overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left"><tr>
-            <th className="p-3 font-medium">Nome</th><th className="p-3 font-medium">E-mail</th><th className="p-3 font-medium">Licenças</th>
+            <th className="p-3 font-medium">Nome</th>
+            <th className="p-3 font-medium">E-mail</th>
+            <th className="p-3 font-medium">Cidade</th>
+            <th className="p-3 font-medium">UF</th>
+            <th className="p-3 font-medium">Licenças</th>
           </tr></thead>
           <tbody>
             {profiles.map((p) => {
@@ -806,11 +810,13 @@ function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; l
                 <tr key={p.user_id} className="border-t border-border">
                   <td className="p-3 font-medium">{p.full_name || "—"}</td>
                   <td className="p-3">{p.email}</td>
+                  <td className="p-3">{p.address_city || "—"}</td>
+                  <td className="p-3">{p.address_state || "—"}</td>
                   <td className="p-3">{count}</td>
                 </tr>
               );
             })}
-            {profiles.length === 0 && <tr><td colSpan={3} className="p-6 text-center text-muted-foreground">Nenhum cliente.</td></tr>}
+            {profiles.length === 0 && <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">Nenhum cliente.</td></tr>}
           </tbody>
         </table>
       </Card>
