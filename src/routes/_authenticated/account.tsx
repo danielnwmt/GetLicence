@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { fetchCep } from "@/lib/cep";
-import { formatCpfCnpj } from "@/lib/mask";
+import { formatCpfCnpj, isValidCpfCnpj } from "@/lib/mask";
 import { KeyRound, User } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/account")({
@@ -92,8 +92,8 @@ function AccountPage() {
   const saveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    if (profile.cpf_cnpj.replace(/\D/g, "").length < 11) {
-      return toast.error("Informe um CPF ou CNPJ válido");
+    if (profile.cpf_cnpj && !isValidCpfCnpj(profile.cpf_cnpj)) {
+      return toast.error("CPF ou CNPJ inválido — verifique os dígitos");
     }
     setProfileSaving(true);
     const { error } = await supabase
