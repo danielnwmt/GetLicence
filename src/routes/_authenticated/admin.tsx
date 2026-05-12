@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { createCustomer, listAdminProfiles } from "@/lib/customers.functions";
-import { createSystemUser, updateSystemUser } from "@/lib/system-users.functions";
+import { createSystemUser, updateSystemUser, deleteSystemUser } from "@/lib/system-users.functions";
 import { issueAsaasBoleto, cancelAsaasBoleto } from "@/lib/boletos.functions";
 import { useEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
@@ -1081,6 +1081,22 @@ function IntegrationsTab() {
 function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange: () => void }) {
   const createSystemUserFn = useServerFn(createSystemUser);
   const updateSystemUserFn = useServerFn(updateSystemUser);
+  const deleteSystemUserFn = useServerFn(deleteSystemUser);
+  const { user: currentUser } = useAuth();
+
+  const handleDelete = async (p: Profile) => {
+    if (p.user_id === currentUser?.id) {
+      return toast.error("Você não pode excluir o próprio usuário");
+    }
+    if (!confirm(`Excluir o usuário ${p.email}? Esta ação não pode ser desfeita.`)) return;
+    try {
+      await deleteSystemUserFn({ data: { user_id: p.user_id } });
+      toast.success("Usuário excluído");
+      onChange();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao excluir");
+    }
+  };
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ full_name: "", email: "", password: "" });
@@ -1203,9 +1219,20 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
                 <td className="p-3">{p.email}</td>
                 <td className="p-3"><Badge variant="outline">admin</Badge></td>
                 <td className="p-3">
-                  <Button variant="ghost" size="sm" onClick={() => openEdit(p)}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => openEdit(p)} title="Editar">
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(p)}
+                      disabled={p.user_id === currentUser?.id}
+                      title={p.user_id === currentUser?.id ? "Não é possível excluir o próprio usuário" : "Excluir"}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}

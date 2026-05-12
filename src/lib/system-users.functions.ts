@@ -116,3 +116,30 @@ export const updateSystemUser = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+export const deleteSystemUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) =>
+    z.object({ user_id: z.string().uuid() }).parse(input)
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Response("Forbidden", { status: 403 });
+    if (data.user_id === userId) {
+      throw new Response("Você não pode excluir o próprio usuário", { status: 400 });
+    }
+
+    const admin = createClient<Database>(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false, autoRefreshToken: false } }
+    );
+
+    const { error } = await admin.auth.admin.deleteUser(data.user_id);
+    if (error) throw new Response(error.message, { status: 400 });
+    return { ok: true };
+  });
