@@ -1,0 +1,22 @@
+[Unit]
+Description=Axis Licenças (self-hosted)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/axis-licencas
+EnvironmentFile=/opt/axis-licencas/.env
+ExecStart=/usr/bin/node /opt/axis-licencas/dist/server.js
+Restart=on-failure
+RestartSec=5
+User=root
+Group=root
+# Hardening básico
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

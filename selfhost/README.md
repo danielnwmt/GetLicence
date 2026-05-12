@@ -1,0 +1,129 @@
+# Axis Licenças — Pacote self-hosted (Ubuntu)
+
+Versão standalone do sistema rodando **100% local** em Postgres, sem depender da Lovable Cloud / Supabase.
+
+## Requisitos
+
+- Ubuntu 22.04 ou 24.04 (servidor com acesso root)
+- 1 GB de RAM, 10 GB de disco (mínimo)
+- Porta 3000 disponível (ou ajustável no `.env`)
+
+## Instalação em 1 comando
+
+```bash
+# 1. Copie a pasta selfhost/ para o servidor
+scp -r selfhost ubuntu@SEU-SERVIDOR:/tmp/
+
+# 2. No servidor, execute o instalador
+ssh ubuntu@SEU-SERVIDOR
+cd /tmp/selfhost
+sudo bash install.sh
+```
+
+O instalador faz tudo:
+1. Instala Node.js 20 e PostgreSQL.
+2. Cria o banco `axis_db` e o usuário `axis_user` com senha aleatória.
+3. Copia o app para `/opt/axis-licencas`.
+4. Pergunta o **email e senha do admin inicial**.
+5. Gera `.env` com `JWT_SECRET` aleatório e `DATABASE_URL` local.
+6. Aplica o `schema.sql`.
+7. Instala o serviço `axis-licencas.service` no systemd e inicia.
+
+Ao final, o sistema responde em `http://IP-DO-SERVIDOR:3000`.
+
+## Comandos úteis
+
+```bash
+sudo systemctl status axis-licencas      # status
+sudo systemctl restart axis-licencas     # reiniciar
+sudo journalctl -u axis-licencas -f      # logs ao vivo
+curl http://127.0.0.1:3000/api/health    # checar saúde + banco
+```
+
+## Atualizar
+
+```bash
+# Coloque a nova pasta selfhost/ no servidor e:
+sudo bash update.sh
+```
+O `.env` e o banco são **preservados**.
+
+## Backup automático
+
+```bash
+sudo cp /opt/axis-licencas/backup.sh /etc/cron.daily/axis-backup
+sudo chmod +x /etc/cron.daily/axis-backup
+```
+Backups em `/var/backups/axis/`, retenção de 30 dias.
+
+## Pagamentos (opcional)
+
+Edite `/opt/axis-licencas/.env` e preencha somente o provedor que for usar:
+- `ASAAS_API_KEY`, `ASAAS_ENV`
+- `SICREDI_CLIENT_ID`, `SICREDI_CLIENT_SECRET`, `SICREDI_CERT_PEM`, `SICREDI_CERT_KEY`
+- `SICOOB_CLIENT_ID`, `SICOOB_ACCESS_TOKEN`, `SICOOB_CERT_PEM`, `SICOOB_CERT_KEY`
+
+Depois: `sudo systemctl restart axis-licencas`.
+
+## Endpoints da API
+
+Autenticação por cookie (`axis_session`) ou header `Authorization: Bearer <token>`.
+
+| Método | Caminho | Permissão | Descrição |
+|---|---|---|---|
+| POST | `/api/auth/login` | público | login com email/senha |
+| POST | `/api/auth/logout` | qualquer | encerra sessão |
+| GET  | `/api/auth/me` | autenticado | perfil + role |
+| POST | `/api/auth/change-password` | autenticado | troca senha |
+| GET  | `/api/profile` | autenticado | meu perfil |
+| PUT  | `/api/profile` | autenticado | atualiza perfil |
+| GET  | `/api/customers` | admin | lista clientes |
+| POST | `/api/customers` | admin | cadastra cliente |
+| DELETE | `/api/customers/:userId` | admin | remove cliente |
+| GET  | `/api/products` | autenticado | lista produtos |
+| POST/PUT/DELETE | `/api/products[/:id]` | admin | CRUD produtos |
+| GET  | `/api/licenses` | autenticado | minhas/todas licenças |
+| POST/PUT/DELETE | `/api/licenses[/:id]` | admin | CRUD licenças |
+| GET  | `/api/payments` | autenticado | meus/todos pagamentos |
+| POST | `/api/payments` | admin | cria pagamento |
+| PUT  | `/api/payments/:id/mark-paid` | admin | marca como pago |
+| GET/PUT | `/api/payment-settings` | admin | provedor ativo |
+
+## Frontend
+
+Esta entrega traz **o backend completo**. O frontend (React) ainda é a versão Lovable que conversa com Supabase — ele será adaptado no próximo passo para falar com `/api/*` deste pacote, e os arquivos buildados serão copiados para `selfhost/web/` (servidos automaticamente pelo `server.ts` quando presentes).
+
+Hoje você já consegue:
+- Subir o backend num Ubuntu.
+- Testar tudo via `curl` ou Insomnia/Postman.
+- Validar fluxo de auth, cadastro de cliente, criação de licença/pagamento.
+
+## Estrutura
+
+```
+selfhost/
+├── install.sh            # instalação completa Ubuntu
+├── update.sh             # atualização preservando dados
+├── backup.sh             # pg_dump diário
+├── axis-licencas.service # unidade systemd
+├── schema.sql            # schema Postgres completo
+├── .env.example
+├── package.json
+├── tsconfig.json
+└── src/
+    ├── server.ts         # bootstrap Express
+    ├── db.ts             # pool pg
+    ├── auth.ts           # bcrypt + JWT
+    ├── middleware.ts     # requireAuth / requireAdmin
+    ├── migrate.ts
+    ├── seed-admin.ts
+    ├── lib/cpf-cnpj.ts
+    └── routes/
+        ├── auth.ts
+        ├── profile.ts
+        ├── customers.ts
+        ├── products.ts
+        ├── licenses.ts
+        ├── payments.ts
+        └── payment-settings.ts
+```
