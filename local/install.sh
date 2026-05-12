@@ -75,7 +75,10 @@ sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" -f "$SCRIPT_DIR/db/init/0
 # senhas dos roles internos
 sudo -u postgres psql -d "$DB_NAME" -c \
   "ALTER USER supabase_auth_admin WITH PASSWORD '${PG_PASS}';
-   ALTER USER authenticator WITH PASSWORD '${PG_PASS}';" >/dev/null
+   ALTER USER authenticator WITH PASSWORD '${PG_PASS}';
+   ALTER ROLE supabase_auth_admin SET search_path = auth, public;
+   GRANT ALL ON SCHEMA auth TO supabase_auth_admin;
+   GRANT USAGE ON SCHEMA public TO supabase_auth_admin;" >/dev/null
 ok "Banco base pronto"
 
 # ---------- 4. PostgREST ----------
