@@ -42,8 +42,15 @@ if [[ ! -f "$DB_PASS_FILE" ]]; then
 fi
 DB_PASS="$(cat "$DB_PASS_FILE")"
 
+CLEAN_INSTALL="${CLEAN_INSTALL:-0}"
+if [[ "$CLEAN_INSTALL" == "1" ]]; then
+  echo "==> CLEAN_INSTALL=1 — apagando banco ${DB_NAME} para instalação limpa..."
+  sudo -u postgres psql -c "DROP DATABASE IF EXISTS ${DB_NAME};" || true
+fi
+
 sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='${DB_USER}'" | grep -q 1 || \
   sudo -u postgres psql -c "CREATE USER ${DB_USER} WITH PASSWORD '${DB_PASS}';"
+sudo -u postgres psql -c "ALTER USER ${DB_USER} WITH PASSWORD '${DB_PASS}';" >/dev/null
 sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}'" | grep -q 1 || \
   sudo -u postgres createdb -O "${DB_USER}" "${DB_NAME}"
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};"
