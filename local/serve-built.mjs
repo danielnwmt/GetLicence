@@ -60,10 +60,35 @@ function writeResponse(res, response) {
   Readable.fromWeb(response.body).pipe(res);
 }
 
+function tryServeStatic(req, res) {
+  if (req.method !== "GET" && req.method !== "HEAD") return false;
+
+  const pathname = decodeURIComponent(new URL(requestUrl(req)).pathname);
+  if (!["/assets/", "/_build/", "/favicon", "/robots.txt"].some((prefix) => pathname.startsWith(prefix))) {
+    return false;
+  }
+
+  for (const dir of staticDirs) {
+    const file = path.resolve(dir, pathname.slice(1));
+    if (!file.startsWith(dir) || !existsSync(file) || !statSync(file).isFile()) continue;
+
+    res.statusCode = 200;
+    res.setHeader("content-type", mimeTypes[path.extname(file)] || "application/octet-stream");
+    res.setHeader("cache-control", pathname.startsWith("/assets/") ? "public, max-age=31536000, immutable" : "public, max-age=3600");
+    if (req.method === "HEAD") res.end();
+    else createReadStream(file).pipe(res);
+    return true;
+  }
+
+  return false;
+}
+
 const app = await loadApp();
 
 const server = http.createServer(async (req, res) => {
   try {
+    if (tryServeStatic(req, res)) return;
+
     const request = new Request(requestUrl(req), {
       method: req.method,
       headers: req.headers,
