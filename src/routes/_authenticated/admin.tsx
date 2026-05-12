@@ -106,11 +106,11 @@ function AdminPage() {
       <TabsTrigger value="customers" className={triggerCls}>Clientes</TabsTrigger>
       <TabsTrigger value="licenses" className={triggerCls}>Licenças</TabsTrigger>
       <Link to="/dashboard" className={linkCls}>Minhas licenças</Link>
-      <TabsTrigger value="integrations" className={triggerCls}>Integrações</TabsTrigger>
-      <TabsTrigger value="users" className={triggerCls}>Usuários</TabsTrigger>
+      <TabsTrigger value="integrations" className={triggerCls + " hidden"} />
+      <TabsTrigger value="users" className={triggerCls + " hidden"} />
       <TabsTrigger value="payments" className={triggerCls}>Financeiro</TabsTrigger>
       <TabsTrigger value="products" className={triggerCls}>Produtos</TabsTrigger>
-      <Link to="/account" className={linkCls}>Configuração</Link>
+      <TabsTrigger value="settings" className={triggerCls}>Configurações</TabsTrigger>
     </TabsList>
   );
 
