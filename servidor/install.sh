@@ -59,9 +59,8 @@ echo "==> Gerando .env..."
 ENV_FILE="${APP_DIR}/.env"
 if [[ ! -f "$ENV_FILE" ]]; then
   JWT_SECRET="$(openssl rand -hex 32)"
-  read -rp "Email do admin inicial: " ADMIN_EMAIL
-  read -rsp "Senha do admin inicial: " ADMIN_PASSWORD; echo
-  read -rp "Nome do admin [Administrador]: " ADMIN_NAME
+  ADMIN_EMAIL="${ADMIN_EMAIL:-admin@getlicence}"
+  ADMIN_PASSWORD="${ADMIN_PASSWORD:-admin1234}"
   ADMIN_NAME="${ADMIN_NAME:-Administrador}"
 
   cat > "$ENV_FILE" <<EOF
@@ -122,4 +121,5 @@ echo " Serviço: systemctl status ${SERVICE_NAME}"
 echo " Logs:    journalctl -u ${SERVICE_NAME} -f"
 echo " URL:     http://$(hostname -I | awk '{print $1}'):3000"
 echo " Health:  curl http://127.0.0.1:3000/api/health"
+echo " Login:   ${ADMIN_EMAIL:-admin@getlicence}  /  ${ADMIN_PASSWORD:-admin1234}"
 echo "================================================================"
