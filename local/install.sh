@@ -1,137 +1,330 @@
 #!/usr/bin/env bash
-# Instalador automático GetLicence para Ubuntu 22.04 / 24.04
-# Uso:  sudo bash install.sh                     (sem SSL, usa IP público)
-#       sudo DOMAIN=app.exemplo.com bash install.sh   (com SSL via Let's Encrypt)
+# Instalador GetLicence bare-metal para Ubuntu 22.04 / 24.04
+# Sem Docker. Postgres + PostgREST + GoTrue + Nginx instalados nativamente.
+#
+# Uso:
+#   sudo bash install.sh                                 # IP público, HTTP
+#   sudo APP_DOMAIN=app.exemplo.com bash install.sh      # com SSL Let's Encrypt
 set -euo pipefail
+
 if [[ $EUID -ne 0 ]]; then echo "❌ Execute como root: sudo bash install.sh"; exit 1; fi
 
-DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$DIR"
+APP_DIR="/opt/getlicence"
+APP_USER="getlicence"
+DB_NAME="getlicence"
+PG_VERSION="16"
+NODE_MAJOR="20"
+POSTGREST_VERSION="v12.2.3"
+GOTRUE_VERSION="v2.158.1"
+APP_DOMAIN="${APP_DOMAIN:-}"
+SSL_EMAIL="${SSL_EMAIL:-admin@${APP_DOMAIN:-localhost}}"
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+SRC_DIR=$(cd "$SCRIPT_DIR/.." && pwd)
 
-log() { printf '\033[1;36m▶ %s\033[0m\n' "$*"; }
-ok()  { printf '\033[1;32m✓ %s\033[0m\n' "$*"; }
+log()  { printf '\033[1;36m▶ %s\033[0m\n' "$*"; }
+ok()   { printf '\033[1;32m✓ %s\033[0m\n' "$*"; }
+warn() { printf '\033[1;33m! %s\033[0m\n' "$*"; }
 
-DOMAIN="${DOMAIN:-}"
-SSL_EMAIL="${SSL_EMAIL:-}"
-
-# ---------- pré-requisitos ----------
-log "Instalando dependências base"
-export DEBIAN_FRONTEND=noninteractive
-apt-get update -y -qq
-apt-get install -y -qq ca-certificates curl gnupg openssl >/dev/null
-
-if ! command -v docker >/dev/null 2>&1; then
-  log "Instalando Docker Engine"
-  install -m 0755 -d /etc/apt/keyrings
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-  chmod a+r /etc/apt/keyrings/docker.gpg
-  . /etc/os-release
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu ${VERSION_CODENAME} stable" > /etc/apt/sources.list.d/docker.list
-  apt-get update -y -qq
-  apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin >/dev/null
-  systemctl enable --now docker
-fi
-ok "Docker pronto"
-
-# ---------- detecta IP / URL ----------
-if [[ -n "$DOMAIN" ]]; then
-  SITE_URL="https://${DOMAIN}"
-  SSL_EMAIL="${SSL_EMAIL:-admin@${DOMAIN}}"
+if [[ -n "$APP_DOMAIN" ]]; then
+  SITE_URL="https://${APP_DOMAIN}"
 else
   IPADDR=$(curl -s --max-time 4 https://api.ipify.org 2>/dev/null \
-         || curl -s --max-time 4 https://ifconfig.me 2>/dev/null \
-         || hostname -I 2>/dev/null | awk '{print $1}' || true)
-  IPADDR="${IPADDR:-localhost}"
-  SITE_URL="http://${IPADDR}:8000"
-  ok "IP detectado: ${IPADDR}"
+        || curl -s --max-time 4 https://ifconfig.me 2>/dev/null \
+        || hostname -I 2>/dev/null | awk '{print $1}' || echo localhost)
+  SITE_URL="http://${IPADDR}"
 fi
 
-# ---------- .env ----------
-log "Gerando configuração (.env)"
-cp -f .env.example .env
+# ---------- 1. dependências base ----------
+log "Instalando dependências do sistema"
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -y -qq
+apt-get install -y -qq ca-certificates curl gnupg openssl jq tar xz-utils \
+  postgresql postgresql-contrib nginx unzip >/dev/null
+
+if ! command -v node >/dev/null 2>&1; then
+  log "Instalando Node.js ${NODE_MAJOR}"
+  curl -fsSL https://deb.nodesource.com/setup_${NODE_MAJOR}.x | bash - >/dev/null
+  apt-get install -y -qq nodejs >/dev/null
+fi
+if ! command -v bun >/dev/null 2>&1; then
+  log "Instalando bun"
+  curl -fsSL https://bun.sh/install | BUN_INSTALL=/usr/local bash >/dev/null
+  ln -sf /usr/local/bin/bun /usr/local/bin/bunx
+fi
+ok "Node $(node -v) / bun $(bun -v)"
+
+# ---------- 2. usuário do app ----------
+id "$APP_USER" >/dev/null 2>&1 || useradd --system --home "$APP_DIR" --shell /bin/bash "$APP_USER"
+
+# ---------- 3. PostgreSQL ----------
+log "Configurando PostgreSQL"
+systemctl enable --now postgresql >/dev/null
 PG_PASS=$(openssl rand -hex 16)
-JWT=$(openssl rand -hex 32)
-sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${PG_PASS}|" .env
-sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT}|" .env
-sed -i "s|^ADMIN_EMAIL=.*|ADMIN_EMAIL=admin@getlicence.com|" .env
-sed -i "s|^ADMIN_PASSWORD=.*|ADMIN_PASSWORD=admin1234|" .env
-sed -i "s|^SITE_URL=.*|SITE_URL=${SITE_URL}|" .env
-sed -i "s|^HTTP_PORT=.*|HTTP_PORT=8000|" .env
+JWT_SECRET=$(openssl rand -hex 32)
 
-bash gen-keys.sh ./.env >/dev/null
-ok "Chaves anon/service_role geradas"
+sudo -u postgres psql -v ON_ERROR_STOP=1 -tc \
+  "SELECT 1 FROM pg_database WHERE datname='${DB_NAME}'" | grep -q 1 || \
+  sudo -u postgres createdb "$DB_NAME"
+sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" -c \
+  "ALTER USER postgres WITH PASSWORD '${PG_PASS}';" >/dev/null
 
-# ---------- containers ----------
-log "Baixando imagens Docker"
-docker compose pull -q
-log "Subindo serviços"
-docker compose up -d --quiet-pull
-ok "Containers no ar"
-
-log "Aguardando GoTrue ficar pronto"
-for i in $(seq 1 60); do
-  curl -sf "http://127.0.0.1:8000/auth/v1/health" >/dev/null 2>&1 && break
-  sleep 2
+log "Carregando schema do banco"
+for f in "$SCRIPT_DIR/db/init"/*.sql; do
+  sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" -f "$f" >/dev/null
 done
 
-# ---------- admin inicial ----------
-log "Criando usuário admin"
-set -a; . ./.env; set +a
-USER_JSON=$(curl -s -X POST "http://127.0.0.1:8000/auth/v1/admin/users" \
-  -H "apikey: ${SUPABASE_SERVICE_ROLE_KEY}" \
-  -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" \
-  -H "Content-Type: application/json" \
-  -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\",\"email_confirm\":true}")
-USER_ID=$(echo "$USER_JSON" | grep -oE '"id":"[^"]+"' | head -1 | cut -d'"' -f4 || true)
-if [[ -n "$USER_ID" ]]; then
-  docker compose exec -T db psql -U postgres -d postgres -c \
-    "insert into public.user_roles(user_id, role) values ('${USER_ID}','admin') on conflict do nothing;" >/dev/null || true
-  ok "Admin criado (${ADMIN_EMAIL})"
-else
-  ok "Admin já existia"
+# senhas dos roles internos
+sudo -u postgres psql -d "$DB_NAME" -c \
+  "ALTER USER supabase_auth_admin WITH PASSWORD '${PG_PASS}';
+   ALTER USER authenticator WITH PASSWORD '${PG_PASS}';" >/dev/null
+ok "Banco ${DB_NAME} pronto"
+
+# ---------- 4. PostgREST ----------
+if [[ ! -x /usr/local/bin/postgrest ]]; then
+  log "Baixando PostgREST ${POSTGREST_VERSION}"
+  ARCH=$(uname -m); [[ "$ARCH" == "x86_64" ]] && ARCH="linux-static-x64" || ARCH="ubuntu-aarch64"
+  curl -sL "https://github.com/PostgREST/postgrest/releases/download/${POSTGREST_VERSION}/postgrest-${POSTGREST_VERSION}-${ARCH}.tar.xz" \
+    | tar -xJ -C /usr/local/bin/
+  chmod +x /usr/local/bin/postgrest
 fi
 
-# ---------- SSL (opcional) ----------
-if [[ -n "$DOMAIN" ]]; then
-  log "Configurando Nginx + Let's Encrypt para ${DOMAIN}"
-  apt-get install -y -qq nginx certbot python3-certbot-nginx >/dev/null
-  systemctl enable --now nginx
-  cat >/etc/nginx/sites-available/getlicence.conf <<NGINX
+cat >/etc/getlicence-postgrest.conf <<EOF
+db-uri = "postgres://authenticator:${PG_PASS}@127.0.0.1:5432/${DB_NAME}"
+db-schemas = "public"
+db-anon-role = "anon"
+jwt-secret = "${JWT_SECRET}"
+server-host = "127.0.0.1"
+server-port = 3001
+EOF
+chmod 600 /etc/getlicence-postgrest.conf
+
+cat >/etc/systemd/system/getlicence-postgrest.service <<EOF
+[Unit]
+Description=GetLicence PostgREST
+After=postgresql.service
+[Service]
+ExecStart=/usr/local/bin/postgrest /etc/getlicence-postgrest.conf
+Restart=always
+User=${APP_USER}
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# ---------- 5. GoTrue (auth) ----------
+if [[ ! -x /usr/local/bin/gotrue ]]; then
+  log "Baixando GoTrue ${GOTRUE_VERSION}"
+  ARCH=$(uname -m); [[ "$ARCH" == "x86_64" ]] && GARCH="amd64" || GARCH="arm64"
+  TMP=$(mktemp -d)
+  curl -sL "https://github.com/supabase/auth/releases/download/${GOTRUE_VERSION}/auth_${GOTRUE_VERSION#v}_linux_${GARCH}.tar.gz" \
+    | tar -xz -C "$TMP"
+  install -m 755 "$TMP"/auth /usr/local/bin/gotrue
+  rm -rf "$TMP"
+fi
+
+cat >/etc/getlicence-auth.env <<EOF
+GOTRUE_API_HOST=127.0.0.1
+GOTRUE_API_PORT=9999
+GOTRUE_DB_DRIVER=postgres
+GOTRUE_DB_DATABASE_URL=postgres://supabase_auth_admin:${PG_PASS}@127.0.0.1:5432/${DB_NAME}
+GOTRUE_SITE_URL=${SITE_URL}
+GOTRUE_URI_ALLOW_LIST=${SITE_URL}
+GOTRUE_DISABLE_SIGNUP=false
+GOTRUE_JWT_SECRET=${JWT_SECRET}
+GOTRUE_JWT_EXP=3600
+GOTRUE_JWT_DEFAULT_GROUP_NAME=authenticated
+GOTRUE_MAILER_AUTOCONFIRM=true
+GOTRUE_SMTP_ADMIN_EMAIL=admin@getlicence.com
+GOTRUE_LOG_LEVEL=info
+EOF
+chmod 600 /etc/getlicence-auth.env
+
+cat >/etc/systemd/system/getlicence-auth.service <<EOF
+[Unit]
+Description=GetLicence Auth (GoTrue)
+After=postgresql.service
+[Service]
+EnvironmentFile=/etc/getlicence-auth.env
+ExecStart=/usr/local/bin/gotrue
+Restart=always
+User=${APP_USER}
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# ---------- 6. gerar chaves anon / service_role ----------
+b64(){ openssl base64 -A | tr -- '+/' '-_' | tr -d '='; }
+mkjwt(){
+  local role="$1"; local exp=$(( $(date +%s) + 60*60*24*365*10 ))
+  local h p s
+  h=$(printf '{"alg":"HS256","typ":"JWT"}'|b64)
+  p=$(printf '{"role":"%s","iss":"supabase","iat":%s,"exp":%s}' "$role" "$(date +%s)" "$exp"|b64)
+  s=$(printf '%s.%s' "$h" "$p" | openssl dgst -binary -sha256 -hmac "$JWT_SECRET" | b64)
+  printf '%s.%s.%s' "$h" "$p" "$s"
+}
+ANON_KEY=$(mkjwt anon)
+SERVICE_KEY=$(mkjwt service_role)
+ok "Chaves JWT geradas"
+
+# ---------- 7. app (frontend) ----------
+log "Copiando aplicação para ${APP_DIR}"
+mkdir -p "$APP_DIR"
+rsync -a --delete --exclude node_modules --exclude .git "$SRC_DIR"/ "$APP_DIR"/
+chown -R "$APP_USER:$APP_USER" "$APP_DIR"
+
+cat >"$APP_DIR/.env" <<EOF
+VITE_SUPABASE_URL=${SITE_URL}
+VITE_SUPABASE_PUBLISHABLE_KEY=${ANON_KEY}
+VITE_SUPABASE_PROJECT_ID=local
+SUPABASE_URL=${SITE_URL}
+SUPABASE_PUBLISHABLE_KEY=${ANON_KEY}
+SUPABASE_SERVICE_ROLE_KEY=${SERVICE_KEY}
+PORT=3000
+HOST=127.0.0.1
+EOF
+chown "$APP_USER:$APP_USER" "$APP_DIR/.env"
+
+log "Instalando dependências do app"
+sudo -u "$APP_USER" bash -lc "cd $APP_DIR && bun install --silent"
+
+log "Compilando frontend"
+sudo -u "$APP_USER" bash -lc "cd $APP_DIR && bun run build" >/dev/null
+
+cat >/etc/systemd/system/getlicence-app.service <<EOF
+[Unit]
+Description=GetLicence App (TanStack)
+After=network.target getlicence-postgrest.service getlicence-auth.service
+[Service]
+WorkingDirectory=${APP_DIR}
+EnvironmentFile=${APP_DIR}/.env
+ExecStart=/usr/local/bin/bun run dev --port 3000 --host 127.0.0.1
+Restart=always
+User=${APP_USER}
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# ---------- 8. Nginx ----------
+log "Configurando Nginx"
+SERVER_NAME="${APP_DOMAIN:-_}"
+cat >/etc/nginx/sites-available/getlicence.conf <<NGINX
 server {
   listen 80;
-  server_name ${DOMAIN};
+  server_name ${SERVER_NAME};
   client_max_body_size 25m;
-  location / {
-    proxy_pass http://127.0.0.1:8000;
-    proxy_http_version 1.1;
+
+  location /auth/v1/ {
+    proxy_pass http://127.0.0.1:9999/;
     proxy_set_header Host \$host;
-    proxy_set_header X-Real-IP \$remote_addr;
     proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto \$scheme;
+  }
+  location /rest/v1/ {
+    proxy_pass http://127.0.0.1:3001/;
+    proxy_set_header Host \$host;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header Authorization \$http_authorization;
+    proxy_set_header apikey \$http_apikey;
+  }
+  location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_http_version 1.1;
+    proxy_set_header Host \$host;
     proxy_set_header Upgrade \$http_upgrade;
     proxy_set_header Connection "upgrade";
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
   }
 }
 NGINX
-  ln -sf /etc/nginx/sites-available/getlicence.conf /etc/nginx/sites-enabled/getlicence.conf
-  rm -f /etc/nginx/sites-enabled/default
-  nginx -t && systemctl reload nginx
-  certbot --nginx -d "${DOMAIN}" --non-interactive --agree-tos -m "${SSL_EMAIL}" --redirect \
-    || echo "⚠ certbot falhou — verifique se ${DOMAIN} aponta para este servidor."
+ln -sf /etc/nginx/sites-available/getlicence.conf /etc/nginx/sites-enabled/getlicence.conf
+rm -f /etc/nginx/sites-enabled/default
+nginx -t >/dev/null
+systemctl reload nginx
+
+# ---------- 9. start services ----------
+systemctl daemon-reload
+systemctl enable --now getlicence-postgrest getlicence-auth getlicence-app >/dev/null
+sleep 4
+
+# ---------- 10. admin inicial ----------
+log "Criando usuário admin"
+ADMIN_EMAIL="admin@getlicence.com"
+ADMIN_PASS="admin1234"
+RESP=$(curl -s -X POST "http://127.0.0.1:9999/admin/users" \
+  -H "Authorization: Bearer ${SERVICE_KEY}" \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASS}\",\"email_confirm\":true}" || true)
+UID=$(echo "$RESP" | jq -r '.id // empty')
+if [[ -n "$UID" ]]; then
+  sudo -u postgres psql -d "$DB_NAME" -c \
+    "insert into public.user_roles(user_id, role) values ('${UID}','admin') on conflict do nothing;" >/dev/null
+  ok "Admin criado (${ADMIN_EMAIL})"
+else
+  warn "Admin já existia ou GoTrue ainda iniciando"
 fi
 
-# ---------- resumo ----------
+# ---------- 11. SSL opcional ----------
+if [[ -n "$APP_DOMAIN" ]]; then
+  log "Emitindo certificado SSL para ${APP_DOMAIN}"
+  apt-get install -y -qq certbot python3-certbot-nginx >/dev/null
+  certbot --nginx -d "$APP_DOMAIN" --non-interactive --agree-tos -m "$SSL_EMAIL" --redirect \
+    || warn "certbot falhou — confirme que ${APP_DOMAIN} aponta para este servidor"
+fi
+
+# ---------- 12. scripts auxiliares ----------
+cat >/opt/getlicence/update.sh <<'EOS'
+#!/usr/bin/env bash
+set -e
+cd /opt/getlicence
+sudo -u getlicence bun install --silent
+sudo -u getlicence bun run build
+systemctl restart getlicence-app
+echo "✓ App atualizado"
+EOS
+cat >/opt/getlicence/backup.sh <<EOS
+#!/usr/bin/env bash
+set -e
+F=/root/getlicence-\$(date +%F-%H%M).sql
+sudo -u postgres pg_dump ${DB_NAME} > "\$F"
+echo "✓ Backup: \$F"
+EOS
+cat >/opt/getlicence/uninstall.sh <<EOS
+#!/usr/bin/env bash
+set -e
+systemctl disable --now getlicence-app getlicence-auth getlicence-postgrest || true
+rm -f /etc/systemd/system/getlicence-*.service /etc/getlicence-*.env /etc/getlicence-*.conf
+rm -f /etc/nginx/sites-enabled/getlicence.conf /etc/nginx/sites-available/getlicence.conf
+systemctl reload nginx || true
+sudo -u postgres dropdb --if-exists ${DB_NAME}
+rm -rf /opt/getlicence
+echo "✓ Removido"
+EOS
+chmod +x /opt/getlicence/*.sh
+
+cat >/root/getlicence-credenciais.txt <<EOF
+GetLicence
+URL:     ${SITE_URL}
+Login:   ${ADMIN_EMAIL}
+Senha:   ${ADMIN_PASS}
+
+JWT_SECRET:               ${JWT_SECRET}
+SUPABASE_ANON_KEY:        ${ANON_KEY}
+SUPABASE_SERVICE_ROLE_KEY:${SERVICE_KEY}
+POSTGRES_PASSWORD:        ${PG_PASS}
+EOF
+chmod 600 /root/getlicence-credenciais.txt
+
 echo
 echo "============================================================"
-echo " ✅ GetLicence instalado com sucesso!"
+echo " ✅ GetLicence instalado com sucesso"
 echo "------------------------------------------------------------"
 echo " URL:     ${SITE_URL}"
-echo " Login:   admin@getlicence.com"
-echo " Senha:   admin1234"
+echo " Login:   ${ADMIN_EMAIL}"
+echo " Senha:   ${ADMIN_PASS}"
+echo " Credenciais completas: /root/getlicence-credenciais.txt"
 echo "------------------------------------------------------------"
-echo " Variáveis para o frontend (.env do Lovable):"
-echo "   VITE_SUPABASE_URL=${SITE_URL}"
-echo "   VITE_SUPABASE_PUBLISHABLE_KEY=${SUPABASE_ANON_KEY}"
-echo "   VITE_SUPABASE_PROJECT_ID=local"
-echo "   SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}"
+echo " Comandos úteis:"
+echo "   sudo bash /opt/getlicence/update.sh     # atualizar"
+echo "   sudo bash /opt/getlicence/backup.sh     # backup do banco"
+echo "   sudo bash /opt/getlicence/uninstall.sh  # remover"
 echo "============================================================"

@@ -1,72 +1,61 @@
-# GetLicence — stack 100% local (Supabase self-hosted)
+# GetLicence — instalação local no Ubuntu (sem Docker)
 
-Esta pasta roda **localmente no Ubuntu** o mesmo backend que o Lovable Cloud usa
-(Postgres + GoTrue + PostgREST), em containers Docker. Assim, o **app React
-do Lovable** (este repositório) roda sem nenhuma alteração, apontando para
-o Supabase local em vez do Cloud.
+Instalação bare-metal: PostgreSQL, PostgREST, GoTrue e Nginx instalados nativamente como serviços `systemd`. Cada servidor fica 100% independente.
 
-> Resultado: paridade total de UI e features, sem reimplementação.
+## Requisitos
 
-## Pré-requisitos
-- Ubuntu 22.04 ou 24.04 (servidor ou VM).
-- Acesso `sudo`.
+- Ubuntu 22.04+ ou 24.04+
+- Acesso root (`sudo`)
+- Domínio apontado para o servidor (opcional, para SSL automático)
 
-## Instalação (uma linha)
+## Instalar
 
 ```bash
-git clone https://github.com/danielnwmt/getlicence.git /opt/getlicence
+sudo rm -rf /opt/getlicence && \
+git clone https://github.com/danielnwmt/GetLicence.git /opt/getlicence && \
 sudo bash /opt/getlicence/local/install.sh
 ```
 
-O instalador:
-1. instala Docker Engine + plugin `compose`;
-2. cria `.env` com senhas e segredo JWT aleatórios;
-3. pergunta email/senha do admin inicial e a URL pública;
-4. gera as chaves `anon` e `service_role` a partir do `JWT_SECRET`;
-5. sobe os containers (`db`, `auth`, `rest`, `proxy`);
-6. cria o usuário admin via GoTrue e marca como `admin` em `user_roles`.
+Com domínio + SSL (Let's Encrypt):
 
-Ao final imprime os valores que você precisa colocar no `.env` do **frontend**.
-
-## Como apontar o app do Lovable para o Supabase local
-
-No repositório raiz, edite `.env` (ou crie `.env.local`):
-
-```
-VITE_SUPABASE_URL=http://SEU-IP:8000
-VITE_SUPABASE_PUBLISHABLE_KEY=<SUPABASE_ANON_KEY do install>
-VITE_SUPABASE_PROJECT_ID=local
-SUPABASE_URL=http://SEU-IP:8000
-SUPABASE_PUBLISHABLE_KEY=<SUPABASE_ANON_KEY do install>
-SUPABASE_SERVICE_ROLE_KEY=<SUPABASE_SERVICE_ROLE_KEY do install>
+```bash
+sudo APP_DOMAIN=app.exemplo.com bash /opt/getlicence/local/install.sh
 ```
 
-Depois rode o app normalmente (`npm install && npm run dev`, ou build para
-produção). Como o cliente `@supabase/supabase-js` só usa essas variáveis, **nenhum
-código React precisa mudar** — toda a UI do Lovable (admin, dashboard, conta)
-funciona como hoje.
+O instalador automaticamente:
+
+1. Instala Node.js 20, bun, PostgreSQL 16 e Nginx
+2. Cria o banco, carrega o schema e os triggers
+3. Baixa e configura **PostgREST** (API REST) como serviço
+4. Baixa e configura **GoTrue** (autenticação) como serviço
+5. Gera segredos JWT, `anon_key` e `service_role_key`
+6. Compila o frontend (TanStack) e sobe como serviço
+7. Configura Nginx como gateway (`/auth/v1`, `/rest/v1`, `/`)
+8. Cria o admin inicial (`admin@getlicence.com` / `admin1234`)
+9. Emite SSL com certbot se `APP_DOMAIN` estiver definido
+10. Grava `/root/getlicence-credenciais.txt`
+
+## Acesso
+
+- Sem domínio: `http://SEU-IP`
+- Com domínio: `https://seu-dominio.com`
 
 ## Operação
 
-| Ação | Comando |
+| Comando | Descrição |
 | --- | --- |
-| Ver status | `cd /opt/getlicence/local && docker compose ps` |
-| Logs | `docker compose logs -f auth rest db` |
-| Parar | `docker compose down` |
-| Subir | `docker compose up -d` |
-| Atualizar imagens | `docker compose pull && docker compose up -d` |
-| Backup do banco | `docker compose exec db pg_dumpall -U postgres > backup-$(date +%F).sql` |
-| Reset total | `docker compose down -v` (apaga o banco!) |
+| `sudo bash /opt/getlicence/update.sh` | Recompilar e reiniciar o app |
+| `sudo bash /opt/getlicence/backup.sh` | Backup SQL em `/root/` |
+| `sudo bash /opt/getlicence/uninstall.sh` | Remover instalação completa |
+| `systemctl status getlicence-app` | Status do frontend |
+| `systemctl status getlicence-auth` | Status do GoTrue |
+| `systemctl status getlicence-postgrest` | Status do PostgREST |
+| `journalctl -u getlicence-app -f` | Logs em tempo real |
 
 ## Estrutura
+
 ```
 local/
-  docker-compose.yml        # Postgres + GoTrue + PostgREST + Nginx
-  proxy/nginx.conf          # gateway: /auth/v1 → GoTrue, /rest/v1 → PostgREST
-  db/init/01_roles_and_auth.sql   # roles anon/authenticated/service_role + schema auth
-  db/init/02_app_schema.sql       # tabelas do app, RLS, triggers handle_new_user
-  gen-keys.sh               # gera SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY
-  install.sh                # bootstrap Ubuntu
-  .env.example
+  install.sh              # instalador único
+  db/init/                # schema SQL (roles, auth, app)
 ```
-
