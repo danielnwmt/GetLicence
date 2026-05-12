@@ -87,7 +87,7 @@ export function Field({ label, children, htmlFor }: { label: string; children: R
 
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={clsx("rounded-xl border border-border bg-card text-card-foreground shadow-sm", className)}>
+    <div className={clsx("rounded-xl border border-border bg-card text-card-foreground shadow-sm p-6", className)}>
       {children}
     </div>
   );
