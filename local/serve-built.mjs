@@ -1,10 +1,30 @@
 #!/usr/bin/env node
 import http from "node:http";
+import { createReadStream, existsSync, statSync } from "node:fs";
 import process from "node:process";
 import { Readable } from "node:stream";
+import path from "node:path";
 
 const host = process.env.HOST || "127.0.0.1";
 const port = Number(process.env.PORT || 3000);
+const staticDirs = [".output/public", ".output/client", "dist/client", "dist"]
+  .map((dir) => path.resolve(process.cwd(), dir))
+  .filter((dir) => existsSync(dir));
+
+const mimeTypes = {
+  ".css": "text/css; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".mjs": "text/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".ico": "image/x-icon",
+  ".webp": "image/webp",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+};
 
 async function loadApp() {
   const entry = await import("../.output/server/index.mjs");
