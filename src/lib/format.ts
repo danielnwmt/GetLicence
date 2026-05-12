@@ -9,6 +9,7 @@ export const statusLabel: Record<string, string> = {
   expired: "Expirada",
   cancelled: "Cancelada",
   pending: "Pendente",
+  blocked: "Bloqueada",
   paid: "Pago",
   failed: "Falhou",
   refunded: "Reembolsado",
