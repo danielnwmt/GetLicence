@@ -510,6 +510,7 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
                       <SelectContent>
                         <SelectItem value="active">Ativa</SelectItem>
                         <SelectItem value="pending">Pendente</SelectItem>
+                        <SelectItem value="blocked">Bloqueada</SelectItem>
                         <SelectItem value="expired">Expirada</SelectItem>
                         <SelectItem value="cancelled">Cancelada</SelectItem>
                       </SelectContent>
