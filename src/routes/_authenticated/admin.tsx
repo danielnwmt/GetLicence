@@ -423,7 +423,7 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
   };
 
   const setStatus = async (id: string, status: string) => {
-    const { error } = await supabase.from("licenses").update({ status: status as "active" | "pending" | "expired" | "cancelled" }).eq("id", id);
+    const { error } = await supabase.from("licenses").update({ status: status as "active" | "pending" | "expired" | "cancelled" | "blocked" }).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Status atualizado");
     onChange();
