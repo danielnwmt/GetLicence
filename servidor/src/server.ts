@@ -60,7 +60,7 @@ if (fs.existsSync(webDir)) {
     res
       .type("text/plain")
       .send(
-        "Axis Licenças — backend rodando.\n\n" +
+        "GetLicence — backend rodando.\n\n" +
           "Frontend ainda não foi copiado para servidor/web/.\n" +
           "API disponível em /api/*. Use /api/health para verificar.\n",
       );
@@ -75,5 +75,5 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
 
 const port = Number(process.env.PORT ?? 3000);
 app.listen(port, "0.0.0.0", () => {
-  console.log(`[server] axis-licencas rodando em http://0.0.0.0:${port}`);
+  console.log(`[server] getlicence rodando em http://0.0.0.0:${port}`);
 });

@@ -1,4 +1,4 @@
-# Axis Licenças — Pacote self-hosted (Ubuntu)
+# GetLicence — Pacote self-hosted (Ubuntu)
 
 Versão standalone do sistema rodando **100% local** em Postgres, sem depender da Lovable Cloud / Supabase.
 
@@ -13,10 +13,10 @@ Versão standalone do sistema rodando **100% local** em Postgres, sem depender d
 No servidor Ubuntu, como root:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/danielnwmt/axis-licencas/main/servidor/setup-from-github.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/danielnwmt/getlicence/main/servidor/setup-from-github.sh | sudo bash
 ```
 
-O script clona o repositório em `/opt/axis-licencas-src`, executa o `install.sh` oficial e deixa o sistema rodando.
+O script clona o repositório em `/opt/getlicence-src`, executa o `install.sh` oficial e deixa o sistema rodando.
 
 ## Instalação manual (sem GitHub)
 
@@ -32,21 +32,21 @@ sudo bash install.sh
 
 O instalador faz tudo:
 1. Instala Node.js 20 e PostgreSQL.
-2. Cria o banco `axis_db` e o usuário `axis_user` com senha aleatória.
-3. Copia o app para `/opt/axis-licencas`.
+2. Cria o banco `getlicence_db` e o usuário `getlicence_user` com senha aleatória.
+3. Copia o app para `/opt/getlicence`.
 4. Pergunta o **email e senha do admin inicial**.
 5. Gera `.env` com `JWT_SECRET` aleatório e `DATABASE_URL` local.
 6. Aplica o `schema.sql`.
-7. Instala o serviço `axis-licencas.service` no systemd e inicia.
+7. Instala o serviço `getlicence.service` no systemd e inicia.
 
 Ao final, o sistema responde em `http://IP-DO-SERVIDOR:3000`.
 
 ## Comandos úteis
 
 ```bash
-sudo systemctl status axis-licencas      # status
-sudo systemctl restart axis-licencas     # reiniciar
-sudo journalctl -u axis-licencas -f      # logs ao vivo
+sudo systemctl status getlicence      # status
+sudo systemctl restart getlicence     # reiniciar
+sudo journalctl -u getlicence -f      # logs ao vivo
 curl http://127.0.0.1:3000/api/health    # checar saúde + banco
 ```
 
@@ -61,23 +61,23 @@ O `.env` e o banco são **preservados**.
 ## Backup automático
 
 ```bash
-sudo cp /opt/axis-licencas/backup.sh /etc/cron.daily/axis-backup
-sudo chmod +x /etc/cron.daily/axis-backup
+sudo cp /opt/getlicence/backup.sh /etc/cron.daily/getlicence-backup
+sudo chmod +x /etc/cron.daily/getlicence-backup
 ```
-Backups em `/var/backups/axis/`, retenção de 30 dias.
+Backups em `/var/backups/getlicence/`, retenção de 30 dias.
 
 ## Pagamentos (opcional)
 
-Edite `/opt/axis-licencas/.env` e preencha somente o provedor que for usar:
+Edite `/opt/getlicence/.env` e preencha somente o provedor que for usar:
 - `ASAAS_API_KEY`, `ASAAS_ENV`
 - `SICREDI_CLIENT_ID`, `SICREDI_CLIENT_SECRET`, `SICREDI_CERT_PEM`, `SICREDI_CERT_KEY`
 - `SICOOB_CLIENT_ID`, `SICOOB_ACCESS_TOKEN`, `SICOOB_CERT_PEM`, `SICOOB_CERT_KEY`
 
-Depois: `sudo systemctl restart axis-licencas`.
+Depois: `sudo systemctl restart getlicence`.
 
 ## Endpoints da API
 
-Autenticação por cookie (`axis_session`) ou header `Authorization: Bearer <token>`.
+Autenticação por cookie (`getlicence_session`) ou header `Authorization: Bearer <token>`.
 
 | Método | Caminho | Permissão | Descrição |
 |---|---|---|---|
@@ -118,7 +118,7 @@ servidor/
 ├── install.sh            # instalação completa Ubuntu
 ├── update.sh             # atualização preservando dados
 ├── backup.sh             # pg_dump diário
-├── axis-licencas.service # unidade systemd
+├── getlicence.service # unidade systemd
 ├── schema.sql            # schema Postgres completo
 ├── .env.example
 ├── package.json
