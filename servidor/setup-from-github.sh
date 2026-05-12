@@ -36,7 +36,7 @@ else
   git clone --depth 1 --branch "${BRANCH}" "${REPO_URL}" "${CLONE_DIR}"
 fi
 
-SERVIDOR_DIR="${CLONE_DIR}/selfhost"
+SERVIDOR_DIR="${CLONE_DIR}/servidor"
 if [[ ! -f "${SERVIDOR_DIR}/install.sh" ]]; then
   echo "ERRO: ${SERVIDOR_DIR}/install.sh não encontrado no repositório."
   echo "Confira se a pasta 'servidor/' existe na branch '${BRANCH}'."

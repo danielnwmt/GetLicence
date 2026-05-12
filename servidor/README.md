@@ -101,7 +101,7 @@ Autenticação por cookie (`axis_session`) ou header `Authorization: Bearer <tok
 
 ## Frontend
 
-O frontend (React + Vite + Tailwind) fica em `selfhost/web-src/` e é **compilado automaticamente pelo `install.sh`** para `selfhost/web/`, que o Express serve na mesma porta 3000.
+O frontend (React + Vite + Tailwind) fica em `servidor/web-src/` e é **compilado automaticamente pelo `install.sh`** para `servidor/web/`, que o Express serve na mesma porta 3000.
 
 Páginas incluídas:
 - `/login` — login email + senha
