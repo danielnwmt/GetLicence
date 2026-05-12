@@ -20,8 +20,8 @@ import { Plus, Package, KeyRound, CreditCard, Users, DollarSign, Pencil, Trash2,
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { toast } from "sonner";
 
-type AdminTab = "licenses" | "customers" | "payments" | "products" | "integrations" | "users";
-const ADMIN_TABS: AdminTab[] = ["licenses", "customers", "payments", "products", "integrations", "users"];
+type AdminTab = "licenses" | "customers" | "payments" | "products" | "settings";
+const ADMIN_TABS: AdminTab[] = ["licenses", "customers", "payments", "products", "settings"];
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — GetLicence" }] }),
