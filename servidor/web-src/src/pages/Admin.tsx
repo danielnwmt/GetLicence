@@ -99,7 +99,7 @@ function CustomersTab() {
   }
 
   return (
-    <Card>
+    <Card className="p-6">
       <div className="flex justify-between mb-3">
         <h2 className="font-semibold">Clientes ({data?.customers.length ?? 0})</h2>
         <Button onClick={() => { setForm({}); setErr(null); setOpen(true); }}>Novo cliente</Button>
@@ -169,7 +169,7 @@ function ProductsTab() {
   const del = useMutation({ mutationFn: (id: string) => api.del(`/api/products/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }) });
 
   return (
-    <Card>
+    <Card className="p-6">
       <div className="flex justify-between mb-3">
         <h2 className="font-semibold">Produtos</h2>
         <Button onClick={() => setEditing({ name: "", price_monthly: 0, price_yearly: 0, active: true })}>Novo produto</Button>
@@ -232,7 +232,7 @@ function LicensesTab() {
   const del = useMutation({ mutationFn: (id: string) => api.del(`/api/licenses/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: ["licenses"] }) });
 
   return (
-    <Card>
+    <Card className="p-6">
       <div className="flex justify-between mb-3">
         <h2 className="font-semibold">Licenças</h2>
         <Button onClick={() => setOpen(true)}>Nova licença</Button>
@@ -306,7 +306,7 @@ function PaymentsTab() {
   const del = useMutation({ mutationFn: (id: string) => api.del(`/api/payments/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: ["payments-admin"] }) });
 
   return (
-    <Card>
+    <Card className="p-6">
       <div className="flex justify-between mb-3">
         <h2 className="font-semibold">Pagamentos</h2>
         <Button onClick={() => setOpen(true)}>Novo pagamento</Button>
@@ -373,13 +373,13 @@ function SettingsTab() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["payment-settings"] }),
   });
 
-  if (isLoading) return <Card>Carregando…</Card>;
+  if (isLoading) return <Card className="p-6">Carregando…</Card>;
   const s = data?.settings;
   const sec = data?.secretStatus ?? {};
-  if (!s) return <Card>Nenhuma configuração criada ainda. Será criada no primeiro uso.</Card>;
+  if (!s) return <Card className="p-6">Nenhuma configuração criada ainda. Será criada no primeiro uso.</Card>;
 
   return (
-    <Card>
+    <Card className="p-6">
       <h2 className="font-semibold mb-3">Configuração de pagamentos</h2>
       <form onSubmit={(e) => { e.preventDefault(); const f = new FormData(e.currentTarget); save.mutate({ id: s.id, active_provider: f.get("active_provider"), asaas_env: f.get("asaas_env"), notes: f.get("notes") }); }} className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl">
         <Field label="Provedor ativo">
