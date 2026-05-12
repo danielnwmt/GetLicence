@@ -214,7 +214,7 @@ function DashboardCharts({ licenses, payments, profiles, products }: { licenses:
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
               <XAxis dataKey="label" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `R$${v}`} />
-              <Tooltip formatter={(v: number) => formatBRL(Number(v))} />
+              <Tooltip formatter={(v) => formatBRL(Number(v))} />
               <Line type="monotone" dataKey="total" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
             </LineChart>
           </ResponsiveContainer>
