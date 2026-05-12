@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { fetchCep } from "@/lib/cep";
+import { formatCpfCnpj } from "@/lib/mask";
 import { KeyRound, User } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/account")({
@@ -74,7 +75,7 @@ function AccountPage() {
       if (data) {
         setProfile({
           full_name: data.full_name ?? "",
-          cpf_cnpj: data.cpf_cnpj ?? "",
+          cpf_cnpj: formatCpfCnpj(data.cpf_cnpj ?? ""),
           phone: data.phone ?? "",
           address_zip: data.address_zip ?? "",
           address_street: data.address_street ?? "",
@@ -177,7 +178,7 @@ function AccountPage() {
             </div>
             <div className="space-y-2">
               <Label>CPF / CNPJ *</Label>
-              <Input value={profile.cpf_cnpj} onChange={(e) => setProfile({ ...profile, cpf_cnpj: e.target.value })} placeholder="Somente números" />
+              <Input value={profile.cpf_cnpj} onChange={(e) => setProfile({ ...profile, cpf_cnpj: formatCpfCnpj(e.target.value) })} placeholder="000.000.000-00" />
             </div>
             <div className="space-y-2 md:col-span-2">
               <Label>Telefone</Label>

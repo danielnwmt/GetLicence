@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Package, KeyRound, CreditCard, Users, DollarSign, Pencil, Trash2, CheckCircle2, Landmark, Copy, FileText, ExternalLink, XCircle } from "lucide-react";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { fetchCep } from "@/lib/cep";
+import { formatCpfCnpj } from "@/lib/mask";
 import { toast } from "sonner";
 
 type AdminTab = "licenses" | "customers" | "payments" | "products" | "settings";
@@ -757,7 +758,7 @@ function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; l
                   <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
                 </div>
                 <div className="space-y-2"><Label>CPF / CNPJ *</Label>
-                  <Input value={form.cpf_cnpj} onChange={(e) => setForm({ ...form, cpf_cnpj: e.target.value })} placeholder="Somente números" />
+                  <Input value={form.cpf_cnpj} onChange={(e) => setForm({ ...form, cpf_cnpj: formatCpfCnpj(e.target.value) })} placeholder="000.000.000-00" />
                 </div>
                 <div className="space-y-2"><Label>E-mail *</Label>
                   <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
