@@ -48,7 +48,7 @@ export const createCustomer = createServerFn({ method: "POST" })
 
     const newUserId = created.user?.id;
     if (newUserId) {
-      await admin.from("profiles").upsert({
+      const { error: profileError } = await admin.from("profiles").upsert({
         user_id: newUserId,
         email: data.email,
         full_name: data.full_name,
@@ -62,10 +62,55 @@ export const createCustomer = createServerFn({ method: "POST" })
         address_city: data.address_city ?? null,
         address_state: data.address_state ?? null,
       }, { onConflict: "user_id" });
-      await admin.from("user_roles").upsert(
+      if (profileError) {
+        await admin.auth.admin.deleteUser(newUserId);
+        throw new Response(profileError.message, { status: 400 });
+      }
+
+      const { error: roleError } = await admin.from("user_roles").upsert(
         { user_id: newUserId, role: "client" },
         { onConflict: "user_id,role" }
       );
+      if (roleError) {
+        await admin.auth.admin.deleteUser(newUserId);
+        throw new Response(roleError.message, { status: 400 });
+      }
     }
     return { user_id: newUserId };
+  });
+
+export const listAdminProfiles = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Response("Forbidden", { status: 403 });
+
+    const admin = createClient<Database>(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false, autoRefreshToken: false } }
+    );
+
+    const [{ data: profiles, error: profilesError }, { data: usersData, error: usersError }] = await Promise.all([
+      admin.from("profiles").select("user_id, full_name, email"),
+      admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+    ]);
+
+    if (profilesError) throw new Response(profilesError.message, { status: 400 });
+    if (usersError) throw new Response(usersError.message, { status: 400 });
+
+    const profileByUserId = new Map((profiles ?? []).map((p) => [p.user_id, p]));
+
+    return usersData.users.map((user) => {
+      const profile = profileByUserId.get(user.id);
+      return {
+        user_id: user.id,
+        full_name: profile?.full_name ?? (typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null),
+        email: profile?.email ?? user.email ?? null,
+      };
+    });
   });

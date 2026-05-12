@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { createCustomer } from "@/lib/customers.functions";
+import { createCustomer, listAdminProfiles } from "@/lib/customers.functions";
 import { createSystemUser } from "@/lib/system-users.functions";
 import { issueAsaasBoleto, cancelAsaasBoleto } from "@/lib/boletos.functions";
 import { useEffect, useState, useCallback } from "react";
@@ -51,6 +51,7 @@ interface PaymentRow {
 
 function AdminPage() {
   const { user, role, loading } = useAuth();
+  const listAdminProfilesFn = useServerFn(listAdminProfiles);
   const navigate = useNavigate();
   const search = Route.useSearch();
   const currentTab: AdminTab = search.tab ?? "licenses";
@@ -74,15 +75,15 @@ function AdminPage() {
       supabase.from("products").select("*").order("created_at", { ascending: false }),
       supabase.from("licenses").select("*, product:products(name)").order("created_at", { ascending: false }),
       supabase.from("payments").select("*, license:licenses(license_key)").order("created_at", { ascending: false }),
-      supabase.from("profiles").select("user_id, full_name, email"),
+      listAdminProfilesFn(),
       supabase.from("user_roles").select("user_id, role").eq("role", "admin"),
     ]);
     setProducts((p.data as Product[]) || []);
     setLicenses((l.data as unknown as LicenseRow[]) || []);
     setPayments((pay.data as unknown as PaymentRow[]) || []);
-    setProfiles((pr.data as Profile[]) || []);
+    setProfiles((pr as Profile[]) || []);
     setAdminIds(((ur.data as { user_id: string }[]) || []).map((r) => r.user_id));
-  }, []);
+  }, [listAdminProfilesFn]);
 
   useEffect(() => { if (role === "admin") reload(); }, [role, reload]);
 
