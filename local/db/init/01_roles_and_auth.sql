@@ -29,7 +29,10 @@ alter default privileges in schema auth grant all on tables to supabase_auth_adm
 alter default privileges in schema auth grant all on sequences to supabase_auth_admin;
 alter default privileges in schema auth grant all on functions to supabase_auth_admin;
 
--- Helpers auth.uid() / auth.role() / auth.jwt() como o Supabase fornece
+-- Helpers auth.uid() / auth.role() / auth.jwt() criados como supabase_auth_admin
+-- (GoTrue tenta CREATE OR REPLACE nessas funções e precisa ser owner)
+set role supabase_auth_admin;
+
 create or replace function auth.jwt() returns jsonb language sql stable as
 $$ select coalesce(current_setting('request.jwt.claims', true)::jsonb, '{}'::jsonb) $$;
 
@@ -41,3 +44,5 @@ $$ select current_setting('request.jwt.claim.role', true) $$;
 
 create or replace function auth.email() returns text language sql stable as
 $$ select current_setting('request.jwt.claim.email', true) $$;
+
+reset role;
