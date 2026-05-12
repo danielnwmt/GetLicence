@@ -71,18 +71,25 @@ function AdminPage() {
   const [adminIds, setAdminIds] = useState<string[]>([]);
 
   const reload = useCallback(async () => {
-    const [p, l, pay, pr, ur] = await Promise.all([
-      supabase.from("products").select("*").order("created_at", { ascending: false }),
-      supabase.from("licenses").select("*, product:products(name)").order("created_at", { ascending: false }),
-      supabase.from("payments").select("*, license:licenses(license_key)").order("created_at", { ascending: false }),
-      listAdminProfilesFn(),
-      supabase.from("user_roles").select("user_id, role").eq("role", "admin"),
-    ]);
-    setProducts((p.data as Product[]) || []);
-    setLicenses((l.data as unknown as LicenseRow[]) || []);
-    setPayments((pay.data as unknown as PaymentRow[]) || []);
-    setProfiles((pr as Profile[]) || []);
-    setAdminIds(((ur.data as { user_id: string }[]) || []).map((r) => r.user_id));
+    try {
+      const [p, l, pay, pr, ur] = await Promise.all([
+        supabase.from("products").select("*").order("created_at", { ascending: false }),
+        supabase.from("licenses").select("*, product:products(name)").order("created_at", { ascending: false }),
+        supabase.from("payments").select("*, license:licenses(license_key)").order("created_at", { ascending: false }),
+        listAdminProfilesFn().catch((e) => {
+          console.error("listAdminProfiles failed:", e);
+          return [] as Profile[];
+        }),
+        supabase.from("user_roles").select("user_id, role").eq("role", "admin"),
+      ]);
+      setProducts((p.data as Product[]) || []);
+      setLicenses((l.data as unknown as LicenseRow[]) || []);
+      setPayments((pay.data as unknown as PaymentRow[]) || []);
+      setProfiles(Array.isArray(pr) ? (pr as Profile[]) : []);
+      setAdminIds(((ur.data as { user_id: string }[]) || []).map((r) => r.user_id));
+    } catch (e) {
+      console.error("Admin reload failed:", e);
+    }
   }, [listAdminProfilesFn]);
 
   useEffect(() => { if (role === "admin") reload(); }, [role, reload]);
