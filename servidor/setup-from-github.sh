@@ -2,9 +2,9 @@
 # ============================================================
 # Instalador Axis Licenças — clona do GitHub e instala tudo
 # Uso (Ubuntu 22.04 / 24.04, como root):
-#   curl -fsSL https://raw.githubusercontent.com/danielnwmt/axis-licencas/main/servidor/setup-from-github.sh | sudo bash
+#   curl -fsSL https://raw.githubusercontent.com/danielnwmt/GetLicence/main/servidor/setup-from-github.sh | sudo bash
 # Ou:
-#   wget -O- https://raw.githubusercontent.com/danielnwmt/axis-licencas/main/servidor/setup-from-github.sh | sudo bash
+#   wget -O- https://raw.githubusercontent.com/danielnwmt/GetLicence/main/servidor/setup-from-github.sh | sudo bash
 # ============================================================
 set -euo pipefail
 
@@ -12,7 +12,7 @@ if [[ $EUID -ne 0 ]]; then
   echo "Execute como root: sudo bash setup-from-github.sh"; exit 1
 fi
 
-REPO_URL="${REPO_URL:-https://github.com/danielnwmt/axis-licencas.git}"
+REPO_URL="${REPO_URL:-https://github.com/danielnwmt/GetLicence.git}"
 BRANCH="${BRANCH:-main}"
 CLONE_DIR="${CLONE_DIR:-/opt/axis-licencas-src}"
 APP_DIR="/opt/axis-licencas"
