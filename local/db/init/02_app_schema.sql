@@ -155,3 +155,34 @@ grant all on all sequences in schema public to authenticated, service_role;
 alter default privileges in schema public grant all on tables to authenticated, service_role;
 alter default privileges in schema public grant select on tables to anon;
 alter default privileges in schema public grant all on sequences to authenticated, service_role;
+
+-- ===== Automação de status da licença =====
+create or replace function public.on_payment_paid() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.status = 'paid' and (tg_op = 'INSERT' or old.status is distinct from 'paid') then
+    update public.licenses
+       set status = 'active'
+     where id = new.license_id
+       and status in ('pending','blocked')
+       and expires_at > now();
+  end if;
+  return new;
+end $$;
+drop trigger if exists trg_on_payment_paid on public.payments;
+create trigger trg_on_payment_paid after insert or update on public.payments
+  for each row execute function public.on_payment_paid();
+
+create or replace function public.refresh_license_statuses() returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  update public.licenses l set status='blocked'
+   where l.status in ('active','pending')
+     and exists (select 1 from public.payments p
+                  where p.license_id=l.id
+                    and p.status in ('pending','failed')
+                    and p.due_date is not null
+                    and p.due_date < current_date);
+  update public.licenses set status='expired'
+   where status in ('active','blocked','pending') and expires_at < now();
+end $$;
