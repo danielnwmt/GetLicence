@@ -24,10 +24,18 @@ end $$;
 grant anon, authenticated, service_role to authenticator;
 
 create schema if not exists auth authorization supabase_auth_admin;
+alter schema auth owner to supabase_auth_admin;
+grant all on schema auth to supabase_auth_admin;
 grant usage on schema auth to anon, authenticated, service_role;
 alter default privileges in schema auth grant all on tables to supabase_auth_admin;
 alter default privileges in schema auth grant all on sequences to supabase_auth_admin;
 alter default privileges in schema auth grant all on functions to supabase_auth_admin;
+
+-- Se já houve tentativa anterior, as funções podem existir com outro owner.
+alter function if exists auth.jwt() owner to supabase_auth_admin;
+alter function if exists auth.uid() owner to supabase_auth_admin;
+alter function if exists auth.role() owner to supabase_auth_admin;
+alter function if exists auth.email() owner to supabase_auth_admin;
 
 -- Helpers auth.uid() / auth.role() / auth.jwt() criados como supabase_auth_admin
 -- (GoTrue tenta CREATE OR REPLACE nessas funções e precisa ser owner)
