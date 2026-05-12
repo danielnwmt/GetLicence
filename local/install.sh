@@ -29,8 +29,10 @@ if [[ ! -f .env ]]; then
   JWT=$(openssl rand -hex 32)
   sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${PG_PASS}|" .env
   sed -i "s|^JWT_SECRET=.*|JWT_SECRET=${JWT}|" .env
-  read -rp "Email do admin inicial: " ADM_EMAIL
-  read -rsp "Senha do admin inicial: " ADM_PASS; echo
+  read -rp "Email do admin inicial [admin@getlicence.com]: " ADM_EMAIL
+  ADM_EMAIL="${ADM_EMAIL:-admin@getlicence.com}"
+  read -rsp "Senha do admin inicial [admin1234]: " ADM_PASS; echo
+  ADM_PASS="${ADM_PASS:-admin1234}"
   sed -i "s|^ADMIN_EMAIL=.*|ADMIN_EMAIL=${ADM_EMAIL}|" .env
   sed -i "s|^ADMIN_PASSWORD=.*|ADMIN_PASSWORD=${ADM_PASS}|" .env
   read -rp "URL publica (ex http://SEU-IP:8000) [http://localhost:8000]: " SITE
