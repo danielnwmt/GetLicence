@@ -1,56 +1,148 @@
-import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes, InputHTMLAttributes, LabelHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+import clsx from "clsx";
 
-export function Button({ className = "", variant = "primary", ...rest }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "danger" | "ghost" }) {
-  const styles = {
-    primary: "bg-blue-600 hover:bg-blue-700 text-white",
-    secondary: "bg-slate-200 hover:bg-slate-300 text-slate-900",
-    danger: "bg-red-600 hover:bg-red-700 text-white",
-    ghost: "bg-transparent hover:bg-slate-100 text-slate-700",
-  }[variant];
-  return <button className={`px-3 py-2 rounded-md text-sm font-medium disabled:opacity-50 ${styles} ${className}`} {...rest} />;
+type ButtonVariant = "default" | "outline" | "ghost" | "secondary" | "destructive";
+type ButtonSize = "default" | "sm" | "lg" | "icon";
+
+export function Button({
+  className,
+  variant = "default",
+  size = "default",
+  ...rest
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; size?: ButtonSize }) {
+  const variants: Record<ButtonVariant, string> = {
+    default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
+    outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+    ghost: "hover:bg-accent hover:text-accent-foreground",
+    secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+    destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+  };
+  const sizes: Record<ButtonSize, string> = {
+    default: "h-9 px-4 py-2 text-sm",
+    sm: "h-8 px-3 text-xs",
+    lg: "h-10 px-6 text-sm",
+    icon: "h-9 w-9",
+  };
+  return (
+    <button
+      className={clsx(
+        "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        variants[variant],
+        sizes[size],
+        className,
+      )}
+      {...rest}
+    />
+  );
 }
 
-export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className={`w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${props.className ?? ""}`} />;
+export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      {...props}
+      className={clsx(
+        "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+        className,
+      )}
+    />
+  );
 }
 
-export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select {...props} className={`w-full border border-slate-300 rounded-md px-3 py-2 text-sm bg-white ${props.className ?? ""}`} />;
+export function Select({ className, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
+  return (
+    <select
+      {...props}
+      className={clsx(
+        "flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+        className,
+      )}
+    />
+  );
 }
 
-export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea {...props} className={`w-full border border-slate-300 rounded-md px-3 py-2 text-sm ${props.className ?? ""}`} />;
+export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      {...props}
+      className={clsx(
+        "flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+        className,
+      )}
+    />
+  );
 }
 
-export function Field({ label, children }: { label: string; children: ReactNode }) {
-  return <label className="block"><span className="block text-xs font-medium text-slate-600 mb-1">{label}</span>{children}</label>;
+export function Label({ className, ...props }: LabelHTMLAttributes<HTMLLabelElement>) {
+  return <label {...props} className={clsx("text-sm font-medium leading-none text-foreground", className)} />;
 }
 
-export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`bg-white border border-slate-200 rounded-lg p-4 ${className}`}>{children}</div>;
+export function Field({ label, children, htmlFor }: { label: string; children: ReactNode; htmlFor?: string }) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={htmlFor}>{label}</Label>
+      {children}
+    </div>
+  );
 }
 
-export function Badge({ children, color = "slate" }: { children: ReactNode; color?: "slate" | "green" | "red" | "yellow" | "blue" }) {
-  const map = {
-    slate: "bg-slate-100 text-slate-700",
-    green: "bg-green-100 text-green-700",
-    red: "bg-red-100 text-red-700",
-    yellow: "bg-yellow-100 text-yellow-700",
-    blue: "bg-blue-100 text-blue-700",
-  }[color];
-  return <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${map}`}>{children}</span>;
+export function Card({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={clsx("rounded-xl border border-border bg-card text-card-foreground shadow-sm", className)}>
+      {children}
+    </div>
+  );
+}
+
+export function CardHeader({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={clsx("flex flex-col space-y-1.5 p-6", className)}>{children}</div>;
+}
+export function CardTitle({ children, className }: { children: ReactNode; className?: string }) {
+  return <h3 className={clsx("text-lg font-semibold leading-none tracking-tight", className)}>{children}</h3>;
+}
+export function CardDescription({ children, className }: { children: ReactNode; className?: string }) {
+  return <p className={clsx("text-sm text-muted-foreground", className)}>{children}</p>;
+}
+export function CardContent({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={clsx("p-6 pt-0", className)}>{children}</div>;
+}
+
+type BadgeColor = "slate" | "green" | "red" | "yellow" | "blue" | "outline";
+export function Badge({ children, color = "slate", className }: { children: ReactNode; color?: BadgeColor; className?: string }) {
+  const map: Record<BadgeColor, string> = {
+    slate: "bg-muted text-muted-foreground border-border",
+    green: "bg-success/15 text-success border-success/30",
+    red: "bg-destructive/15 text-destructive border-destructive/30",
+    yellow: "bg-warning/15 text-warning-foreground border-warning/30",
+    blue: "bg-primary/15 text-primary border-primary/30",
+    outline: "border-border text-foreground",
+  };
+  return (
+    <span className={clsx("inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium", map[color], className)}>
+      {children}
+    </span>
+  );
 }
 
 export function Modal({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: ReactNode }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 grid place-items-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="px-4 py-3 border-b flex items-center justify-between">
-          <h3 className="font-semibold">{title}</h3>
-          <button className="text-slate-400 hover:text-slate-700" onClick={onClose}>✕</button>
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-foreground/40 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-2xl max-h-[90vh] overflow-auto rounded-xl border border-border bg-card text-card-foreground shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+          <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
+          <button
+            className="text-muted-foreground hover:text-foreground transition-colors"
+            onClick={onClose}
+            aria-label="Fechar"
+          >✕</button>
         </div>
-        <div className="p-4">{children}</div>
+        <div className="p-6">{children}</div>
       </div>
     </div>
   );
@@ -67,3 +159,13 @@ export function fmtDate(v: string | null | undefined) {
   if (Number.isNaN(d.getTime())) return "—";
   return d.toLocaleDateString("pt-BR");
 }
+
+export const statusLabel: Record<string, string> = {
+  active: "Ativa",
+  pending: "Pendente",
+  expired: "Expirada",
+  cancelled: "Cancelada",
+  paid: "Pago",
+  failed: "Falhou",
+  refunded: "Estornado",
+};
