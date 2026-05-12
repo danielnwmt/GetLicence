@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { fetchCep } from "@/lib/cep";
 import { KeyRound, User } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/account")({
@@ -186,7 +187,14 @@ function AccountPage() {
           <div className="pt-2 text-xs uppercase tracking-wide text-muted-foreground">Endereço</div>
           <div className="grid gap-3 md:grid-cols-3">
             <div className="space-y-2"><Label>CEP</Label>
-              <Input value={profile.address_zip} onChange={(e) => setProfile({ ...profile, address_zip: e.target.value })} />
+              <Input
+                value={profile.address_zip}
+                onChange={(e) => setProfile({ ...profile, address_zip: e.target.value })}
+                onBlur={async (e) => {
+                  const r = await fetchCep(e.target.value);
+                  if (r) setProfile((p) => ({ ...p, address_street: r.street || p.address_street, address_neighborhood: r.neighborhood || p.address_neighborhood, address_city: r.city || p.address_city, address_state: r.state || p.address_state }));
+                }}
+              />
             </div>
             <div className="space-y-2 md:col-span-2"><Label>Rua / Logradouro</Label>
               <Input value={profile.address_street} onChange={(e) => setProfile({ ...profile, address_street: e.target.value })} />

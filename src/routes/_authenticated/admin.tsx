@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Package, KeyRound, CreditCard, Users, DollarSign, Pencil, Trash2, CheckCircle2, Landmark, Copy, FileText, ExternalLink, XCircle } from "lucide-react";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
+import { fetchCep } from "@/lib/cep";
 import { toast } from "sonner";
 
 type AdminTab = "licenses" | "customers" | "payments" | "products" | "settings";
@@ -772,7 +773,14 @@ function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; l
               <div className="pt-2 text-xs uppercase tracking-wide text-muted-foreground">Endereço</div>
               <div className="grid gap-3 md:grid-cols-3">
                 <div className="space-y-2"><Label>CEP</Label>
-                  <Input value={form.address_zip} onChange={(e) => setForm({ ...form, address_zip: e.target.value })} />
+                  <Input
+                    value={form.address_zip}
+                    onChange={(e) => setForm({ ...form, address_zip: e.target.value })}
+                    onBlur={async (e) => {
+                      const r = await fetchCep(e.target.value);
+                      if (r) setForm((f) => ({ ...f, address_street: r.street || f.address_street, address_neighborhood: r.neighborhood || f.address_neighborhood, address_city: r.city || f.address_city, address_state: r.state || f.address_state }));
+                    }}
+                  />
                 </div>
                 <div className="space-y-2 md:col-span-2"><Label>Rua / Logradouro</Label>
                   <Input value={form.address_street} onChange={(e) => setForm({ ...form, address_street: e.target.value })} />
