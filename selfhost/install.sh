@@ -90,11 +90,19 @@ else
 fi
 
 cd "${APP_DIR}"
-echo "==> Instalando dependências npm..."
+echo "==> Instalando dependências npm (backend)..."
 npm install --omit=dev --no-audit --no-fund
-echo "==> Compilando TypeScript..."
+echo "==> Compilando TypeScript (backend)..."
 npm install --no-audit --no-fund --save-dev typescript @types/node
 npx tsc -p tsconfig.json
+
+if [[ -d "${APP_DIR}/web-src" ]]; then
+  echo "==> Buildando frontend (web-src/ -> web/)..."
+  cd "${APP_DIR}/web-src"
+  npm install --no-audit --no-fund
+  npm run build
+  cd "${APP_DIR}"
+fi
 
 echo "==> Aplicando schema do banco..."
 node dist/migrate.js

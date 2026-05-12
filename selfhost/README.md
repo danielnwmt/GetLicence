@@ -91,12 +91,15 @@ Autenticação por cookie (`axis_session`) ou header `Authorization: Bearer <tok
 
 ## Frontend
 
-Esta entrega traz **o backend completo**. O frontend (React) ainda é a versão Lovable que conversa com Supabase — ele será adaptado no próximo passo para falar com `/api/*` deste pacote, e os arquivos buildados serão copiados para `selfhost/web/` (servidos automaticamente pelo `server.ts` quando presentes).
+O frontend (React + Vite + Tailwind) fica em `selfhost/web-src/` e é **compilado automaticamente pelo `install.sh`** para `selfhost/web/`, que o Express serve na mesma porta 3000.
 
-Hoje você já consegue:
-- Subir o backend num Ubuntu.
-- Testar tudo via `curl` ou Insomnia/Postman.
-- Validar fluxo de auth, cadastro de cliente, criação de licença/pagamento.
+Páginas incluídas:
+- `/login` — login email + senha
+- `/admin` — abas: Clientes, Produtos, Licenças, Pagamentos, Config pagamentos
+- `/dashboard` — minhas licenças e pagamentos (cliente)
+- `/account` — atualizar perfil e trocar senha
+
+Para desenvolver localmente: `cd selfhost/web-src && npm install && npm run dev` (proxy do `/api` aponta para o backend em `127.0.0.1:3000`).
 
 ## Estrutura
 
@@ -117,13 +120,28 @@ selfhost/
     ├── middleware.ts     # requireAuth / requireAdmin
     ├── migrate.ts
     ├── seed-admin.ts
-    ├── lib/cpf-cnpj.ts
-    └── routes/
-        ├── auth.ts
-        ├── profile.ts
-        ├── customers.ts
-        ├── products.ts
-        ├── licenses.ts
-        ├── payments.ts
-        └── payment-settings.ts
+│   ├── lib/cpf-cnpj.ts
+│   └── routes/
+│       ├── auth.ts
+│       ├── profile.ts
+│       ├── customers.ts
+│       ├── products.ts
+│       ├── licenses.ts
+│       ├── payments.ts
+│       └── payment-settings.ts
+└── web-src/              # frontend React (Vite + Tailwind)
+    ├── package.json
+    ├── vite.config.ts
+    ├── index.html
+    └── src/
+        ├── main.tsx
+        ├── App.tsx
+        ├── api.ts        # cliente fetch para /api/*
+        ├── auth.tsx      # provider de sessão
+        ├── ui.tsx        # componentes (botão, input, modal, badge…)
+        └── pages/
+            ├── Login.tsx
+            ├── Admin.tsx
+            ├── Dashboard.tsx
+            └── Account.tsx
 ```

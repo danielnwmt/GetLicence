@@ -21,6 +21,14 @@ npm install --omit=dev --no-audit --no-fund
 npm install --no-audit --no-fund --save-dev typescript @types/node
 npx tsc -p tsconfig.json
 
+if [[ -d "${APP_DIR}/web-src" ]]; then
+  echo "==> Buildando frontend..."
+  cd "${APP_DIR}/web-src"
+  npm install --no-audit --no-fund
+  npm run build
+  cd "${APP_DIR}"
+fi
+
 echo "==> Aplicando migrations..."
 node dist/migrate.js
 
