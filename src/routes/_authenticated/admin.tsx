@@ -400,7 +400,7 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
       user_id: form.user_id,
       product_id: form.product_id,
       plan: form.plan as "monthly" | "yearly",
-      status: form.status as "active" | "pending" | "expired" | "cancelled",
+      status: form.status as "active" | "pending" | "expired" | "cancelled" | "blocked",
       expires_at: expires.toISOString(),
     }).select().single();
     if (error) return toast.error(error.message);
@@ -423,7 +423,7 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
   };
 
   const setStatus = async (id: string, status: string) => {
-    const { error } = await supabase.from("licenses").update({ status: status as "active" | "pending" | "expired" | "cancelled" }).eq("id", id);
+    const { error } = await supabase.from("licenses").update({ status: status as "active" | "pending" | "expired" | "cancelled" | "blocked" }).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Status atualizado");
     onChange();
@@ -510,6 +510,7 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
                       <SelectContent>
                         <SelectItem value="active">Ativa</SelectItem>
                         <SelectItem value="pending">Pendente</SelectItem>
+                        <SelectItem value="blocked">Bloqueada</SelectItem>
                         <SelectItem value="expired">Expirada</SelectItem>
                         <SelectItem value="cancelled">Cancelada</SelectItem>
                       </SelectContent>

@@ -70,6 +70,7 @@ function Dashboard() {
   const statusVariant: Record<string, string> = {
     active: "bg-success/15 text-success border-success/30",
     pending: "bg-warning/15 text-warning-foreground border-warning/30",
+    blocked: "bg-destructive/15 text-destructive border-destructive/30",
     expired: "bg-muted text-muted-foreground border-border",
     cancelled: "bg-destructive/15 text-destructive border-destructive/30",
     paid: "bg-success/15 text-success border-success/30",
