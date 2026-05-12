@@ -2,7 +2,8 @@
 create extension if not exists pgcrypto;
 
 do $$ begin create type public.app_role as enum ('admin','client'); exception when duplicate_object then null; end $$;
-do $$ begin create type public.license_status as enum ('pending','active','expired','cancelled'); exception when duplicate_object then null; end $$;
+do $$ begin create type public.license_status as enum ('pending','active','expired','cancelled','blocked'); exception when duplicate_object then null; end $$;
+do $$ begin alter type public.license_status add value if not exists 'blocked'; exception when others then null; end $$;
 do $$ begin create type public.license_plan as enum ('monthly','yearly'); exception when duplicate_object then null; end $$;
 do $$ begin create type public.payment_status as enum ('pending','paid','failed','refunded'); exception when duplicate_object then null; end $$;
 do $$ begin create type public.payment_provider as enum ('asaas','sicredi','sicoob','manual'); exception when duplicate_object then null; end $$;
@@ -13,9 +14,11 @@ create table if not exists public.profiles (
   full_name text, email text, cpf_cnpj text, phone text,
   address_zip text, address_street text, address_number text, address_complement text,
   address_neighborhood text, address_city text, address_state text,
+  must_change_password boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+alter table public.profiles add column if not exists must_change_password boolean not null default false;
 
 create table if not exists public.user_roles (
   id uuid primary key default gen_random_uuid(),
@@ -152,3 +155,34 @@ grant all on all sequences in schema public to authenticated, service_role;
 alter default privileges in schema public grant all on tables to authenticated, service_role;
 alter default privileges in schema public grant select on tables to anon;
 alter default privileges in schema public grant all on sequences to authenticated, service_role;
+
+-- ===== Automação de status da licença =====
+create or replace function public.on_payment_paid() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.status = 'paid' and (tg_op = 'INSERT' or old.status is distinct from 'paid') then
+    update public.licenses
+       set status = 'active'
+     where id = new.license_id
+       and status in ('pending','blocked')
+       and expires_at > now();
+  end if;
+  return new;
+end $$;
+drop trigger if exists trg_on_payment_paid on public.payments;
+create trigger trg_on_payment_paid after insert or update on public.payments
+  for each row execute function public.on_payment_paid();
+
+create or replace function public.refresh_license_statuses() returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  update public.licenses l set status='blocked'
+   where l.status in ('active','pending')
+     and exists (select 1 from public.payments p
+                  where p.license_id=l.id
+                    and p.status in ('pending','failed')
+                    and p.due_date is not null
+                    and p.due_date < current_date);
+  update public.licenses set status='expired'
+   where status in ('active','blocked','pending') and expires_at < now();
+end $$;
