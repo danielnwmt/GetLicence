@@ -4,6 +4,7 @@ import { createReadStream, existsSync, statSync } from "node:fs";
 import process from "node:process";
 import { Readable } from "node:stream";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 const host = process.env.HOST || "127.0.0.1";
 const port = Number(process.env.PORT || 3000);
@@ -27,11 +28,19 @@ const mimeTypes = {
 };
 
 async function loadApp() {
-  const entry = await import("../.output/server/index.mjs");
+  const entryFile = ["dist/server/index.js", ".output/server/index.mjs", ".output/server/index.js"]
+    .map((file) => path.resolve(process.cwd(), file))
+    .find((file) => existsSync(file));
+
+  if (!entryFile) {
+    throw new Error("Build inválido: entrada do servidor não encontrada. Rode bun run build novamente.");
+  }
+
+  const entry = await import(pathToFileURL(entryFile).href);
   const app = entry.default ?? entry;
 
   if (!app || typeof app.fetch !== "function") {
-    throw new Error("Build inválido: .output/server/index.mjs não exporta fetch(). Rode bun run build novamente.");
+    throw new Error(`Build inválido: ${path.relative(process.cwd(), entryFile)} não exporta fetch(). Rode bun run build novamente.`);
   }
 
   return app;
