@@ -873,6 +873,7 @@ function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; l
       <Card className="overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left"><tr>
+            <th className="p-3 font-medium w-16">ID</th>
             <th className="p-3 font-medium">Nome</th>
             <th className="p-3 font-medium">E-mail</th>
             <th className="p-3 font-medium">Cidade</th>
@@ -884,6 +885,7 @@ function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; l
               const count = licenses.filter((l) => l.user_id === p.user_id).length;
               return (
                 <tr key={p.user_id} className="border-t border-border">
+                  <td className="p-3 font-mono text-xs text-muted-foreground">#{p.customer_number ?? "—"}</td>
                   <td className="p-3 font-medium">{p.full_name || "—"}</td>
                   <td className="p-3">{p.email}</td>
                   <td className="p-3">{p.address_city || "—"}</td>
@@ -892,7 +894,7 @@ function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; l
                 </tr>
               );
             })}
-            {profiles.length === 0 && <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">Nenhum cliente.</td></tr>}
+            {profiles.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Nenhum cliente.</td></tr>}
           </tbody>
         </table>
       </Card>
