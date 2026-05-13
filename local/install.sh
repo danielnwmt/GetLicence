@@ -355,12 +355,12 @@ EOS
 cat >/opt/getlicence/uninstall.sh <<EOS
 #!/usr/bin/env bash
 set -e
-systemctl disable --now getlicence-app getlicence-storage getlicence-auth getlicence-postgrest || true
+systemctl disable --now getlicence-app getlicence-auth getlicence-postgrest || true
 rm -f /etc/systemd/system/getlicence-*.service /etc/getlicence-*.env /etc/getlicence-*.conf
 rm -f /etc/nginx/sites-enabled/getlicence.conf /etc/nginx/sites-available/getlicence.conf
 systemctl reload nginx || true
 sudo -u postgres dropdb --if-exists ${DB_NAME}
-rm -rf /opt/getlicence /opt/getlicence-storage /var/lib/getlicence-storage
+rm -rf /opt/getlicence
 echo "✓ Removido"
 EOS
 chmod +x /opt/getlicence/*.sh
