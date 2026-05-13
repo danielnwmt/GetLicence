@@ -21,6 +21,7 @@ async function asaasFetch(env: string, apiKey: string, path: string, init?: Requ
     ...init,
     headers: {
       "Content-Type": "application/json",
+      "User-Agent": "Lovable-GetLicence/1.0",
       access_token: apiKey,
       ...(init?.headers ?? {}),
     },
