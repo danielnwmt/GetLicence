@@ -531,21 +531,21 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
 
   const create = async () => {
     if (!form.user_id || !form.product_id) return toast.error("Selecione cliente e produto");
-    const months = form.plan === "yearly" ? 12 : 1;
+    const months = form.plan === "yearly" ? 12 : form.plan === "semestral" ? 6 : 1;
     const expires = new Date();
     expires.setMonth(expires.getMonth() + months);
     const product = products.find((p) => p.id === form.product_id);
     const { data: lic, error } = await supabase.from("licenses").insert({
       user_id: form.user_id,
       product_id: form.product_id,
-      plan: form.plan as "monthly" | "yearly",
+      plan: form.plan as "monthly" | "semestral" | "yearly",
       status: form.status as "active" | "pending" | "expired" | "cancelled" | "blocked",
       expires_at: expires.toISOString(),
     }).select().single();
     if (error) return toast.error(error.message);
 
     if (form.auto_pay && product) {
-      const amount = form.plan === "yearly" ? Number(product.price_yearly) : Number(product.price_monthly);
+      const amount = form.plan === "yearly" ? Number(product.price_yearly) : form.plan === "semestral" ? Number(product.price_semestral) : Number(product.price_monthly);
       if (amount > 0) {
         await supabase.from("payments").insert({
           user_id: form.user_id,
