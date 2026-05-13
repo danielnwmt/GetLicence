@@ -313,6 +313,7 @@ cat >/opt/getlicence/update.sh <<'EOS'
 set -e
 cd /opt/getlicence
 if [ -d .git ] && command -v git >/dev/null 2>&1; then
+  git config --global --add safe.directory /opt/getlicence
   git pull --ff-only
 fi
 chown -R getlicence:getlicence /opt/getlicence
