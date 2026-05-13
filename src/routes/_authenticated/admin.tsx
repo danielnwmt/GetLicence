@@ -715,30 +715,36 @@ function PaymentsTab({ payments, licenses, profiles, onChange }: { payments: Pay
           </DialogContent>
         </Dialog>
       </div>
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder="Buscar cliente por nome, e-mail, CPF/CNPJ ou licença..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-md"
+        />
+      </div>
       <Card className="overflow-hidden">
         <table className="w-full text-sm">
         <thead className="bg-muted/50 text-left"><tr>
-          <th className="p-3 font-medium">Data</th><th className="p-3 font-medium">Licença</th>
+          <th className="p-3 font-medium">Data</th>
+          <th className="p-3 font-medium">Cliente</th>
+          <th className="p-3 font-medium">Licença</th>
           <th className="p-3 font-medium">Valor</th><th className="p-3 font-medium">Pago em</th>
           <th className="p-3 font-medium">Status</th><th className="p-3 font-medium">Boleto</th><th className="p-3"></th>
         </tr></thead>
         <tbody>
-          {payments.map((p) => (
+          {filteredPayments.map((p) => {
+            const prof = profileById.get(p.user_id);
+            const statusVariant = p.status === "paid" ? "default" : p.status === "failed" ? "destructive" : "secondary";
+            return (
             <tr key={p.id} className="border-t border-border">
               <td className="p-3">{formatDate(p.created_at)}</td>
+              <td className="p-3">{prof?.full_name || prof?.email || "—"}</td>
               <td className="p-3 font-mono text-xs">{p.license?.license_key ?? "—"}</td>
               <td className="p-3 font-medium">{formatBRL(Number(p.amount))}</td>
               <td className="p-3">{p.paid_at ? formatDate(p.paid_at) : "—"}</td>
               <td className="p-3">
-                <Select value={p.status} onValueChange={(v) => setStatus(p.id, v)}>
-                  <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pendente</SelectItem>
-                    <SelectItem value="paid">Pago</SelectItem>
-                    <SelectItem value="failed">Falhou</SelectItem>
-                    <SelectItem value="refunded">Reembolsado</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Badge variant={statusVariant}>{statusLabel[p.status] ?? p.status}</Badge>
               </td>
               <td className="p-3">
                 {p.boleto_url ? (
@@ -760,15 +766,11 @@ function PaymentsTab({ payments, licenses, profiles, onChange }: { payments: Pay
                     <XCircle className="mr-1 h-3.5 w-3.5" /> {cancelingId === p.id ? "Cancelando..." : "Cancelar boleto"}
                   </Button>
                 )}
-                {p.status !== "paid" && (
-                  <Button size="sm" variant="ghost" onClick={() => markPaid(p.id)}>
-                    <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Pago
-                  </Button>
-                )}
               </td>
             </tr>
-          ))}
-          {payments.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Nenhum pagamento.</td></tr>}
+            );
+          })}
+          {filteredPayments.length === 0 && <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Nenhum pagamento.</td></tr>}
         </tbody>
       </table>
     </Card>
