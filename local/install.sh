@@ -194,56 +194,8 @@ ANON_KEY=$(mkjwt anon)
 SERVICE_KEY=$(mkjwt service_role)
 ok "Chaves JWT geradas"
 
-# ---------- 6b. Storage API (Supabase Storage) ----------
-if [[ ! -d "$STORAGE_DIR/node_modules" ]]; then
-  log "Baixando Storage API ${STORAGE_VERSION}"
-  rm -rf "$STORAGE_DIR"
-  mkdir -p "$STORAGE_DIR"
-  curl -fsSL "https://github.com/supabase/storage/archive/refs/tags/${STORAGE_VERSION}.tar.gz" \
-    | tar -xz --strip-components=1 -C "$STORAGE_DIR"
-  ( cd "$STORAGE_DIR" && npm ci --omit=dev --silent && npm run build --silent ) || \
-    ( cd "$STORAGE_DIR" && npm install --silent && npm run build --silent )
-fi
-mkdir -p "$STORAGE_DATA_DIR"
-chown -R "$APP_USER:$APP_USER" "$STORAGE_DIR" "$STORAGE_DATA_DIR"
+# Storage API removido — não há buckets em uso. Pode ser adicionado depois se necessário.
 
-cat >/etc/getlicence-storage.env <<EOF
-SERVER_PORT=5555
-SERVER_HOST=127.0.0.1
-ANON_KEY=${ANON_KEY}
-SERVICE_KEY=${SERVICE_KEY}
-TENANT_ID=getlicence
-REGION=local
-POSTGREST_URL=http://127.0.0.1:3001
-PGRST_JWT_SECRET=${JWT_SECRET}
-AUTH_JWT_SECRET=${JWT_SECRET}
-DATABASE_URL=postgres://supabase_storage_admin:${PG_PASS}@127.0.0.1:5432/${DB_NAME}
-DATABASE_POOL_URL=postgres://supabase_storage_admin:${PG_PASS}@127.0.0.1:5432/${DB_NAME}
-PGOPTIONS=-c search_path=storage,public
-DB_INSTALL_ROLES=false
-STORAGE_BACKEND=file
-FILE_STORAGE_BACKEND_PATH=${STORAGE_DATA_DIR}
-STORAGE_FILE_BACKEND_PATH=${STORAGE_DATA_DIR}
-GLOBAL_S3_BUCKET=getlicence
-FILE_SIZE_LIMIT=52428800
-ENABLE_IMAGE_TRANSFORMATION=false
-EOF
-chmod 600 /etc/getlicence-storage.env
-
-cat >/etc/systemd/system/getlicence-storage.service <<EOF
-[Unit]
-Description=GetLicence Storage API
-After=postgresql.service getlicence-postgrest.service
-Requires=postgresql.service
-[Service]
-WorkingDirectory=${STORAGE_DIR}
-EnvironmentFile=/etc/getlicence-storage.env
-ExecStart=/usr/bin/node ${STORAGE_DIR}/dist/server.js
-Restart=always
-User=${APP_USER}
-[Install]
-WantedBy=multi-user.target
-EOF
 # ---------- 7. app (frontend) ----------
 log "Copiando aplicação para ${APP_DIR}"
 mkdir -p "$APP_DIR"
@@ -273,8 +225,8 @@ sudo -u "$APP_USER" bash -lc "cd $APP_DIR && bun run build" >/dev/null
 cat >/etc/systemd/system/getlicence-app.service <<EOF
 [Unit]
 Description=GetLicence App (TanStack)
-After=network.target postgresql.service getlicence-postgrest.service getlicence-auth.service getlicence-storage.service
-Requires=postgresql.service getlicence-postgrest.service getlicence-auth.service getlicence-storage.service
+After=network.target postgresql.service getlicence-postgrest.service getlicence-auth.service
+Requires=postgresql.service getlicence-postgrest.service getlicence-auth.service
 [Service]
 WorkingDirectory=${APP_DIR}
 EnvironmentFile=${APP_DIR}/.env
@@ -309,16 +261,6 @@ server {
     proxy_set_header Authorization \$http_authorization;
     proxy_set_header apikey \$http_apikey;
   }
-  location /storage/v1/ {
-    proxy_pass http://127.0.0.1:5555/;
-    proxy_set_header Host \$host;
-    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto \$scheme;
-    proxy_set_header Authorization \$http_authorization;
-    proxy_set_header apikey \$http_apikey;
-    proxy_request_buffering off;
-    client_max_body_size 50m;
-  }
   location / {
     proxy_pass http://127.0.0.1:3000;
     proxy_http_version 1.1;
@@ -339,8 +281,11 @@ systemctl reload nginx
 
 # ---------- 9. start services ----------
 systemctl daemon-reload
-systemctl enable --now getlicence-postgrest getlicence-auth getlicence-storage getlicence-app >/dev/null
-sleep 4
+systemctl enable --now getlicence-postgrest getlicence-auth getlicence-app >/dev/null
+for i in $(seq 1 30); do
+  curl -fsS http://127.0.0.1:3000 >/dev/null 2>&1 && break
+  sleep 2
+done
 if ! curl -fsS http://127.0.0.1:3000 >/dev/null; then
   warn "App não respondeu na porta 3000. Últimos logs:"
   journalctl -u getlicence-app -n 80 --no-pager || true
@@ -400,7 +345,7 @@ if [ -n "$ADMIN_UID" ]; then
   sudo -u postgres psql -d getlicence -c "insert into public.user_roles(user_id, role) values ('${ADMIN_UID}','admin') on conflict (user_id, role) do nothing;" >/dev/null
 fi
 sudo -u getlicence bash -lc 'cd /opt/getlicence && bun install --silent && bun run build'
-systemctl restart getlicence-postgrest getlicence-auth getlicence-storage getlicence-app
+systemctl restart getlicence-postgrest getlicence-auth getlicence-app
 echo "✓ App atualizado"
 EOS
 cat >/opt/getlicence/backup.sh <<EOS
@@ -413,12 +358,12 @@ EOS
 cat >/opt/getlicence/uninstall.sh <<EOS
 #!/usr/bin/env bash
 set -e
-systemctl disable --now getlicence-app getlicence-storage getlicence-auth getlicence-postgrest || true
+systemctl disable --now getlicence-app getlicence-auth getlicence-postgrest || true
 rm -f /etc/systemd/system/getlicence-*.service /etc/getlicence-*.env /etc/getlicence-*.conf
 rm -f /etc/nginx/sites-enabled/getlicence.conf /etc/nginx/sites-available/getlicence.conf
 systemctl reload nginx || true
 sudo -u postgres dropdb --if-exists ${DB_NAME}
-rm -rf /opt/getlicence /opt/getlicence-storage /var/lib/getlicence-storage
+rm -rf /opt/getlicence
 echo "✓ Removido"
 EOS
 chmod +x /opt/getlicence/*.sh
