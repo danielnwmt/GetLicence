@@ -310,6 +310,7 @@ cat >/opt/getlicence/update.sh <<'EOS'
 #!/usr/bin/env bash
 set -e
 cd /opt/getlicence
+sudo -u postgres psql -v ON_ERROR_STOP=1 -d getlicence -f /opt/getlicence/local/db/init/02_app_schema.sql >/dev/null
 sudo -u getlicence bun install --silent
 sudo -u getlicence bun run build
 systemctl restart getlicence-app
