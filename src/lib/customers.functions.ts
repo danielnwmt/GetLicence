@@ -96,7 +96,7 @@ export const listAdminProfiles = createServerFn({ method: "GET" })
     );
 
     const [{ data: profiles, error: profilesError }, { data: usersData, error: usersError }] = await Promise.all([
-      admin.from("profiles").select("user_id, full_name, email, address_city, address_state, customer_number"),
+      admin.from("profiles").select("user_id, full_name, email, address_city, address_state, customer_number, cpf_cnpj, phone, address_zip, address_street, address_number, address_complement, address_neighborhood"),
       admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
     ]);
 
@@ -112,8 +112,74 @@ export const listAdminProfiles = createServerFn({ method: "GET" })
         customer_number: profile?.customer_number ?? null,
         full_name: profile?.full_name ?? (typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null),
         email: profile?.email ?? user.email ?? null,
+        cpf_cnpj: profile?.cpf_cnpj ?? null,
+        phone: profile?.phone ?? null,
+        address_zip: profile?.address_zip ?? null,
+        address_street: profile?.address_street ?? null,
+        address_number: profile?.address_number ?? null,
+        address_complement: profile?.address_complement ?? null,
+        address_neighborhood: profile?.address_neighborhood ?? null,
         address_city: profile?.address_city ?? null,
         address_state: profile?.address_state ?? null,
       };
     });
+  });
+
+const updateSchema = z.object({
+  user_id: z.string().uuid(),
+  email: z.string().email().optional(),
+  password: z.string().min(6).optional().or(z.literal("")),
+  full_name: z.string().min(1),
+  cpf_cnpj: z.string().min(11),
+  phone: z.string().optional().nullable(),
+  address_zip: z.string().optional().nullable(),
+  address_street: z.string().optional().nullable(),
+  address_number: z.string().optional().nullable(),
+  address_complement: z.string().optional().nullable(),
+  address_neighborhood: z.string().optional().nullable(),
+  address_city: z.string().optional().nullable(),
+  address_state: z.string().optional().nullable(),
+});
+
+export const updateCustomer = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => updateSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Response("Forbidden", { status: 403 });
+
+    const admin = createClient<Database>(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false, autoRefreshToken: false } }
+    );
+
+    const authUpdate: { email?: string; password?: string } = {};
+    if (data.email) authUpdate.email = data.email;
+    if (data.password && data.password.length >= 6) authUpdate.password = data.password;
+    if (Object.keys(authUpdate).length > 0) {
+      const { error } = await admin.auth.admin.updateUserById(data.user_id, authUpdate);
+      if (error) throw new Response(error.message, { status: 400 });
+    }
+
+    const { error: pErr } = await admin.from("profiles").update({
+      full_name: data.full_name,
+      email: data.email ?? undefined,
+      cpf_cnpj: data.cpf_cnpj.replace(/\D/g, ""),
+      phone: data.phone ?? null,
+      address_zip: data.address_zip ?? null,
+      address_street: data.address_street ?? null,
+      address_number: data.address_number ?? null,
+      address_complement: data.address_complement ?? null,
+      address_neighborhood: data.address_neighborhood ?? null,
+      address_city: data.address_city ?? null,
+      address_state: data.address_state ?? null,
+    }).eq("user_id", data.user_id);
+    if (pErr) throw new Response(pErr.message, { status: 400 });
+
+    return { ok: true };
   });
