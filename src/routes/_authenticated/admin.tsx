@@ -455,7 +455,30 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                 </div>
                 <div className="text-xs text-muted-foreground">Custo total: {formatBRL(totalCost)}</div>
               </div>
-              <div className="space-y-2"><Label>Margem de lucro (%)</Label><Input type="number" step="0.1" value={form.profit_margin} onChange={(e) => setForm({ ...form, profit_margin: e.target.value })} /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Margem de lucro (%)</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={form.profit_margin}
+                    onChange={(e) => setForm({ ...form, profit_margin: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Preço de venda (R$)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={form.price_monthly}
+                    onChange={(e) => {
+                      const price = Number(e.target.value) || 0;
+                      const newMargin = totalCost > 0 ? +(((price / totalCost) - 1) * 100).toFixed(2) : 0;
+                      setForm({ ...form, price_monthly: e.target.value, profit_margin: String(newMargin) });
+                    }}
+                  />
+                </div>
+              </div>
               <div className="rounded-md bg-muted/50 p-3 space-y-1 text-sm">
                 <div className="flex justify-between"><span className="text-muted-foreground">Preço mensal calculado</span><span className="font-semibold">{formatBRL(computedMonthly)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Preço anual (10% desc.)</span><span className="font-semibold">{formatBRL(computedYearly)}</span></div>
