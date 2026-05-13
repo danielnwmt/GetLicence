@@ -17,6 +17,7 @@ import { Route as AuthenticatedChangePasswordRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as ApiPublicWebhooksProviderRouteImport } from './routes/api/public/webhooks/$provider'
+import { Route as ApiPublicLicenseCheckRouteImport } from './routes/api/public/license/check'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -59,6 +60,11 @@ const ApiPublicWebhooksProviderRoute =
     path: '/api/public/webhooks/$provider',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicLicenseCheckRoute = ApiPublicLicenseCheckRouteImport.update({
+  id: '/api/public/license/check',
+  path: '/api/public/license/check',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/change-password': typeof AuthenticatedChangePasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/api/public/license/check': typeof ApiPublicLicenseCheckRoute
   '/api/public/webhooks/$provider': typeof ApiPublicWebhooksProviderRoute
 }
 export interface FileRoutesByTo {
@@ -76,6 +83,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/change-password': typeof AuthenticatedChangePasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/api/public/license/check': typeof ApiPublicLicenseCheckRoute
   '/api/public/webhooks/$provider': typeof ApiPublicWebhooksProviderRoute
 }
 export interface FileRoutesById {
@@ -87,6 +95,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/change-password': typeof AuthenticatedChangePasswordRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/api/public/license/check': typeof ApiPublicLicenseCheckRoute
   '/api/public/webhooks/$provider': typeof ApiPublicWebhooksProviderRoute
 }
 export interface FileRouteTypes {
@@ -98,6 +107,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/change-password'
     | '/dashboard'
+    | '/api/public/license/check'
     | '/api/public/webhooks/$provider'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/change-password'
     | '/dashboard'
+    | '/api/public/license/check'
     | '/api/public/webhooks/$provider'
   id:
     | '__root__'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/change-password'
     | '/_authenticated/dashboard'
+    | '/api/public/license/check'
     | '/api/public/webhooks/$provider'
   fileRoutesById: FileRoutesById
 }
@@ -124,6 +136,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicLicenseCheckRoute: typeof ApiPublicLicenseCheckRoute
   ApiPublicWebhooksProviderRoute: typeof ApiPublicWebhooksProviderRoute
 }
 
@@ -185,6 +198,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebhooksProviderRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/license/check': {
+      id: '/api/public/license/check'
+      path: '/api/public/license/check'
+      fullPath: '/api/public/license/check'
+      preLoaderRoute: typeof ApiPublicLicenseCheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -210,6 +230,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicLicenseCheckRoute: ApiPublicLicenseCheckRoute,
   ApiPublicWebhooksProviderRoute: ApiPublicWebhooksProviderRoute,
 }
 export const routeTree = rootRouteImport

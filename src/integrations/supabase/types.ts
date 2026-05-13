@@ -16,10 +16,14 @@ export type Database = {
     Tables: {
       licenses: {
         Row: {
+          activated_at: string | null
           auto_renew: boolean
           created_at: string
+          device_hostname: string | null
+          device_ip: string | null
           expires_at: string
           id: string
+          last_seen_at: string | null
           license_key: string
           notes: string | null
           plan: Database["public"]["Enums"]["license_plan"]
@@ -32,10 +36,14 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          activated_at?: string | null
           auto_renew?: boolean
           created_at?: string
+          device_hostname?: string | null
+          device_ip?: string | null
           expires_at: string
           id?: string
+          last_seen_at?: string | null
           license_key?: string
           notes?: string | null
           plan?: Database["public"]["Enums"]["license_plan"]
@@ -48,10 +56,14 @@ export type Database = {
           user_id: string
         }
         Update: {
+          activated_at?: string | null
           auto_renew?: boolean
           created_at?: string
+          device_hostname?: string | null
+          device_ip?: string | null
           expires_at?: string
           id?: string
+          last_seen_at?: string | null
           license_key?: string
           notes?: string | null
           plan?: Database["public"]["Enums"]["license_plan"]
@@ -275,6 +287,7 @@ export type Database = {
           address_zip: string | null
           cpf_cnpj: string | null
           created_at: string
+          customer_number: number
           email: string | null
           full_name: string | null
           id: string
@@ -293,6 +306,7 @@ export type Database = {
           address_zip?: string | null
           cpf_cnpj?: string | null
           created_at?: string
+          customer_number?: number
           email?: string | null
           full_name?: string | null
           id?: string
@@ -311,6 +325,7 @@ export type Database = {
           address_zip?: string | null
           cpf_cnpj?: string | null
           created_at?: string
+          customer_number?: number
           email?: string | null
           full_name?: string | null
           id?: string

@@ -70,8 +70,8 @@ export function AppSidebar({
             <KeyRound className="h-4 w-4" />
           </div>
           {!collapsed && (
-            <span className="text-base">
-              Get<span className="text-primary">Licence</span>
+            <span className="text-base font-bold">
+              Get<span className="text-foreground">Licence</span>
             </span>
           )}
         </Link>

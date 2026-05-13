@@ -35,10 +35,11 @@ export const Route = createFileRoute("/_authenticated/admin")({
 });
 
 interface Product { id: string; name: string; description: string | null; price_monthly: number; price_yearly: number; active: boolean; cost_vps?: number; cost_storage?: number; cost_other?: number; profit_margin?: number; vps_specs?: string | null; storage_amount?: number; storage_unit?: string; vps_storage_amount?: number; vps_storage_unit?: string; }
-interface Profile { user_id: string; full_name: string | null; email: string | null; address_city?: string | null; address_state?: string | null; }
+interface Profile { user_id: string; full_name: string | null; email: string | null; address_city?: string | null; address_state?: string | null; customer_number?: number | null; }
 interface LicenseRow {
   id: string; license_key: string; plan: string; status: string;
   starts_at: string; expires_at: string; user_id: string; product_id: string;
+  device_ip?: string | null; last_seen_at?: string | null; activated_at?: string | null;
   product: { name: string } | null; profile?: Profile | null;
 }
 interface PaymentRow {
@@ -440,7 +441,7 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
   licenses: LicenseRow[]; products: Product[]; profiles: Profile[]; onChange: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ user_id: "", product_id: "", plan: "monthly", status: "active", auto_pay: true });
+  const [form, setForm] = useState({ user_id: "", product_id: "", plan: "monthly", status: "pending", auto_pay: true });
 
   const profileById = (id: string) => profiles.find((p) => p.user_id === id);
 
@@ -546,7 +547,10 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
           <thead className="bg-muted/50 text-left"><tr>
             <th className="p-3 font-medium">Cliente</th><th className="p-3 font-medium">Produto</th>
             <th className="p-3 font-medium">Chave</th><th className="p-3 font-medium">Plano</th>
-            <th className="p-3 font-medium">Expira</th><th className="p-3 font-medium">Status</th><th className="p-3"></th>
+            <th className="p-3 font-medium">Expira</th>
+            <th className="p-3 font-medium">IP</th>
+            <th className="p-3 font-medium">Último contato</th>
+            <th className="p-3 font-medium">Status</th><th className="p-3"></th>
           </tr></thead>
           <tbody>
             {licenses.map((l) => {
@@ -558,6 +562,8 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
                   <td className="p-3 font-mono text-xs">{l.license_key}</td>
                   <td className="p-3 capitalize">{l.plan === "monthly" ? "Mensal" : "Anual"}</td>
                   <td className="p-3">{formatDate(l.expires_at)}</td>
+                  <td className="p-3 font-mono text-xs">{l.device_ip || "—"}</td>
+                  <td className="p-3 text-xs">{l.last_seen_at ? new Date(l.last_seen_at).toLocaleString("pt-BR") : "—"}</td>
                   <td className="p-3">
                     <Select value={l.status} onValueChange={(v) => setStatus(l.id, v)}>
                       <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
@@ -576,7 +582,7 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
                 </tr>
               );
             })}
-            {licenses.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Nenhuma licença emitida.</td></tr>}
+            {licenses.length === 0 && <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">Nenhuma licença emitida.</td></tr>}
           </tbody>
         </table>
       </Card>
@@ -873,6 +879,7 @@ function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; l
       <Card className="overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left"><tr>
+            <th className="p-3 font-medium w-16">ID</th>
             <th className="p-3 font-medium">Nome</th>
             <th className="p-3 font-medium">E-mail</th>
             <th className="p-3 font-medium">Cidade</th>
@@ -884,6 +891,7 @@ function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; l
               const count = licenses.filter((l) => l.user_id === p.user_id).length;
               return (
                 <tr key={p.user_id} className="border-t border-border">
+                  <td className="p-3 font-mono text-xs text-muted-foreground">#{p.customer_number ?? "—"}</td>
                   <td className="p-3 font-medium">{p.full_name || "—"}</td>
                   <td className="p-3">{p.email}</td>
                   <td className="p-3">{p.address_city || "—"}</td>
@@ -892,7 +900,7 @@ function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; l
                 </tr>
               );
             })}
-            {profiles.length === 0 && <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">Nenhum cliente.</td></tr>}
+            {profiles.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Nenhum cliente.</td></tr>}
           </tbody>
         </table>
       </Card>

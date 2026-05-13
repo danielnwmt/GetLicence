@@ -96,7 +96,7 @@ export const listAdminProfiles = createServerFn({ method: "GET" })
     );
 
     const [{ data: profiles, error: profilesError }, { data: usersData, error: usersError }] = await Promise.all([
-      admin.from("profiles").select("user_id, full_name, email, address_city, address_state"),
+      admin.from("profiles").select("user_id, full_name, email, address_city, address_state, customer_number"),
       admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
     ]);
 
@@ -109,6 +109,7 @@ export const listAdminProfiles = createServerFn({ method: "GET" })
       const profile = profileByUserId.get(user.id);
       return {
         user_id: user.id,
+        customer_number: profile?.customer_number ?? null,
         full_name: profile?.full_name ?? (typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null),
         email: profile?.email ?? user.email ?? null,
         address_city: profile?.address_city ?? null,
