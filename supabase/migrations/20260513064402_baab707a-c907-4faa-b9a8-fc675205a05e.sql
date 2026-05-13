@@ -1,0 +1,1 @@
+UPDATE public.products SET price_semestral = ROUND((price_monthly * 6 * 0.95)::numeric, 2) WHERE price_semestral = 0 AND price_monthly > 0;
