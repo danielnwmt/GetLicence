@@ -225,8 +225,8 @@ sudo -u "$APP_USER" bash -lc "cd $APP_DIR && bun run build" >/dev/null
 cat >/etc/systemd/system/getlicence-app.service <<EOF
 [Unit]
 Description=GetLicence App (TanStack)
-After=network.target postgresql.service getlicence-postgrest.service getlicence-auth.service getlicence-storage.service
-Requires=postgresql.service getlicence-postgrest.service getlicence-auth.service getlicence-storage.service
+After=network.target postgresql.service getlicence-postgrest.service getlicence-auth.service
+Requires=postgresql.service getlicence-postgrest.service getlicence-auth.service
 [Service]
 WorkingDirectory=${APP_DIR}
 EnvironmentFile=${APP_DIR}/.env
