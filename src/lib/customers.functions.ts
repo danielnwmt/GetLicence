@@ -109,6 +109,7 @@ export const listAdminProfiles = createServerFn({ method: "GET" })
       const profile = profileByUserId.get(user.id);
       return {
         user_id: user.id,
+        customer_number: profile?.customer_number ?? null,
         full_name: profile?.full_name ?? (typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null),
         email: profile?.email ?? user.email ?? null,
         address_city: profile?.address_city ?? null,
