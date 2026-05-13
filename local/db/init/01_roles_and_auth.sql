@@ -32,3 +32,11 @@ grant usage on schema auth to anon, authenticated, service_role, postgres;
 alter default privileges in schema auth grant all on tables to supabase_auth_admin;
 alter default privileges in schema auth grant all on sequences to supabase_auth_admin;
 alter default privileges in schema auth grant all on functions to supabase_auth_admin;
+
+-- Schema storage para o servidor de Storage (gerenciado pelo storage-api)
+drop schema if exists storage cascade;
+create schema storage authorization supabase_storage_admin;
+grant usage on schema storage to anon, authenticated, service_role, postgres;
+alter default privileges in schema storage grant all on tables to supabase_storage_admin;
+alter default privileges in schema storage grant all on sequences to supabase_storage_admin;
+alter default privileges in schema storage grant all on functions to supabase_storage_admin;
