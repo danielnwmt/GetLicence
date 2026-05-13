@@ -677,7 +677,7 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
 }
 
 // ---------- Payments ----------
-function PaymentsTab({ payments, licenses, profiles, onChange }: { payments: PaymentRow[]; licenses: LicenseRow[]; profiles: Profile[]; onChange: () => void }) {
+function PaymentsTab({ payments, licenses, products, profiles, onChange }: { payments: PaymentRow[]; licenses: LicenseRow[]; products: Product[]; profiles: Profile[]; onChange: () => void }) {
   const issueBoleto = useServerFn(issueAsaasBoleto);
   const cancelBoleto = useServerFn(cancelAsaasBoleto);
   const [issuingId, setIssuingId] = useState<string | null>(null);
