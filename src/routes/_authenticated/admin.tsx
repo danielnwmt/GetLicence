@@ -336,6 +336,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
       cost_other: String(p.cost_other ?? 0),
       profit_margin: String(p.profit_margin ?? 30),
       price_monthly: String(p.price_monthly),
+      price_semestral: String(p.price_semestral ?? 0),
       price_yearly: String(p.price_yearly),
     });
     setOpen(true);
