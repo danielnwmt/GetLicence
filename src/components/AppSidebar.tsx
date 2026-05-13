@@ -70,8 +70,8 @@ export function AppSidebar({
             <KeyRound className="h-4 w-4" />
           </div>
           {!collapsed && (
-            <span className="text-base font-bold">
-              Get<span className="text-foreground">Licence</span>
+            <span className="text-lg font-extrabold tracking-tight text-foreground">
+              Get<span className="text-primary">Licence</span>
             </span>
           )}
         </Link>
@@ -89,7 +89,7 @@ export function AppSidebar({
               className={cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                 active
-                  ? "bg-primary/10 text-foreground"
+                  ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
                 collapsed && "justify-center px-0"
               )}
