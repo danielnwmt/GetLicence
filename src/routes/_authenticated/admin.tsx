@@ -774,7 +774,12 @@ function PaymentsTab({ payments, licenses, products, profiles, onChange }: { pay
                 </Select>
               </div>
               <div className="space-y-2"><Label>Licença</Label>
-                <Select value={newForm.license_id} onValueChange={(v) => setNewForm({ ...newForm, license_id: v })} disabled={!newForm.user_id}>
+                <Select value={newForm.license_id} onValueChange={(v) => {
+                  const lic = licenses.find((l) => l.id === v);
+                  const prod = lic ? products.find((p) => p.id === lic.product_id) : null;
+                  const amt = !prod ? "" : lic?.plan === "yearly" ? String(prod.price_yearly) : lic?.plan === "semestral" ? String(prod.price_semestral) : String(prod.price_monthly);
+                  setNewForm({ ...newForm, license_id: v, amount: amt });
+                }} disabled={!newForm.user_id}>
                   <SelectTrigger><SelectValue placeholder={newForm.user_id ? "Selecione..." : "Escolha o cliente primeiro"} /></SelectTrigger>
                   <SelectContent>{clientLicenses.map((l) => (
                     <SelectItem key={l.id} value={l.id}>{l.product?.name ?? "Licença"} — {l.license_key}</SelectItem>
