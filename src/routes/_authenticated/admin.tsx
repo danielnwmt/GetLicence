@@ -356,6 +356,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
       cost_other: Number(form.cost_other) || 0,
       profit_margin: margin,
       price_monthly: computedMonthly,
+      price_semestral: computedSemestral,
       price_yearly: computedYearly,
     };
     const { error } = editing
