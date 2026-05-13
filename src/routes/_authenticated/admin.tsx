@@ -777,7 +777,12 @@ function PaymentsTab({ payments, licenses, products, profiles, onChange }: { pay
                 <Select value={newForm.license_id} onValueChange={(v) => {
                   const lic = licenses.find((l) => l.id === v);
                   const prod = lic ? products.find((p) => p.id === lic.product_id) : null;
-                  const amt = !prod ? "" : lic?.plan === "yearly" ? String(prod.price_yearly) : lic?.plan === "semestral" ? String(prod.price_semestral) : String(prod.price_monthly);
+                  let amt = "";
+                  if (prod) {
+                    if (lic?.plan === "yearly") amt = String(Number(prod.price_yearly) || +(Number(prod.price_monthly) * 12 * 0.9).toFixed(2));
+                    else if (lic?.plan === "semestral") amt = String(Number(prod.price_semestral) || +(Number(prod.price_monthly) * 6 * 0.95).toFixed(2));
+                    else amt = String(prod.price_monthly);
+                  }
                   setNewForm({ ...newForm, license_id: v, amount: amt });
                 }} disabled={!newForm.user_id}>
                   <SelectTrigger><SelectValue placeholder={newForm.user_id ? "Selecione..." : "Escolha o cliente primeiro"} /></SelectTrigger>
