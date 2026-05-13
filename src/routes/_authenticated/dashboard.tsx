@@ -107,7 +107,7 @@ function Dashboard() {
                 </div>
                 <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Expira em {formatDate(l.expires_at)}</span>
-                  <span className="capitalize">{l.plan === "monthly" ? "Mensal" : "Anual"}</span>
+                  <span className="capitalize">{l.plan === "monthly" ? "Mensal" : l.plan === "semestral" ? "Semestral" : "Anual"}</span>
                 </div>
                 <Button size="sm" variant="outline" className="mt-4" onClick={() => copyKey(l.license_key)}>
                   {copied === l.license_key ? <Check className="mr-2 h-3.5 w-3.5" /> : <Copy className="mr-2 h-3.5 w-3.5" />}
