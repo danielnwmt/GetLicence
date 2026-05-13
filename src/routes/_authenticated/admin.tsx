@@ -441,7 +441,7 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
   licenses: LicenseRow[]; products: Product[]; profiles: Profile[]; onChange: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ user_id: "", product_id: "", plan: "monthly", status: "active", auto_pay: true });
+  const [form, setForm] = useState({ user_id: "", product_id: "", plan: "monthly", status: "pending", auto_pay: true });
 
   const profileById = (id: string) => profiles.find((p) => p.user_id === id);
 
