@@ -646,23 +646,6 @@ function PaymentsTab({ payments, licenses, profiles, onChange }: { payments: Pay
     }
   };
 
-  const markPaid = async (id: string) => {
-    const { error } = await supabase.from("payments").update({ status: "paid" as const, paid_at: new Date().toISOString() }).eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success("Pagamento confirmado");
-    onChange();
-  };
-  const setStatus = async (id: string, status: string) => {
-    const update: { status: "pending" | "paid" | "failed" | "refunded"; paid_at?: string | null } = {
-      status: status as "pending" | "paid" | "failed" | "refunded",
-    };
-    if (status === "paid") update.paid_at = new Date().toISOString();
-    if (status === "pending") update.paid_at = null;
-    const { error } = await supabase.from("payments").update(update).eq("id", id);
-    if (error) return toast.error(error.message);
-    onChange();
-  };
-
   const emitir = async (id: string) => {
     setIssuingId(id);
     try {
