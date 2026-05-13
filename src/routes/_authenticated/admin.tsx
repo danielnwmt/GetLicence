@@ -626,7 +626,7 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
           <thead className="bg-muted/50 text-left"><tr>
             <th className="p-3 font-medium">Cliente</th><th className="p-3 font-medium">Produto</th>
             <th className="p-3 font-medium">Chave</th><th className="p-3 font-medium">Plano</th>
-            <th className="p-3 font-medium">Expira</th>
+            
             <th className="p-3 font-medium">IP</th>
             <th className="p-3 font-medium">Último contato</th>
             <th className="p-3 font-medium">Status</th><th className="p-3"></th>
