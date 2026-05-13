@@ -258,6 +258,8 @@ server {
     proxy_set_header Connection "upgrade";
     proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto \$scheme;
+    proxy_set_header Authorization \$http_authorization;
+    proxy_set_header apikey \$http_apikey;
   }
 }
 NGINX
@@ -310,9 +312,9 @@ cat >/opt/getlicence/update.sh <<'EOS'
 #!/usr/bin/env bash
 set -e
 cd /opt/getlicence
+chown -R getlicence:getlicence /opt/getlicence
 sudo -u postgres psql -v ON_ERROR_STOP=1 -d getlicence -f /opt/getlicence/local/db/init/02_app_schema.sql >/dev/null
-sudo -u getlicence bun install --silent
-sudo -u getlicence bun run build
+sudo -u getlicence bash -lc 'cd /opt/getlicence && bun install --silent && bun run build'
 systemctl restart getlicence-app
 echo "✓ App atualizado"
 EOS
