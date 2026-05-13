@@ -77,7 +77,7 @@ sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" -c \
   "ALTER USER postgres WITH PASSWORD '${PG_PASS}';" >/dev/null
 
 log "Carregando schema base do banco"
-sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" -f "$SCRIPT_DIR/db/init/01_roles_and_auth.sql" >/dev/null
+sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" < "$SCRIPT_DIR/db/init/01_roles_and_auth.sql" >/dev/null
 
 # senhas dos roles internos
 sudo -u postgres psql -d "$DB_NAME" -c \
@@ -164,7 +164,7 @@ set +a
 /usr/local/bin/gotrue migrate >/dev/null
 
 log "Carregando schema da aplicação"
-sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" -f "$SCRIPT_DIR/db/init/02_app_schema.sql" >/dev/null
+sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" < "$SCRIPT_DIR/db/init/02_app_schema.sql" >/dev/null
 ok "Banco ${DB_NAME} pronto"
 
 cat >/etc/systemd/system/getlicence-auth.service <<EOF
@@ -392,7 +392,7 @@ if [ -d .git ] && command -v git >/dev/null 2>&1; then
   git pull --ff-only
 fi
 chown -R getlicence:getlicence /opt/getlicence
-sudo -u postgres psql -v ON_ERROR_STOP=1 -d getlicence -f /opt/getlicence/local/db/init/02_app_schema.sql >/dev/null
+sudo -u postgres psql -v ON_ERROR_STOP=1 -d getlicence < /opt/getlicence/local/db/init/02_app_schema.sql >/dev/null
 ADMIN_UID=$(sudo -u postgres psql -d getlicence -tAc "select id from auth.users where email='admin@getlicence.com' limit 1;" | tr -d '[:space:]')
 if [ -n "$ADMIN_UID" ]; then
   sudo -u postgres psql -d getlicence -c "insert into public.user_roles(user_id, role) values ('${ADMIN_UID}','admin') on conflict (user_id, role) do nothing;" >/dev/null
