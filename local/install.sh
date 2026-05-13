@@ -217,7 +217,8 @@ sudo -u "$APP_USER" bash -lc "cd $APP_DIR && bun run build" >/dev/null
 cat >/etc/systemd/system/getlicence-app.service <<EOF
 [Unit]
 Description=GetLicence App (TanStack)
-After=network.target getlicence-postgrest.service getlicence-auth.service
+After=network.target postgresql.service getlicence-postgrest.service getlicence-auth.service
+Requires=postgresql.service getlicence-postgrest.service getlicence-auth.service
 [Service]
 WorkingDirectory=${APP_DIR}
 EnvironmentFile=${APP_DIR}/.env
@@ -307,6 +308,14 @@ if [[ -n "$APP_DOMAIN" ]]; then
     || warn "certbot falhou — confirme que ${APP_DOMAIN} aponta para este servidor"
 fi
 
+log "Garantindo permissões de administrador"
+ADMIN_UID=$(sudo -u postgres psql -d "$DB_NAME" -tAc \
+  "select id from auth.users where email='${ADMIN_EMAIL}' limit 1;" | tr -d '[:space:]')
+if [[ -n "$ADMIN_UID" ]]; then
+  sudo -u postgres psql -d "$DB_NAME" -c \
+    "insert into public.user_roles(user_id, role) values ('${ADMIN_UID}','admin') on conflict (user_id, role) do nothing;" >/dev/null
+fi
+
 # ---------- 12. scripts auxiliares ----------
 cat >/opt/getlicence/update.sh <<'EOS'
 #!/usr/bin/env bash
@@ -318,8 +327,12 @@ if [ -d .git ] && command -v git >/dev/null 2>&1; then
 fi
 chown -R getlicence:getlicence /opt/getlicence
 sudo -u postgres psql -v ON_ERROR_STOP=1 -d getlicence -f /opt/getlicence/local/db/init/02_app_schema.sql >/dev/null
+ADMIN_UID=$(sudo -u postgres psql -d getlicence -tAc "select id from auth.users where email='admin@getlicence.com' limit 1;" | tr -d '[:space:]')
+if [ -n "$ADMIN_UID" ]; then
+  sudo -u postgres psql -d getlicence -c "insert into public.user_roles(user_id, role) values ('${ADMIN_UID}','admin') on conflict (user_id, role) do nothing;" >/dev/null
+fi
 sudo -u getlicence bash -lc 'cd /opt/getlicence && bun install --silent && bun run build'
-systemctl restart getlicence-app
+systemctl restart getlicence-postgrest getlicence-auth getlicence-app
 echo "✓ App atualizado"
 EOS
 cat >/opt/getlicence/backup.sh <<EOS
