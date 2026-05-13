@@ -227,6 +227,7 @@ export type Database = {
           id: string
           name: string
           price_monthly: number
+          price_semestral: number
           price_yearly: number
           profit_margin: number
           storage_amount: number
@@ -246,6 +247,7 @@ export type Database = {
           id?: string
           name: string
           price_monthly?: number
+          price_semestral?: number
           price_yearly?: number
           profit_margin?: number
           storage_amount?: number
@@ -265,6 +267,7 @@ export type Database = {
           id?: string
           name?: string
           price_monthly?: number
+          price_semestral?: number
           price_yearly?: number
           profit_margin?: number
           storage_amount?: number
@@ -373,7 +376,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "client"
-      license_plan: "monthly" | "yearly"
+      license_plan: "monthly" | "yearly" | "semestral"
       license_status: "active" | "expired" | "cancelled" | "pending" | "blocked"
       payment_provider: "asaas" | "sicredi" | "sicoob" | "manual"
       payment_status: "pending" | "paid" | "failed" | "refunded"
@@ -505,7 +508,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "client"],
-      license_plan: ["monthly", "yearly"],
+      license_plan: ["monthly", "yearly", "semestral"],
       license_status: ["active", "expired", "cancelled", "pending", "blocked"],
       payment_provider: ["asaas", "sicredi", "sicoob", "manual"],
       payment_status: ["pending", "paid", "failed", "refunded"],

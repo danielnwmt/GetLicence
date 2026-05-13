@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-interface Product { id: string; name: string; description: string | null; price_monthly: number; price_yearly: number; active: boolean; cost_vps?: number; cost_storage?: number; cost_other?: number; profit_margin?: number; vps_specs?: string | null; storage_amount?: number; storage_unit?: string; vps_storage_amount?: number; vps_storage_unit?: string; }
+interface Product { id: string; name: string; description: string | null; price_monthly: number; price_semestral: number; price_yearly: number; active: boolean; cost_vps?: number; cost_storage?: number; cost_other?: number; profit_margin?: number; vps_specs?: string | null; storage_amount?: number; storage_unit?: string; vps_storage_amount?: number; vps_storage_unit?: string; }
 interface Profile { user_id: string; full_name: string | null; email: string | null; address_city?: string | null; address_state?: string | null; customer_number?: number | null; cpf_cnpj?: string | null; phone?: string | null; address_zip?: string | null; address_street?: string | null; address_number?: string | null; address_complement?: string | null; address_neighborhood?: string | null; }
 interface LicenseRow {
   id: string; license_key: string; plan: string; status: string;
@@ -311,12 +311,13 @@ const statusBadge: Record<string, string> = {
 function ProductsTab({ products, onChange }: { products: Product[]; onChange: () => void }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
-  const emptyForm = { name: "", description: "", vps_specs: "", vps_storage_amount: "0", vps_storage_unit: "GB", storage_amount: "0", storage_unit: "GB", cost_vps: "0", cost_storage: "0", cost_other: "0", profit_margin: "30", price_monthly: "0", price_yearly: "0" };
+  const emptyForm = { name: "", description: "", vps_specs: "", vps_storage_amount: "0", vps_storage_unit: "GB", storage_amount: "0", storage_unit: "GB", cost_vps: "0", cost_storage: "0", cost_other: "0", profit_margin: "30", price_monthly: "0", price_semestral: "0", price_yearly: "0" };
   const [form, setForm] = useState(emptyForm);
 
   const totalCost = (Number(form.cost_vps) || 0) + (Number(form.cost_storage) || 0) + (Number(form.cost_other) || 0);
   const margin = Number(form.profit_margin) || 0;
   const computedMonthly = +(totalCost * (1 + margin / 100)).toFixed(2);
+  const computedSemestral = +(computedMonthly * 6 * 0.95).toFixed(2);
   const computedYearly = +(computedMonthly * 12 * 0.9).toFixed(2);
 
   const openNew = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
@@ -335,6 +336,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
       cost_other: String(p.cost_other ?? 0),
       profit_margin: String(p.profit_margin ?? 30),
       price_monthly: String(p.price_monthly),
+      price_semestral: String(p.price_semestral ?? 0),
       price_yearly: String(p.price_yearly),
     });
     setOpen(true);
@@ -355,6 +357,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
       cost_other: Number(form.cost_other) || 0,
       profit_margin: margin,
       price_monthly: computedMonthly,
+      price_semestral: computedSemestral,
       price_yearly: computedYearly,
     };
     const { error } = editing
@@ -481,6 +484,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
               </div>
               <div className="rounded-md bg-muted/50 p-3 space-y-1 text-sm">
                 <div className="flex justify-between"><span className="text-muted-foreground">Preço mensal calculado</span><span className="font-semibold">{formatBRL(computedMonthly)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Preço semestral (5% desc.)</span><span className="font-semibold">{formatBRL(computedSemestral)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Preço anual (10% desc.)</span><span className="font-semibold">{formatBRL(computedYearly)}</span></div>
               </div>
             </div>
@@ -492,6 +496,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left"><tr>
             <th className="p-3 font-medium">Produto</th><th className="p-3 font-medium">Mensal</th>
+            <th className="p-3 font-medium">Semestral</th>
             <th className="p-3 font-medium">Anual</th><th className="p-3 font-medium">Status</th><th className="p-3"></th>
           </tr></thead>
           <tbody>
@@ -499,6 +504,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
               <tr key={p.id} className="border-t border-border">
                 <td className="p-3"><div className="font-medium">{p.name}</div><div className="text-xs text-muted-foreground">{p.description}</div></td>
                 <td className="p-3">{formatBRL(Number(p.price_monthly))}</td>
+                <td className="p-3">{formatBRL(Number(p.price_semestral))}</td>
                 <td className="p-3">{formatBRL(Number(p.price_yearly))}</td>
                 <td className="p-3"><Badge variant="outline">{p.active ? "Ativo" : "Inativo"}</Badge></td>
                 <td className="p-3 text-right">
@@ -507,7 +513,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                 </td>
               </tr>
             ))}
-            {products.length === 0 && <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">Nenhum produto. Crie o primeiro.</td></tr>}
+            {products.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Nenhum produto. Crie o primeiro.</td></tr>}
           </tbody>
         </table>
       </Card>
@@ -526,21 +532,21 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
 
   const create = async () => {
     if (!form.user_id || !form.product_id) return toast.error("Selecione cliente e produto");
-    const months = form.plan === "yearly" ? 12 : 1;
+    const months = form.plan === "yearly" ? 12 : form.plan === "semestral" ? 6 : 1;
     const expires = new Date();
     expires.setMonth(expires.getMonth() + months);
     const product = products.find((p) => p.id === form.product_id);
     const { data: lic, error } = await supabase.from("licenses").insert({
       user_id: form.user_id,
       product_id: form.product_id,
-      plan: form.plan as "monthly" | "yearly",
+      plan: form.plan as "monthly" | "semestral" | "yearly",
       status: form.status as "active" | "pending" | "expired" | "cancelled" | "blocked",
       expires_at: expires.toISOString(),
     }).select().single();
     if (error) return toast.error(error.message);
 
     if (form.auto_pay && product) {
-      const amount = form.plan === "yearly" ? Number(product.price_yearly) : Number(product.price_monthly);
+      const amount = form.plan === "yearly" ? Number(product.price_yearly) : form.plan === "semestral" ? Number(product.price_semestral) : Number(product.price_monthly);
       if (amount > 0) {
         await supabase.from("payments").insert({
           user_id: form.user_id,
@@ -599,6 +605,7 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="monthly">Mensal (1 mês)</SelectItem>
+                    <SelectItem value="semestral">Semestral (6 meses)</SelectItem>
                     <SelectItem value="yearly">Anual (12 meses)</SelectItem>
                   </SelectContent>
                 </Select>
@@ -639,7 +646,7 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
                   <td className="p-3"><div className="font-medium">{prof?.full_name || "—"}</div><div className="text-xs text-muted-foreground">{prof?.email}</div></td>
                   <td className="p-3">{l.product?.name}</td>
                   <td className="p-3 font-mono text-xs">{l.license_key}</td>
-                  <td className="p-3 capitalize">{l.plan === "monthly" ? "Mensal" : "Anual"}</td>
+                  <td className="p-3 capitalize">{l.plan === "monthly" ? "Mensal" : l.plan === "semestral" ? "Semestral" : "Anual"}</td>
                   
                   <td className="p-3 font-mono text-xs">{l.device_ip || "—"}</td>
                   <td className="p-3 text-xs">{l.last_seen_at ? new Date(l.last_seen_at).toLocaleString("pt-BR") : "—"}</td>
