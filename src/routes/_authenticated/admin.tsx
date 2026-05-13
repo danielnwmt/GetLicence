@@ -604,6 +604,7 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="monthly">Mensal (1 mês)</SelectItem>
+                    <SelectItem value="semestral">Semestral (6 meses)</SelectItem>
                     <SelectItem value="yearly">Anual (12 meses)</SelectItem>
                   </SelectContent>
                 </Select>
