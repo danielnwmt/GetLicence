@@ -164,7 +164,7 @@ set +a
 /usr/local/bin/gotrue migrate >/dev/null
 
 log "Carregando schema da aplicação"
-sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" -f "$SCRIPT_DIR/db/init/02_app_schema.sql" >/dev/null
+sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" < "$SCRIPT_DIR/db/init/02_app_schema.sql" >/dev/null
 ok "Banco ${DB_NAME} pronto"
 
 cat >/etc/systemd/system/getlicence-auth.service <<EOF
