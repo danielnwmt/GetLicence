@@ -130,7 +130,7 @@ function AdminPage() {
           <ProductsTab products={products} onChange={reload} />
         </TabsContent>
         <TabsContent value="customers" className="mt-6">
-          <CustomersTab profiles={profiles.filter((p) => !adminIds.includes(p.user_id))} licenses={licenses} onChange={reload} />
+          <CustomersTab profiles={profiles.filter((p) => !adminIds.includes(p.user_id))} licenses={licenses} payments={payments} onChange={reload} />
         </TabsContent>
         <TabsContent value="settings" className="mt-6">
           <Tabs defaultValue="users" className="space-y-4">
