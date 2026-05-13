@@ -512,7 +512,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                 </td>
               </tr>
             ))}
-            {products.length === 0 && <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">Nenhum produto. Crie o primeiro.</td></tr>}
+            {products.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Nenhum produto. Crie o primeiro.</td></tr>}
           </tbody>
         </table>
       </Card>
