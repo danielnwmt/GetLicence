@@ -604,6 +604,18 @@ function PaymentsTab({ payments, licenses, profiles, onChange }: { payments: Pay
   const [newOpen, setNewOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newForm, setNewForm] = useState({ user_id: "", license_id: "", amount: "", due_date: "" });
+  const [search, setSearch] = useState("");
+  const profileById = new Map(profiles.map((p) => [p.user_id, p]));
+  const q = search.trim().toLowerCase();
+  const filteredPayments = !q ? payments : payments.filter((p) => {
+    const prof = profileById.get(p.user_id);
+    return (
+      (prof?.full_name || "").toLowerCase().includes(q) ||
+      (prof?.email || "").toLowerCase().includes(q) ||
+      (prof?.cpf_cnpj || "").toLowerCase().includes(q) ||
+      (p.license?.license_key || "").toLowerCase().includes(q)
+    );
+  });
 
   const clientLicenses = licenses.filter((l) => l.user_id === newForm.user_id);
 
