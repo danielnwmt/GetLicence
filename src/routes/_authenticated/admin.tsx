@@ -39,6 +39,7 @@ interface Profile { user_id: string; full_name: string | null; email: string | n
 interface LicenseRow {
   id: string; license_key: string; plan: string; status: string;
   starts_at: string; expires_at: string; user_id: string; product_id: string;
+  device_ip?: string | null; last_seen_at?: string | null; activated_at?: string | null;
   product: { name: string } | null; profile?: Profile | null;
 }
 interface PaymentRow {
