@@ -281,8 +281,11 @@ systemctl reload nginx
 
 # ---------- 9. start services ----------
 systemctl daemon-reload
-systemctl enable --now getlicence-postgrest getlicence-auth getlicence-storage getlicence-app >/dev/null
-sleep 4
+systemctl enable --now getlicence-postgrest getlicence-auth getlicence-app >/dev/null
+for i in $(seq 1 30); do
+  curl -fsS http://127.0.0.1:3000 >/dev/null 2>&1 && break
+  sleep 2
+done
 if ! curl -fsS http://127.0.0.1:3000 >/dev/null; then
   warn "App não respondeu na porta 3000. Últimos logs:"
   journalctl -u getlicence-app -n 80 --no-pager || true
