@@ -782,38 +782,76 @@ function PaymentsTab({ payments, licenses, profiles, onChange }: { payments: Pay
 }
 
 // ---------- Customers ----------
+const emptyCustomerForm = {
+  full_name: "", email: "", password: "",
+  cpf_cnpj: "", phone: "",
+  address_zip: "", address_street: "", address_number: "",
+  address_complement: "", address_neighborhood: "", address_city: "", address_state: "",
+};
+
 function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; licenses: LicenseRow[]; onChange: () => void }) {
   const createCustomerFn = useServerFn(createCustomer);
+  const updateCustomerFn = useServerFn(updateCustomer);
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Profile | null>(null);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    full_name: "", email: "", password: "",
-    cpf_cnpj: "", phone: "",
-    address_zip: "", address_street: "", address_number: "",
-    address_complement: "", address_neighborhood: "", address_city: "", address_state: "",
-  });
+  const [form, setForm] = useState(emptyCustomerForm);
+
+  const isEdit = !!editing;
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyCustomerForm);
+    setOpen(true);
+  };
+
+  const openEdit = (p: Profile) => {
+    setEditing(p);
+    setForm({
+      full_name: p.full_name ?? "",
+      email: p.email ?? "",
+      password: "",
+      cpf_cnpj: p.cpf_cnpj ? formatCpfCnpj(p.cpf_cnpj) : "",
+      phone: p.phone ?? "",
+      address_zip: p.address_zip ?? "",
+      address_street: p.address_street ?? "",
+      address_number: p.address_number ?? "",
+      address_complement: p.address_complement ?? "",
+      address_neighborhood: p.address_neighborhood ?? "",
+      address_city: p.address_city ?? "",
+      address_state: p.address_state ?? "",
+    });
+    setOpen(true);
+  };
 
   const save = async () => {
-    if (!form.full_name.trim() || !form.email.trim() || form.password.length < 6) {
-      return toast.error("Preencha nome, e-mail e senha (mín. 6 caracteres)");
+    if (!form.full_name.trim() || !form.email.trim()) {
+      return toast.error("Preencha nome e e-mail");
+    }
+    if (!isEdit && form.password.length < 6) {
+      return toast.error("Informe uma senha com no mínimo 6 caracteres");
+    }
+    if (isEdit && form.password && form.password.length < 6) {
+      return toast.error("A nova senha precisa ter no mínimo 6 caracteres");
     }
     if (!isValidCpfCnpj(form.cpf_cnpj)) {
       return toast.error("CPF ou CNPJ inválido — verifique os dígitos");
     }
     setSaving(true);
     try {
-      await createCustomerFn({ data: form });
-      toast.success("Cliente cadastrado");
+      if (isEdit && editing) {
+        await updateCustomerFn({ data: { ...form, user_id: editing.user_id } });
+        toast.success("Cliente atualizado");
+      } else {
+        await createCustomerFn({ data: form });
+        toast.success("Cliente cadastrado");
+      }
       setOpen(false);
-      setForm({
-        full_name: "", email: "", password: "",
-        cpf_cnpj: "", phone: "",
-        address_zip: "", address_street: "", address_number: "",
-        address_complement: "", address_neighborhood: "", address_city: "", address_state: "",
-      });
+      setEditing(null);
+      setForm(emptyCustomerForm);
       onChange();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao cadastrar");
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar");
     } finally {
       setSaving(false);
     }
@@ -822,10 +860,10 @@ function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; l
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Novo cliente</Button></DialogTrigger>
+        <Button onClick={openCreate}><Plus className="mr-2 h-4 w-4" /> Novo cliente</Button>
+        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditing(null); setForm(emptyCustomerForm); } }}>
           <DialogContent className="max-w-2xl">
-            <DialogHeader><DialogTitle>Cadastrar cliente</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{isEdit ? "Editar cliente" : "Cadastrar cliente"}</DialogTitle></DialogHeader>
             <div className="space-y-3 py-2 max-h-[70vh] overflow-y-auto pr-1">
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="space-y-2"><Label>Nome completo / Razão social *</Label>
@@ -840,7 +878,7 @@ function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; l
                 <div className="space-y-2"><Label>Telefone</Label>
                   <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="(11) 99999-0000" />
                 </div>
-                <div className="space-y-2 md:col-span-2"><Label>Senha inicial *</Label>
+                <div className="space-y-2 md:col-span-2"><Label>{isEdit ? "Nova senha (deixe em branco para manter)" : "Senha inicial *"}</Label>
                   <Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="mín. 6 caracteres" />
                 </div>
               </div>
@@ -877,7 +915,7 @@ function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; l
                 </div>
               </div>
             </div>
-            <DialogFooter><Button onClick={save} disabled={saving}>{saving ? "Salvando..." : "Cadastrar"}</Button></DialogFooter>
+            <DialogFooter><Button onClick={save} disabled={saving}>{saving ? "Salvando..." : (isEdit ? "Salvar" : "Cadastrar")}</Button></DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
@@ -890,6 +928,7 @@ function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; l
             <th className="p-3 font-medium">Cidade</th>
             <th className="p-3 font-medium">UF</th>
             <th className="p-3 font-medium">Licenças</th>
+            <th className="p-3 font-medium w-20 text-right">Ações</th>
           </tr></thead>
           <tbody>
             {profiles.map((p) => {
@@ -902,10 +941,13 @@ function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; l
                   <td className="p-3">{p.address_city || "—"}</td>
                   <td className="p-3">{p.address_state || "—"}</td>
                   <td className="p-3">{count}</td>
+                  <td className="p-3 text-right">
+                    <Button variant="ghost" size="sm" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
+                  </td>
                 </tr>
               );
             })}
-            {profiles.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Nenhum cliente.</td></tr>}
+            {profiles.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Nenhum cliente.</td></tr>}
           </tbody>
         </table>
       </Card>
