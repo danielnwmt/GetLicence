@@ -495,6 +495,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left"><tr>
             <th className="p-3 font-medium">Produto</th><th className="p-3 font-medium">Mensal</th>
+            <th className="p-3 font-medium">Semestral</th>
             <th className="p-3 font-medium">Anual</th><th className="p-3 font-medium">Status</th><th className="p-3"></th>
           </tr></thead>
           <tbody>
@@ -502,6 +503,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
               <tr key={p.id} className="border-t border-border">
                 <td className="p-3"><div className="font-medium">{p.name}</div><div className="text-xs text-muted-foreground">{p.description}</div></td>
                 <td className="p-3">{formatBRL(Number(p.price_monthly))}</td>
+                <td className="p-3">{formatBRL(Number(p.price_semestral))}</td>
                 <td className="p-3">{formatBRL(Number(p.price_yearly))}</td>
                 <td className="p-3"><Badge variant="outline">{p.active ? "Ativo" : "Inativo"}</Badge></td>
                 <td className="p-3 text-right">
