@@ -288,9 +288,11 @@ EOF
 # ---------- 8. Nginx ----------
 log "Configurando Nginx"
 SERVER_NAME="${APP_DOMAIN:-_}"
+rm -f /etc/nginx/sites-enabled/default /etc/nginx/sites-available/default
 cat >/etc/nginx/sites-available/getlicence.conf <<NGINX
 server {
-  listen 80;
+  listen 80 default_server;
+  listen [::]:80 default_server;
   server_name ${SERVER_NAME};
   client_max_body_size 25m;
 
