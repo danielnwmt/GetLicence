@@ -52,7 +52,7 @@ function AuthenticatedLayout() {
     <div className="flex min-h-screen w-full bg-background">
       <AppSidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
       <main className="flex-1 overflow-x-hidden">
-        <div className="container mx-auto px-4 py-8">
+        <div className="px-6 py-6">
           <Outlet />
         </div>
       </main>
