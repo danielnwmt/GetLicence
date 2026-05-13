@@ -124,7 +124,7 @@ function AdminPage() {
           <LicensesTab licenses={licenses} products={products} profiles={profiles.filter((p) => !adminIds.includes(p.user_id))} onChange={reload} />
         </TabsContent>
         <TabsContent value="payments" className="mt-6">
-          <PaymentsTab payments={payments} licenses={licenses} profiles={profiles.filter((p) => !adminIds.includes(p.user_id))} onChange={reload} />
+          <PaymentsTab payments={payments} licenses={licenses} products={products} profiles={profiles.filter((p) => !adminIds.includes(p.user_id))} onChange={reload} />
         </TabsContent>
         <TabsContent value="products" className="mt-6">
           <ProductsTab products={products} onChange={reload} />
@@ -677,7 +677,7 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
 }
 
 // ---------- Payments ----------
-function PaymentsTab({ payments, licenses, profiles, onChange }: { payments: PaymentRow[]; licenses: LicenseRow[]; profiles: Profile[]; onChange: () => void }) {
+function PaymentsTab({ payments, licenses, products, profiles, onChange }: { payments: PaymentRow[]; licenses: LicenseRow[]; products: Product[]; profiles: Profile[]; onChange: () => void }) {
   const issueBoleto = useServerFn(issueAsaasBoleto);
   const cancelBoleto = useServerFn(cancelAsaasBoleto);
   const [issuingId, setIssuingId] = useState<string | null>(null);
@@ -774,7 +774,12 @@ function PaymentsTab({ payments, licenses, profiles, onChange }: { payments: Pay
                 </Select>
               </div>
               <div className="space-y-2"><Label>Licença</Label>
-                <Select value={newForm.license_id} onValueChange={(v) => setNewForm({ ...newForm, license_id: v })} disabled={!newForm.user_id}>
+                <Select value={newForm.license_id} onValueChange={(v) => {
+                  const lic = licenses.find((l) => l.id === v);
+                  const prod = lic ? products.find((p) => p.id === lic.product_id) : null;
+                  const amt = !prod ? "" : lic?.plan === "yearly" ? String(prod.price_yearly) : lic?.plan === "semestral" ? String(prod.price_semestral) : String(prod.price_monthly);
+                  setNewForm({ ...newForm, license_id: v, amount: amt });
+                }} disabled={!newForm.user_id}>
                   <SelectTrigger><SelectValue placeholder={newForm.user_id ? "Selecione..." : "Escolha o cliente primeiro"} /></SelectTrigger>
                   <SelectContent>{clientLicenses.map((l) => (
                     <SelectItem key={l.id} value={l.id}>{l.product?.name ?? "Licença"} — {l.license_key}</SelectItem>
