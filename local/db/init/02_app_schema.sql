@@ -162,6 +162,21 @@ alter table public.licenses enable row level security;
 alter table public.payments enable row level security;
 alter table public.payment_settings enable row level security;
 
+drop policy if exists "Users view own profile" on public.profiles;
+drop policy if exists "Users update own profile" on public.profiles;
+drop policy if exists "Admins view all profiles" on public.profiles;
+drop policy if exists "Users view own roles" on public.user_roles;
+drop policy if exists "Admins manage roles" on public.user_roles;
+drop policy if exists "Anyone authed reads active products" on public.products;
+drop policy if exists "Admins manage products" on public.products;
+drop policy if exists "Users view own licenses" on public.licenses;
+drop policy if exists "Admins view all licenses" on public.licenses;
+drop policy if exists "Admins manage licenses" on public.licenses;
+drop policy if exists "Users view own payments" on public.payments;
+drop policy if exists "Admins view all payments" on public.payments;
+drop policy if exists "Admins manage payments" on public.payments;
+drop policy if exists "Admins manage payment settings" on public.payment_settings;
+
 create policy "Users view own profile" on public.profiles for select using (auth.uid() = user_id);
 create policy "Users update own profile" on public.profiles for update using (auth.uid() = user_id);
 create policy "Admins view all profiles" on public.profiles for select using (public.has_role(auth.uid(),'admin'));
