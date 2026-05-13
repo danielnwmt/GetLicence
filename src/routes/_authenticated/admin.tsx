@@ -223,7 +223,7 @@ function DashboardCharts({ licenses, payments, profiles, products }: { licenses:
                   cursor={{ fill: "oklch(0.55 0.18 255 / 0.08)" }}
                   contentStyle={{ borderRadius: 12, border: "1px solid oklch(0.9 0.01 255)", boxShadow: "0 8px 24px -8px oklch(0.55 0.18 255 / 0.25)", padding: "8px 12px" }}
                   labelStyle={{ fontWeight: 600, marginBottom: 4 }}
-                  formatter={(v: number) => [`${v} licença${v === 1 ? "" : "s"}`, "Total"]}
+                  formatter={(v) => [`${Number(v)} licença${Number(v) === 1 ? "" : "s"}`, "Total"]}
                 />
                 <Bar dataKey="count" fill="url(#barFill)" radius={[8, 8, 0, 0]} maxBarSize={56}>
                   {topProducts.map((_, i) => <Cell key={i} />)}
@@ -255,7 +255,7 @@ function DashboardCharts({ licenses, payments, profiles, products }: { licenses:
                 cursor={{ stroke: "oklch(0.55 0.18 255)", strokeWidth: 1, strokeDasharray: "4 4" }}
                 contentStyle={{ borderRadius: 12, border: "1px solid oklch(0.9 0.01 255)", boxShadow: "0 8px 24px -8px oklch(0.55 0.18 255 / 0.25)", padding: "8px 12px" }}
                 labelStyle={{ fontWeight: 600, marginBottom: 4 }}
-                formatter={(v: number) => [formatBRL(v), "Faturamento"]}
+                formatter={(v) => [formatBRL(Number(v)), "Faturamento"]}
               />
               <Area type="monotone" dataKey="total" stroke="oklch(0.55 0.18 255)" strokeWidth={2.5} fill="url(#areaFill)" activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }} />
             </AreaChart>
