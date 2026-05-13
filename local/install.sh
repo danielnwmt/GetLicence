@@ -392,7 +392,7 @@ if [ -d .git ] && command -v git >/dev/null 2>&1; then
   git pull --ff-only
 fi
 chown -R getlicence:getlicence /opt/getlicence
-sudo -u postgres psql -v ON_ERROR_STOP=1 -d getlicence -f /opt/getlicence/local/db/init/02_app_schema.sql >/dev/null
+sudo -u postgres psql -v ON_ERROR_STOP=1 -d getlicence < /opt/getlicence/local/db/init/02_app_schema.sql >/dev/null
 ADMIN_UID=$(sudo -u postgres psql -d getlicence -tAc "select id from auth.users where email='admin@getlicence.com' limit 1;" | tr -d '[:space:]')
 if [ -n "$ADMIN_UID" ]; then
   sudo -u postgres psql -d getlicence -c "insert into public.user_roles(user_id, role) values ('${ADMIN_UID}','admin') on conflict (user_id, role) do nothing;" >/dev/null
