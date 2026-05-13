@@ -121,7 +121,7 @@
   --border: oklch(0.28 0.02 260);
   --input: oklch(0.28 0.02 260);
   --ring: oklch(0.7 0.18 255);
-  --gradient-hero: linear-gradient(135deg, oklch(0.4 0.18 255) 0%, oklch(0.45 0.2 280) 50%, oklch(0.5 0.18 310) 100%);
+  --gradient-hero: linear-gradient(135deg, oklch(0.4 0.18 255) 0%, oklch(0.45 0.19 255) 50%, oklch(0.5 0.18 255) 100%);
   --gradient-card: linear-gradient(180deg, oklch(0.2 0.025 260), oklch(0.17 0.025 260));
 }
 
