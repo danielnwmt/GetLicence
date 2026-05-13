@@ -317,6 +317,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
   const totalCost = (Number(form.cost_vps) || 0) + (Number(form.cost_storage) || 0) + (Number(form.cost_other) || 0);
   const margin = Number(form.profit_margin) || 0;
   const computedMonthly = +(totalCost * (1 + margin / 100)).toFixed(2);
+  const computedSemestral = +(computedMonthly * 6 * 0.95).toFixed(2);
   const computedYearly = +(computedMonthly * 12 * 0.9).toFixed(2);
 
   const openNew = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
