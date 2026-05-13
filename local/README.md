@@ -11,14 +11,21 @@ Instalação bare-metal: PostgreSQL, PostgREST, GoTrue e Nginx instalados nativa
 ## Instalar
 
 ```bash
-git clone https://github.com/danielnwmt/GetLicence.git /opt/getlicence && \
-sudo bash /opt/getlicence/local/install.sh
+cd ~
+rm -rf getlicence
+git clone https://github.com/danielnwmt/GetLicence getlicence
+cd getlicence
+sudo bash local/install.sh
 ```
 
 Com domínio + SSL (Let's Encrypt):
 
 ```bash
-sudo APP_DOMAIN=app.exemplo.com bash /opt/getlicence/local/install.sh
+cd ~
+rm -rf getlicence
+git clone https://github.com/danielnwmt/GetLicence getlicence
+cd getlicence
+sudo APP_DOMAIN=app.exemplo.com bash local/install.sh
 ```
 
 O instalador automaticamente:
