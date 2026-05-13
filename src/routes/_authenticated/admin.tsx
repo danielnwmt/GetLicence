@@ -626,7 +626,7 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
           <thead className="bg-muted/50 text-left"><tr>
             <th className="p-3 font-medium">Cliente</th><th className="p-3 font-medium">Produto</th>
             <th className="p-3 font-medium">Chave</th><th className="p-3 font-medium">Plano</th>
-            <th className="p-3 font-medium">Expira</th>
+            
             <th className="p-3 font-medium">IP</th>
             <th className="p-3 font-medium">Último contato</th>
             <th className="p-3 font-medium">Status</th><th className="p-3"></th>
@@ -640,7 +640,7 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
                   <td className="p-3">{l.product?.name}</td>
                   <td className="p-3 font-mono text-xs">{l.license_key}</td>
                   <td className="p-3 capitalize">{l.plan === "monthly" ? "Mensal" : "Anual"}</td>
-                  <td className="p-3">{formatDate(l.expires_at)}</td>
+                  
                   <td className="p-3 font-mono text-xs">{l.device_ip || "—"}</td>
                   <td className="p-3 text-xs">{l.last_seen_at ? new Date(l.last_seen_at).toLocaleString("pt-BR") : "—"}</td>
                   <td className="p-3">
