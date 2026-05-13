@@ -22,33 +22,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
+
+    const applySession = async (sess: Session | null) => {
       if (!mounted) return;
       setSession(sess);
       setUser(sess?.user ?? null);
       if (sess?.user) {
-        // Defer role fetch
-        setTimeout(() => { if (mounted) fetchRole(sess.user.id); }, 0);
+        await fetchRole(sess.user.id);
       } else {
         setRole(null);
       }
-      setLoading(false);
+      if (mounted) setLoading(false);
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
+      void applySession(sess);
     });
+
+    supabase.auth.getSession().then(({ data }) => applySession(data.session));
 
     return () => { mounted = false; subscription.unsubscribe(); };
   }, []);
 
   const fetchRole = async (userId: string) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userId);
-    if (data && data.length) {
-      const isAdmin = data.some((r: { role: string }) => r.role === "admin");
-      setRole(isAdmin ? "admin" : "client");
-    } else {
+    if (error) {
       setRole("client");
+      return;
     }
+    const isAdmin = (data ?? []).some((r: { role: string }) => r.role === "admin");
+    setRole(isAdmin ? "admin" : "client");
   };
 
   const signOut = async () => {
