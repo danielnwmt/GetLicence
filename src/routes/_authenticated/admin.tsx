@@ -197,32 +197,68 @@ function DashboardCharts({ licenses, payments, profiles, products }: { licenses:
         <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Faturamento total</div><div className="mt-1 text-2xl font-bold">{formatBRL(totalRevenue)}</div></Card>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="p-5">
-          <div className="mb-4 font-semibold">Licenças mais vendidas</div>
+        <Card className="p-5 bg-gradient-card border-border/60 shadow-elegant">
+          <div className="mb-1 flex items-center justify-between">
+            <div>
+              <div className="font-semibold">Licenças mais vendidas</div>
+              <div className="text-xs text-muted-foreground">Top produtos por nº de licenças</div>
+            </div>
+            <Badge variant="secondary" className="font-normal">{topProducts.length} produtos</Badge>
+          </div>
           {topProducts.length === 0 ? (
-            <div className="py-12 text-center text-sm text-muted-foreground">Sem licenças emitidas.</div>
+            <div className="py-16 text-center text-sm text-muted-foreground">Sem licenças emitidas.</div>
           ) : (
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={topProducts}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={topProducts} margin={{ top: 16, right: 8, left: -16, bottom: 4 }} barCategoryGap="28%">
+                <defs>
+                  <linearGradient id="barFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="oklch(0.7 0.18 255)" stopOpacity={1} />
+                    <stop offset="100%" stopColor="oklch(0.55 0.18 255)" stopOpacity={0.85} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid vertical={false} stroke="oklch(0.92 0.01 255)" strokeDasharray="4 4" />
+                <XAxis dataKey="name" tick={{ fontSize: 12, fill: "oklch(0.45 0.02 260)" }} tickLine={false} axisLine={false} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: "oklch(0.45 0.02 260)" }} tickLine={false} axisLine={false} width={32} />
+                <Tooltip
+                  cursor={{ fill: "oklch(0.55 0.18 255 / 0.08)" }}
+                  contentStyle={{ borderRadius: 12, border: "1px solid oklch(0.9 0.01 255)", boxShadow: "0 8px 24px -8px oklch(0.55 0.18 255 / 0.25)", padding: "8px 12px" }}
+                  labelStyle={{ fontWeight: 600, marginBottom: 4 }}
+                  formatter={(v: number) => [`${v} licença${v === 1 ? "" : "s"}`, "Total"]}
+                />
+                <Bar dataKey="count" fill="url(#barFill)" radius={[8, 8, 0, 0]} maxBarSize={56}>
+                  {topProducts.map((_, i) => <Cell key={i} />)}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           )}
         </Card>
-        <Card className="p-5">
-          <div className="mb-4 font-semibold">Faturamento (últimos 6 meses)</div>
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={months}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-              <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `R$${v}`} />
-              <Tooltip formatter={(v) => formatBRL(Number(v))} />
-              <Line type="monotone" dataKey="total" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
-            </LineChart>
+        <Card className="p-5 bg-gradient-card border-border/60 shadow-elegant">
+          <div className="mb-1 flex items-center justify-between">
+            <div>
+              <div className="font-semibold">Faturamento</div>
+              <div className="text-xs text-muted-foreground">Últimos 6 meses (pagos)</div>
+            </div>
+            <Badge variant="secondary" className="font-normal">{formatBRL(months.reduce((s, m) => s + m.total, 0))}</Badge>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={months} margin={{ top: 16, right: 8, left: -8, bottom: 4 }}>
+              <defs>
+                <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="oklch(0.7 0.18 255)" stopOpacity={0.45} />
+                  <stop offset="100%" stopColor="oklch(0.7 0.18 255)" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid vertical={false} stroke="oklch(0.92 0.01 255)" strokeDasharray="4 4" />
+              <XAxis dataKey="label" tick={{ fontSize: 12, fill: "oklch(0.45 0.02 260)" }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 12, fill: "oklch(0.45 0.02 260)" }} tickLine={false} axisLine={false} width={56} tickFormatter={(v) => v >= 1000 ? `R$${(v / 1000).toFixed(1)}k` : `R$${v}`} />
+              <Tooltip
+                cursor={{ stroke: "oklch(0.55 0.18 255)", strokeWidth: 1, strokeDasharray: "4 4" }}
+                contentStyle={{ borderRadius: 12, border: "1px solid oklch(0.9 0.01 255)", boxShadow: "0 8px 24px -8px oklch(0.55 0.18 255 / 0.25)", padding: "8px 12px" }}
+                labelStyle={{ fontWeight: 600, marginBottom: 4 }}
+                formatter={(v: number) => [formatBRL(v), "Faturamento"]}
+              />
+              <Area type="monotone" dataKey="total" stroke="oklch(0.55 0.18 255)" strokeWidth={2.5} fill="url(#areaFill)" activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }} />
+            </AreaChart>
           </ResponsiveContainer>
         </Card>
       </div>
