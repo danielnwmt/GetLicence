@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Package, KeyRound, CreditCard, Users, DollarSign, Pencil, Trash2, CheckCircle2, Landmark, Copy, FileText, ExternalLink, XCircle } from "lucide-react";
+import { Plus, Package, KeyRound, CreditCard, Users, DollarSign, Pencil, Trash2, Landmark, Copy, FileText, ExternalLink, XCircle } from "lucide-react";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { fetchCep } from "@/lib/cep";
 import { formatCpfCnpj, isValidCpfCnpj } from "@/lib/mask";
@@ -130,7 +130,7 @@ function AdminPage() {
           <ProductsTab products={products} onChange={reload} />
         </TabsContent>
         <TabsContent value="customers" className="mt-6">
-          <CustomersTab profiles={profiles.filter((p) => !adminIds.includes(p.user_id))} licenses={licenses} onChange={reload} />
+          <CustomersTab profiles={profiles.filter((p) => !adminIds.includes(p.user_id))} licenses={licenses} payments={payments} onChange={reload} />
         </TabsContent>
         <TabsContent value="settings" className="mt-6">
           <Tabs defaultValue="users" className="space-y-4">
@@ -604,6 +604,18 @@ function PaymentsTab({ payments, licenses, profiles, onChange }: { payments: Pay
   const [newOpen, setNewOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newForm, setNewForm] = useState({ user_id: "", license_id: "", amount: "", due_date: "" });
+  const [search, setSearch] = useState("");
+  const profileById = new Map(profiles.map((p) => [p.user_id, p]));
+  const q = search.trim().toLowerCase();
+  const filteredPayments = !q ? payments : payments.filter((p) => {
+    const prof = profileById.get(p.user_id);
+    return (
+      (prof?.full_name || "").toLowerCase().includes(q) ||
+      (prof?.email || "").toLowerCase().includes(q) ||
+      (prof?.cpf_cnpj || "").toLowerCase().includes(q) ||
+      (p.license?.license_key || "").toLowerCase().includes(q)
+    );
+  });
 
   const clientLicenses = licenses.filter((l) => l.user_id === newForm.user_id);
 
@@ -632,23 +644,6 @@ function PaymentsTab({ payments, licenses, profiles, onChange }: { payments: Pay
     } finally {
       setCreating(false);
     }
-  };
-
-  const markPaid = async (id: string) => {
-    const { error } = await supabase.from("payments").update({ status: "paid" as const, paid_at: new Date().toISOString() }).eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success("Pagamento confirmado");
-    onChange();
-  };
-  const setStatus = async (id: string, status: string) => {
-    const update: { status: "pending" | "paid" | "failed" | "refunded"; paid_at?: string | null } = {
-      status: status as "pending" | "paid" | "failed" | "refunded",
-    };
-    if (status === "paid") update.paid_at = new Date().toISOString();
-    if (status === "pending") update.paid_at = null;
-    const { error } = await supabase.from("payments").update(update).eq("id", id);
-    if (error) return toast.error(error.message);
-    onChange();
   };
 
   const emitir = async (id: string) => {
@@ -720,30 +715,36 @@ function PaymentsTab({ payments, licenses, profiles, onChange }: { payments: Pay
           </DialogContent>
         </Dialog>
       </div>
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder="Buscar cliente por nome, e-mail, CPF/CNPJ ou licença..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-md"
+        />
+      </div>
       <Card className="overflow-hidden">
         <table className="w-full text-sm">
         <thead className="bg-muted/50 text-left"><tr>
-          <th className="p-3 font-medium">Data</th><th className="p-3 font-medium">Licença</th>
+          <th className="p-3 font-medium">Data</th>
+          <th className="p-3 font-medium">Cliente</th>
+          <th className="p-3 font-medium">Licença</th>
           <th className="p-3 font-medium">Valor</th><th className="p-3 font-medium">Pago em</th>
           <th className="p-3 font-medium">Status</th><th className="p-3 font-medium">Boleto</th><th className="p-3"></th>
         </tr></thead>
         <tbody>
-          {payments.map((p) => (
+          {filteredPayments.map((p) => {
+            const prof = profileById.get(p.user_id);
+            const statusVariant = p.status === "paid" ? "default" : p.status === "failed" ? "destructive" : "secondary";
+            return (
             <tr key={p.id} className="border-t border-border">
               <td className="p-3">{formatDate(p.created_at)}</td>
+              <td className="p-3">{prof?.full_name || prof?.email || "—"}</td>
               <td className="p-3 font-mono text-xs">{p.license?.license_key ?? "—"}</td>
               <td className="p-3 font-medium">{formatBRL(Number(p.amount))}</td>
               <td className="p-3">{p.paid_at ? formatDate(p.paid_at) : "—"}</td>
               <td className="p-3">
-                <Select value={p.status} onValueChange={(v) => setStatus(p.id, v)}>
-                  <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pendente</SelectItem>
-                    <SelectItem value="paid">Pago</SelectItem>
-                    <SelectItem value="failed">Falhou</SelectItem>
-                    <SelectItem value="refunded">Reembolsado</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Badge variant={statusVariant}>{statusLabel[p.status] ?? p.status}</Badge>
               </td>
               <td className="p-3">
                 {p.boleto_url ? (
@@ -765,15 +766,11 @@ function PaymentsTab({ payments, licenses, profiles, onChange }: { payments: Pay
                     <XCircle className="mr-1 h-3.5 w-3.5" /> {cancelingId === p.id ? "Cancelando..." : "Cancelar boleto"}
                   </Button>
                 )}
-                {p.status !== "paid" && (
-                  <Button size="sm" variant="ghost" onClick={() => markPaid(p.id)}>
-                    <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Pago
-                  </Button>
-                )}
               </td>
             </tr>
-          ))}
-          {payments.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Nenhum pagamento.</td></tr>}
+            );
+          })}
+          {filteredPayments.length === 0 && <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Nenhum pagamento.</td></tr>}
         </tbody>
       </table>
     </Card>
@@ -789,15 +786,31 @@ const emptyCustomerForm = {
   address_complement: "", address_neighborhood: "", address_city: "", address_state: "",
 };
 
-function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; licenses: LicenseRow[]; onChange: () => void }) {
+function CustomersTab({ profiles, licenses, payments, onChange }: { profiles: Profile[]; licenses: LicenseRow[]; payments: PaymentRow[]; onChange: () => void }) {
   const createCustomerFn = useServerFn(createCustomer);
   const updateCustomerFn = useServerFn(updateCustomer);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Profile | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyCustomerForm);
+  const [search, setSearch] = useState("");
+  const [detail, setDetail] = useState<Profile | null>(null);
 
   const isEdit = !!editing;
+
+  const q = search.trim().toLowerCase();
+  const filteredProfiles = !q ? profiles : profiles.filter((p) =>
+    (p.full_name || "").toLowerCase().includes(q) ||
+    (p.email || "").toLowerCase().includes(q) ||
+    (p.cpf_cnpj || "").toLowerCase().includes(q) ||
+    String(p.customer_number ?? "").includes(q)
+  );
+
+  const detailLicenses = detail ? licenses.filter((l) => l.user_id === detail.user_id) : [];
+  const detailPayments = detail ? payments.filter((p) => p.user_id === detail.user_id) : [];
+  const detailTotalPaid = detailPayments.filter((p) => p.status === "paid").reduce((s, p) => s + Number(p.amount), 0);
+  const detailPending = detailPayments.filter((p) => p.status === "pending").reduce((s, p) => s + Number(p.amount), 0);
+
 
   const openCreate = () => {
     setEditing(null);
@@ -919,6 +932,14 @@ function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; l
           </DialogContent>
         </Dialog>
       </div>
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder="Buscar cliente por nome, e-mail, CPF/CNPJ ou ID..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-md"
+        />
+      </div>
       <Card className="overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left"><tr>
@@ -928,29 +949,103 @@ function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; l
             <th className="p-3 font-medium">Cidade</th>
             <th className="p-3 font-medium">UF</th>
             <th className="p-3 font-medium">Licenças</th>
-            <th className="p-3 font-medium w-20 text-right">Ações</th>
+            <th className="p-3 font-medium w-32 text-right">Ações</th>
           </tr></thead>
           <tbody>
-            {profiles.map((p) => {
+            {filteredProfiles.map((p) => {
               const count = licenses.filter((l) => l.user_id === p.user_id).length;
               return (
-                <tr key={p.user_id} className="border-t border-border">
+                <tr key={p.user_id} className="border-t border-border hover:bg-muted/30 cursor-pointer" onClick={() => setDetail(p)}>
                   <td className="p-3 font-mono text-xs text-muted-foreground">#{p.customer_number ?? "—"}</td>
                   <td className="p-3 font-medium">{p.full_name || "—"}</td>
                   <td className="p-3">{p.email}</td>
                   <td className="p-3">{p.address_city || "—"}</td>
                   <td className="p-3">{p.address_state || "—"}</td>
                   <td className="p-3">{count}</td>
-                  <td className="p-3 text-right">
+                  <td className="p-3 text-right space-x-1" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" size="sm" onClick={() => setDetail(p)}><DollarSign className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="sm" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
                   </td>
                 </tr>
               );
             })}
-            {profiles.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Nenhum cliente.</td></tr>}
+            {filteredProfiles.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Nenhum cliente.</td></tr>}
           </tbody>
         </table>
       </Card>
+
+      <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{detail?.full_name || detail?.email} — Histórico</DialogTitle>
+          </DialogHeader>
+          {detail && (
+            <div className="space-y-6 py-2">
+              <div className="grid grid-cols-3 gap-3">
+                <Card className="p-3"><div className="text-xs text-muted-foreground">Pago</div><div className="text-lg font-semibold">{formatBRL(detailTotalPaid)}</div></Card>
+                <Card className="p-3"><div className="text-xs text-muted-foreground">Pendente</div><div className="text-lg font-semibold">{formatBRL(detailPending)}</div></Card>
+                <Card className="p-3"><div className="text-xs text-muted-foreground">Licenças</div><div className="text-lg font-semibold">{detailLicenses.length}</div></Card>
+              </div>
+
+              <div>
+                <h3 className="font-medium mb-2">Licenças</h3>
+                <Card className="overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 text-left"><tr>
+                      <th className="p-2 font-medium">Chave</th>
+                      <th className="p-2 font-medium">Produto</th>
+                      <th className="p-2 font-medium">Plano</th>
+                      <th className="p-2 font-medium">Status</th>
+                      <th className="p-2 font-medium">Expira em</th>
+                    </tr></thead>
+                    <tbody>
+                      {detailLicenses.map((l) => (
+                        <tr key={l.id} className="border-t border-border">
+                          <td className="p-2 font-mono text-xs">{l.license_key}</td>
+                          <td className="p-2">{l.product?.name ?? "—"}</td>
+                          <td className="p-2">{l.plan}</td>
+                          <td className="p-2"><Badge variant="secondary">{statusLabel[l.status] ?? l.status}</Badge></td>
+                          <td className="p-2">{formatDate(l.expires_at)}</td>
+                        </tr>
+                      ))}
+                      {detailLicenses.length === 0 && <tr><td colSpan={5} className="p-3 text-center text-muted-foreground">Sem licenças.</td></tr>}
+                    </tbody>
+                  </table>
+                </Card>
+              </div>
+
+              <div>
+                <h3 className="font-medium mb-2">Financeiro</h3>
+                <Card className="overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 text-left"><tr>
+                      <th className="p-2 font-medium">Data</th>
+                      <th className="p-2 font-medium">Licença</th>
+                      <th className="p-2 font-medium">Valor</th>
+                      <th className="p-2 font-medium">Pago em</th>
+                      <th className="p-2 font-medium">Status</th>
+                      <th className="p-2 font-medium">Boleto</th>
+                    </tr></thead>
+                    <tbody>
+                      {detailPayments.map((p) => (
+                        <tr key={p.id} className="border-t border-border">
+                          <td className="p-2">{formatDate(p.created_at)}</td>
+                          <td className="p-2 font-mono text-xs">{p.license?.license_key ?? "—"}</td>
+                          <td className="p-2">{formatBRL(Number(p.amount))}</td>
+                          <td className="p-2">{p.paid_at ? formatDate(p.paid_at) : "—"}</td>
+                          <td className="p-2"><Badge variant={p.status === "paid" ? "default" : p.status === "failed" ? "destructive" : "secondary"}>{statusLabel[p.status] ?? p.status}</Badge></td>
+                          <td className="p-2">{p.boleto_url ? <a href={p.boleto_url} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1 text-xs"><FileText className="h-3.5 w-3.5" />Abrir</a> : "—"}</td>
+                        </tr>
+                      ))}
+                      {detailPayments.length === 0 && <tr><td colSpan={6} className="p-3 text-center text-muted-foreground">Sem pagamentos.</td></tr>}
+                    </tbody>
+                  </table>
+                </Card>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
