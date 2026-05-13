@@ -134,14 +134,18 @@ function AdminPage() {
         <TabsContent value="settings" className="mt-6">
           <Tabs defaultValue="users" className="space-y-4">
             <TabsList>
-              <TabsTrigger value="users">Usuários</TabsTrigger>
+             <TabsTrigger value="users">Usuários</TabsTrigger>
               <TabsTrigger value="integrations">Integrações</TabsTrigger>
+              <TabsTrigger value="mobile">App Mobile</TabsTrigger>
             </TabsList>
             <TabsContent value="users">
               <SystemUsersTab profiles={profiles.filter((p) => adminIds.includes(p.user_id))} onChange={reload} />
             </TabsContent>
             <TabsContent value="integrations">
               <IntegrationsTab />
+            </TabsContent>
+            <TabsContent value="mobile">
+              <MobileAppTab />
             </TabsContent>
           </Tabs>
         </TabsContent>
