@@ -21,6 +21,7 @@ import { fetchCep } from "@/lib/cep";
 import { formatCpfCnpj, isValidCpfCnpj } from "@/lib/mask";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line } from "recharts";
+import { QRCodeSVG } from "qrcode.react";
 
 type AdminTab = "dashboard" | "licenses" | "customers" | "payments" | "products" | "settings";
 const ADMIN_TABS: AdminTab[] = ["dashboard", "licenses", "customers", "payments", "products", "settings"];
@@ -134,14 +135,18 @@ function AdminPage() {
         <TabsContent value="settings" className="mt-6">
           <Tabs defaultValue="users" className="space-y-4">
             <TabsList>
-              <TabsTrigger value="users">Usuários</TabsTrigger>
+             <TabsTrigger value="users">Usuários</TabsTrigger>
               <TabsTrigger value="integrations">Integrações</TabsTrigger>
+              <TabsTrigger value="mobile">App Mobile</TabsTrigger>
             </TabsList>
             <TabsContent value="users">
               <SystemUsersTab profiles={profiles.filter((p) => adminIds.includes(p.user_id))} onChange={reload} />
             </TabsContent>
             <TabsContent value="integrations">
               <IntegrationsTab />
+            </TabsContent>
+            <TabsContent value="mobile">
+              <MobileAppTab />
             </TabsContent>
           </Tabs>
         </TabsContent>
@@ -1310,5 +1315,37 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
         </table>
       </Card>
     </div>
+  );
+}
+
+function MobileAppTab() {
+  const [url, setUrl] = useState("");
+  useEffect(() => {
+    if (typeof window !== "undefined") setUrl(window.location.origin);
+  }, []);
+
+  const copy = async () => {
+    await navigator.clipboard.writeText(url);
+    toast.success("Link copiado");
+  };
+
+  return (
+    <Card className="p-6">
+      <div className="flex flex-col items-center gap-6 md:flex-row md:items-start">
+        <div className="rounded-lg bg-white p-4 shadow-sm">
+          {url ? <QRCodeSVG value={url} size={200} level="M" /> : <div className="h-[200px] w-[200px]" />}
+        </div>
+        <div className="flex-1 space-y-3">
+          <h3 className="text-lg font-semibold">Acesso ao App Mobile</h3>
+          <p className="text-sm text-muted-foreground">
+            Escaneie o QR Code com a câmera do celular para abrir o aplicativo no domínio configurado nesta instalação.
+          </p>
+          <div className="flex items-center gap-2">
+            <Input readOnly value={url} />
+            <Button variant="outline" size="icon" onClick={copy}><Copy className="h-4 w-4" /></Button>
+          </div>
+        </div>
+      </div>
+    </Card>
   );
 }
