@@ -96,7 +96,7 @@ export const listAdminProfiles = createServerFn({ method: "GET" })
     );
 
     const [{ data: profiles, error: profilesError }, { data: usersData, error: usersError }] = await Promise.all([
-      admin.from("profiles").select("user_id, full_name, email, address_city, address_state"),
+      admin.from("profiles").select("user_id, full_name, email, address_city, address_state, customer_number"),
       admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
     ]);
 
