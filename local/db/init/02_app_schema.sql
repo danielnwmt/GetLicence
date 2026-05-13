@@ -6,13 +6,13 @@ create extension if not exists pgcrypto;
 -- (o GoTrue tenta fazer CREATE OR REPLACE neles e precisa ser owner).
 set role supabase_auth_admin;
 create or replace function auth.jwt() returns jsonb language sql stable as
-$$ select coalesce(current_setting('request.jwt.claims', true)::jsonb, '{}'::jsonb) $$;
+$$ select coalesce(nullif(current_setting('request.jwt.claims', true), '')::jsonb, '{}'::jsonb) $$;
 create or replace function auth.uid() returns uuid language sql stable as
-$$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+$$ select nullif(coalesce(current_setting('request.jwt.claim.sub', true), auth.jwt()->>'sub'), '')::uuid $$;
 create or replace function auth.role() returns text language sql stable as
-$$ select current_setting('request.jwt.claim.role', true) $$;
+$$ select coalesce(nullif(current_setting('request.jwt.claim.role', true), ''), auth.jwt()->>'role') $$;
 create or replace function auth.email() returns text language sql stable as
-$$ select current_setting('request.jwt.claim.email', true) $$;
+$$ select coalesce(nullif(current_setting('request.jwt.claim.email', true), ''), auth.jwt()->>'email') $$;
 reset role;
 
 do $$ begin create type public.app_role as enum ('admin','client'); exception when duplicate_object then null; end $$;
@@ -25,6 +25,7 @@ do $$ begin create type public.payment_provider as enum ('asaas','sicredi','sico
 create table if not exists public.profiles (
   id uuid primary key default gen_random_uuid(),
   user_id uuid unique not null,
+  customer_number bigint,
   full_name text, email text, cpf_cnpj text, phone text,
   address_zip text, address_street text, address_number text, address_complement text,
   address_neighborhood text, address_city text, address_state text,
@@ -33,6 +34,18 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default now()
 );
 alter table public.profiles add column if not exists must_change_password boolean not null default false;
+create sequence if not exists public.profiles_customer_number_seq start 1;
+alter table public.profiles add column if not exists customer_number bigint;
+alter table public.profiles alter column customer_number set default nextval('public.profiles_customer_number_seq');
+with ordered as (
+  select id, row_number() over (order by created_at) as rn
+  from public.profiles
+  where customer_number is null
+)
+update public.profiles p set customer_number = o.rn from ordered o where p.id = o.id;
+select setval('public.profiles_customer_number_seq', coalesce((select max(customer_number) from public.profiles), 0) + 1, false);
+alter table public.profiles alter column customer_number set not null;
+create unique index if not exists profiles_customer_number_key on public.profiles(customer_number);
 
 create table if not exists public.user_roles (
   id uuid primary key default gen_random_uuid(),
@@ -71,10 +84,18 @@ create table if not exists public.licenses (
   status public.license_status not null default 'pending',
   starts_at timestamptz not null default now(),
   expires_at timestamptz not null,
+  activated_at timestamptz,
+  last_seen_at timestamptz,
+  device_ip text,
+  device_hostname text,
   auto_renew boolean not null default true,
   notes text, provider public.payment_provider, provider_subscription_id text,
   created_at timestamptz not null default now(), updated_at timestamptz not null default now()
 );
+alter table public.licenses add column if not exists activated_at timestamptz;
+alter table public.licenses add column if not exists last_seen_at timestamptz;
+alter table public.licenses add column if not exists device_ip text;
+alter table public.licenses add column if not exists device_hostname text;
 
 create table if not exists public.payments (
   id uuid primary key default gen_random_uuid(),
