@@ -194,6 +194,56 @@ ANON_KEY=$(mkjwt anon)
 SERVICE_KEY=$(mkjwt service_role)
 ok "Chaves JWT geradas"
 
+# ---------- 6b. Storage API (Supabase Storage) ----------
+if [[ ! -d "$STORAGE_DIR/node_modules" ]]; then
+  log "Baixando Storage API ${STORAGE_VERSION}"
+  rm -rf "$STORAGE_DIR"
+  mkdir -p "$STORAGE_DIR"
+  curl -fsSL "https://github.com/supabase/storage/archive/refs/tags/${STORAGE_VERSION}.tar.gz" \
+    | tar -xz --strip-components=1 -C "$STORAGE_DIR"
+  ( cd "$STORAGE_DIR" && npm ci --omit=dev --silent && npm run build --silent ) || \
+    ( cd "$STORAGE_DIR" && npm install --silent && npm run build --silent )
+fi
+mkdir -p "$STORAGE_DATA_DIR"
+chown -R "$APP_USER:$APP_USER" "$STORAGE_DIR" "$STORAGE_DATA_DIR"
+
+cat >/etc/getlicence-storage.env <<EOF
+SERVER_PORT=5555
+SERVER_HOST=127.0.0.1
+ANON_KEY=${ANON_KEY}
+SERVICE_KEY=${SERVICE_KEY}
+TENANT_ID=getlicence
+REGION=local
+POSTGREST_URL=http://127.0.0.1:3001
+PGRST_JWT_SECRET=${JWT_SECRET}
+AUTH_JWT_SECRET=${JWT_SECRET}
+DATABASE_URL=postgres://supabase_storage_admin:${PG_PASS}@127.0.0.1:5432/${DB_NAME}
+DATABASE_POOL_URL=postgres://supabase_storage_admin:${PG_PASS}@127.0.0.1:5432/${DB_NAME}
+PGOPTIONS=-c search_path=storage,public
+DB_INSTALL_ROLES=false
+STORAGE_BACKEND=file
+FILE_STORAGE_BACKEND_PATH=${STORAGE_DATA_DIR}
+STORAGE_FILE_BACKEND_PATH=${STORAGE_DATA_DIR}
+GLOBAL_S3_BUCKET=getlicence
+FILE_SIZE_LIMIT=52428800
+ENABLE_IMAGE_TRANSFORMATION=false
+EOF
+chmod 600 /etc/getlicence-storage.env
+
+cat >/etc/systemd/system/getlicence-storage.service <<EOF
+[Unit]
+Description=GetLicence Storage API
+After=postgresql.service getlicence-postgrest.service
+Requires=postgresql.service
+[Service]
+WorkingDirectory=${STORAGE_DIR}
+EnvironmentFile=/etc/getlicence-storage.env
+ExecStart=/usr/bin/node ${STORAGE_DIR}/dist/server.js
+Restart=always
+User=${APP_USER}
+[Install]
+WantedBy=multi-user.target
+EOF
 # ---------- 7. app (frontend) ----------
 log "Copiando aplicação para ${APP_DIR}"
 mkdir -p "$APP_DIR"
