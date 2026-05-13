@@ -77,7 +77,7 @@ sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" -c \
   "ALTER USER postgres WITH PASSWORD '${PG_PASS}';" >/dev/null
 
 log "Carregando schema base do banco"
-sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" -f "$SCRIPT_DIR/db/init/01_roles_and_auth.sql" >/dev/null
+sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" < "$SCRIPT_DIR/db/init/01_roles_and_auth.sql" >/dev/null
 
 # senhas dos roles internos
 sudo -u postgres psql -d "$DB_NAME" -c \
