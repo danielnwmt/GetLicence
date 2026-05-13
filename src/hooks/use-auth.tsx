@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { getCurrentUserRole } from "@/lib/auth.functions";
 
 type Role = "admin" | "client";
 
@@ -15,6 +17,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const getCurrentUserRoleFn = useServerFn(getCurrentUserRole);
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<Role | null>(null);
@@ -45,15 +48,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const fetchRole = async (userId: string) => {
-    const { data, error } = await supabase
+    try {
+      const serverRole = await getCurrentUserRoleFn();
+      setRole(serverRole);
+      return;
+    } catch (e) {
+      console.error("Role fetch failed:", e);
+    }
+
+    const { data } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", userId);
-    if (error) {
+    const isAdmin = (data ?? []).some((r: { role: string }) => r.role === "admin");
+    if (!isAdmin && userId) {
       setRole("client");
       return;
     }
-    const isAdmin = (data ?? []).some((r: { role: string }) => r.role === "admin");
     setRole(isAdmin ? "admin" : "client");
   };
 
