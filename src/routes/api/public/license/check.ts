@@ -40,7 +40,7 @@ async function handle(request: Request, params: { license_key?: string; hostname
   const expired = new Date(lic.expires_at) < now;
 
   let newStatus = lic.status;
-  const update: Record<string, unknown> = {
+  const update: Database["public"]["Tables"]["licenses"]["Update"] = {
     last_seen_at: now.toISOString(),
     device_ip: ip,
     device_hostname: params.hostname ?? null,
