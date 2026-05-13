@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { createCustomer, listAdminProfiles } from "@/lib/customers.functions";
+import { createCustomer, listAdminProfiles, updateCustomer } from "@/lib/customers.functions";
 import { createSystemUser, updateSystemUser, deleteSystemUser } from "@/lib/system-users.functions";
 import { issueAsaasBoleto, cancelAsaasBoleto } from "@/lib/boletos.functions";
 import { useEffect, useState, useCallback } from "react";
