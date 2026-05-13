@@ -932,6 +932,14 @@ function CustomersTab({ profiles, licenses, payments, onChange }: { profiles: Pr
           </DialogContent>
         </Dialog>
       </div>
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder="Buscar cliente por nome, e-mail, CPF/CNPJ ou ID..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-md"
+        />
+      </div>
       <Card className="overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left"><tr>
@@ -941,29 +949,103 @@ function CustomersTab({ profiles, licenses, payments, onChange }: { profiles: Pr
             <th className="p-3 font-medium">Cidade</th>
             <th className="p-3 font-medium">UF</th>
             <th className="p-3 font-medium">Licenças</th>
-            <th className="p-3 font-medium w-20 text-right">Ações</th>
+            <th className="p-3 font-medium w-32 text-right">Ações</th>
           </tr></thead>
           <tbody>
-            {profiles.map((p) => {
+            {filteredProfiles.map((p) => {
               const count = licenses.filter((l) => l.user_id === p.user_id).length;
               return (
-                <tr key={p.user_id} className="border-t border-border">
+                <tr key={p.user_id} className="border-t border-border hover:bg-muted/30 cursor-pointer" onClick={() => setDetail(p)}>
                   <td className="p-3 font-mono text-xs text-muted-foreground">#{p.customer_number ?? "—"}</td>
                   <td className="p-3 font-medium">{p.full_name || "—"}</td>
                   <td className="p-3">{p.email}</td>
                   <td className="p-3">{p.address_city || "—"}</td>
                   <td className="p-3">{p.address_state || "—"}</td>
                   <td className="p-3">{count}</td>
-                  <td className="p-3 text-right">
+                  <td className="p-3 text-right space-x-1" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" size="sm" onClick={() => setDetail(p)}><DollarSign className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="sm" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
                   </td>
                 </tr>
               );
             })}
-            {profiles.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Nenhum cliente.</td></tr>}
+            {filteredProfiles.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Nenhum cliente.</td></tr>}
           </tbody>
         </table>
       </Card>
+
+      <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{detail?.full_name || detail?.email} — Histórico</DialogTitle>
+          </DialogHeader>
+          {detail && (
+            <div className="space-y-6 py-2">
+              <div className="grid grid-cols-3 gap-3">
+                <Card className="p-3"><div className="text-xs text-muted-foreground">Pago</div><div className="text-lg font-semibold">{formatBRL(detailTotalPaid)}</div></Card>
+                <Card className="p-3"><div className="text-xs text-muted-foreground">Pendente</div><div className="text-lg font-semibold">{formatBRL(detailPending)}</div></Card>
+                <Card className="p-3"><div className="text-xs text-muted-foreground">Licenças</div><div className="text-lg font-semibold">{detailLicenses.length}</div></Card>
+              </div>
+
+              <div>
+                <h3 className="font-medium mb-2">Licenças</h3>
+                <Card className="overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 text-left"><tr>
+                      <th className="p-2 font-medium">Chave</th>
+                      <th className="p-2 font-medium">Produto</th>
+                      <th className="p-2 font-medium">Plano</th>
+                      <th className="p-2 font-medium">Status</th>
+                      <th className="p-2 font-medium">Expira em</th>
+                    </tr></thead>
+                    <tbody>
+                      {detailLicenses.map((l) => (
+                        <tr key={l.id} className="border-t border-border">
+                          <td className="p-2 font-mono text-xs">{l.license_key}</td>
+                          <td className="p-2">{l.product?.name ?? "—"}</td>
+                          <td className="p-2">{l.plan}</td>
+                          <td className="p-2"><Badge variant="secondary">{statusLabel[l.status] ?? l.status}</Badge></td>
+                          <td className="p-2">{formatDate(l.expires_at)}</td>
+                        </tr>
+                      ))}
+                      {detailLicenses.length === 0 && <tr><td colSpan={5} className="p-3 text-center text-muted-foreground">Sem licenças.</td></tr>}
+                    </tbody>
+                  </table>
+                </Card>
+              </div>
+
+              <div>
+                <h3 className="font-medium mb-2">Financeiro</h3>
+                <Card className="overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 text-left"><tr>
+                      <th className="p-2 font-medium">Data</th>
+                      <th className="p-2 font-medium">Licença</th>
+                      <th className="p-2 font-medium">Valor</th>
+                      <th className="p-2 font-medium">Pago em</th>
+                      <th className="p-2 font-medium">Status</th>
+                      <th className="p-2 font-medium">Boleto</th>
+                    </tr></thead>
+                    <tbody>
+                      {detailPayments.map((p) => (
+                        <tr key={p.id} className="border-t border-border">
+                          <td className="p-2">{formatDate(p.created_at)}</td>
+                          <td className="p-2 font-mono text-xs">{p.license?.license_key ?? "—"}</td>
+                          <td className="p-2">{formatBRL(Number(p.amount))}</td>
+                          <td className="p-2">{p.paid_at ? formatDate(p.paid_at) : "—"}</td>
+                          <td className="p-2"><Badge variant={p.status === "paid" ? "default" : p.status === "failed" ? "destructive" : "secondary"}>{statusLabel[p.status] ?? p.status}</Badge></td>
+                          <td className="p-2">{p.boleto_url ? <a href={p.boleto_url} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1 text-xs"><FileText className="h-3.5 w-3.5" />Abrir</a> : "—"}</td>
+                        </tr>
+                      ))}
+                      {detailPayments.length === 0 && <tr><td colSpan={6} className="p-3 text-center text-muted-foreground">Sem pagamentos.</td></tr>}
+                    </tbody>
+                  </table>
+                </Card>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
