@@ -207,30 +207,45 @@ function DashboardCharts({ licenses, payments, profiles, products }: { licenses:
           </div>
           {topProducts.length === 0 ? (
             <div className="py-16 text-center text-sm text-muted-foreground">Sem licenças emitidas.</div>
-          ) : (
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={topProducts} margin={{ top: 16, right: 8, left: -16, bottom: 4 }} barCategoryGap="28%">
-                <defs>
-                  <linearGradient id="barFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="oklch(0.7 0.18 255)" stopOpacity={1} />
-                    <stop offset="100%" stopColor="oklch(0.55 0.18 255)" stopOpacity={0.85} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid vertical={false} stroke="oklch(0.92 0.01 255)" strokeDasharray="4 4" />
-                <XAxis dataKey="name" tick={{ fontSize: 12, fill: "oklch(0.45 0.02 260)" }} tickLine={false} axisLine={false} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: "oklch(0.45 0.02 260)" }} tickLine={false} axisLine={false} width={32} />
-                <Tooltip
-                  cursor={{ fill: "oklch(0.55 0.18 255 / 0.08)" }}
-                  contentStyle={{ borderRadius: 12, border: "1px solid oklch(0.9 0.01 255)", boxShadow: "0 8px 24px -8px oklch(0.55 0.18 255 / 0.25)", padding: "8px 12px" }}
-                  labelStyle={{ fontWeight: 600, marginBottom: 4 }}
-                  formatter={(v) => [`${Number(v)} licença${Number(v) === 1 ? "" : "s"}`, "Total"]}
-                />
-                <Bar dataKey="count" fill="url(#barFill)" radius={[8, 8, 0, 0]} maxBarSize={56}>
-                  {topProducts.map((_, i) => <Cell key={i} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+          ) : (() => {
+            const PIE_COLORS = [
+              "oklch(0.6 0.18 255)",
+              "oklch(0.7 0.16 200)",
+              "oklch(0.65 0.18 300)",
+              "oklch(0.72 0.17 160)",
+              "oklch(0.68 0.18 30)",
+              "oklch(0.62 0.2 350)",
+              "oklch(0.74 0.16 90)",
+              "oklch(0.55 0.18 230)",
+            ];
+            const total = topProducts.reduce((s, p) => s + p.count, 0);
+            return (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Tooltip
+                    contentStyle={{ borderRadius: 12, border: "1px solid oklch(0.9 0.01 255)", boxShadow: "0 8px 24px -8px oklch(0.55 0.18 255 / 0.25)", padding: "8px 12px" }}
+                    labelStyle={{ fontWeight: 600, marginBottom: 4 }}
+                    formatter={(v, n) => [`${Number(v)} (${((Number(v) / total) * 100).toFixed(1)}%)`, n as string]}
+                  />
+                  <Legend verticalAlign="middle" align="right" layout="vertical" iconType="circle" wrapperStyle={{ fontSize: 12 }} />
+                  <Pie
+                    data={topProducts}
+                    dataKey="count"
+                    nameKey="name"
+                    cx="40%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={110}
+                    paddingAngle={2}
+                    stroke="oklch(1 0 0)"
+                    strokeWidth={2}
+                  >
+                    {topProducts.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            );
+          })()}
         </Card>
         <Card className="p-5 bg-gradient-card border-border/60 shadow-elegant">
           <div className="mb-1 flex items-center justify-between">
