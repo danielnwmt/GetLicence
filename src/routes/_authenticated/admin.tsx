@@ -786,15 +786,31 @@ const emptyCustomerForm = {
   address_complement: "", address_neighborhood: "", address_city: "", address_state: "",
 };
 
-function CustomersTab({ profiles, licenses, onChange }: { profiles: Profile[]; licenses: LicenseRow[]; onChange: () => void }) {
+function CustomersTab({ profiles, licenses, payments, onChange }: { profiles: Profile[]; licenses: LicenseRow[]; payments: PaymentRow[]; onChange: () => void }) {
   const createCustomerFn = useServerFn(createCustomer);
   const updateCustomerFn = useServerFn(updateCustomer);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Profile | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyCustomerForm);
+  const [search, setSearch] = useState("");
+  const [detail, setDetail] = useState<Profile | null>(null);
 
   const isEdit = !!editing;
+
+  const q = search.trim().toLowerCase();
+  const filteredProfiles = !q ? profiles : profiles.filter((p) =>
+    (p.full_name || "").toLowerCase().includes(q) ||
+    (p.email || "").toLowerCase().includes(q) ||
+    (p.cpf_cnpj || "").toLowerCase().includes(q) ||
+    String(p.customer_number ?? "").includes(q)
+  );
+
+  const detailLicenses = detail ? licenses.filter((l) => l.user_id === detail.user_id) : [];
+  const detailPayments = detail ? payments.filter((p) => p.user_id === detail.user_id) : [];
+  const detailTotalPaid = detailPayments.filter((p) => p.status === "paid").reduce((s, p) => s + Number(p.amount), 0);
+  const detailPending = detailPayments.filter((p) => p.status === "pending").reduce((s, p) => s + Number(p.amount), 0);
+
 
   const openCreate = () => {
     setEditing(null);
