@@ -483,6 +483,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
               </div>
               <div className="rounded-md bg-muted/50 p-3 space-y-1 text-sm">
                 <div className="flex justify-between"><span className="text-muted-foreground">Preço mensal calculado</span><span className="font-semibold">{formatBRL(computedMonthly)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Preço semestral (5% desc.)</span><span className="font-semibold">{formatBRL(computedSemestral)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Preço anual (10% desc.)</span><span className="font-semibold">{formatBRL(computedYearly)}</span></div>
               </div>
             </div>
