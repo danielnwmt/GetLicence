@@ -40,7 +40,7 @@ log "Instalando dependências do sistema"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y -qq
 apt-get install -y -qq ca-certificates curl gnupg openssl jq tar xz-utils \
-  postgresql postgresql-contrib nginx unzip rsync >/dev/null
+  postgresql postgresql-contrib nginx unzip rsync git >/dev/null
 
 CURRENT_NODE_MAJOR=0
 if command -v node >/dev/null 2>&1; then
@@ -312,6 +312,9 @@ cat >/opt/getlicence/update.sh <<'EOS'
 #!/usr/bin/env bash
 set -e
 cd /opt/getlicence
+if [ -d .git ] && command -v git >/dev/null 2>&1; then
+  git pull --ff-only
+fi
 chown -R getlicence:getlicence /opt/getlicence
 sudo -u postgres psql -v ON_ERROR_STOP=1 -d getlicence -f /opt/getlicence/local/db/init/02_app_schema.sql >/dev/null
 sudo -u getlicence bash -lc 'cd /opt/getlicence && bun install --silent && bun run build'
