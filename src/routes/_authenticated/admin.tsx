@@ -21,6 +21,7 @@ import { fetchCep } from "@/lib/cep";
 import { formatCpfCnpj, isValidCpfCnpj } from "@/lib/mask";
 import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LineChart, Line } from "recharts";
+import { QRCodeSVG } from "qrcode.react";
 
 type AdminTab = "dashboard" | "licenses" | "customers" | "payments" | "products" | "settings";
 const ADMIN_TABS: AdminTab[] = ["dashboard", "licenses", "customers", "payments", "products", "settings"];
