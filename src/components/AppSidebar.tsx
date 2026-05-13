@@ -39,7 +39,7 @@ const adminItems: NavItem[] = [
 
 const clientItems: NavItem[] = [
   { label: "Minhas licenças", to: "/dashboard", icon: KeyRound, match: (p) => p === "/dashboard" },
-  { label: "Conta", to: "/account", icon: UserCircle, match: (p) => p === "/account" },
+  { label: "Configurações", to: "/account", icon: UserCircle, match: (p) => p === "/account" },
 ];
 
 export function AppSidebar({
