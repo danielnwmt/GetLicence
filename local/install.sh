@@ -108,7 +108,8 @@ jwt-secret = "${JWT_SECRET}"
 server-host = "127.0.0.1"
 server-port = 3001
 EOF
-chmod 600 /etc/getlicence-postgrest.conf
+chown root:${APP_USER} /etc/getlicence-postgrest.conf
+chmod 640 /etc/getlicence-postgrest.conf
 
 cat >/etc/systemd/system/getlicence-postgrest.service <<EOF
 [Unit]
@@ -155,7 +156,8 @@ GOTRUE_MAILER_AUTOCONFIRM=true
 GOTRUE_SMTP_ADMIN_EMAIL=admin@getlicence.com
 GOTRUE_LOG_LEVEL=info
 EOF
-chmod 600 /etc/getlicence-auth.env
+chown root:${APP_USER} /etc/getlicence-auth.env
+chmod 640 /etc/getlicence-auth.env
 
 log "Migrando autenticação"
 set -a
@@ -232,6 +234,7 @@ WorkingDirectory=${APP_DIR}
 EnvironmentFile=${APP_DIR}/.env
 ExecStart=/usr/bin/node local/serve-built.mjs
 Restart=always
+RestartSec=3
 User=${APP_USER}
 [Install]
 WantedBy=multi-user.target
@@ -281,7 +284,17 @@ systemctl reload nginx
 
 # ---------- 9. start services ----------
 systemctl daemon-reload
-systemctl enable --now getlicence-postgrest getlicence-auth getlicence-app >/dev/null
+systemctl enable --now getlicence-postgrest getlicence-auth >/dev/null
+
+for svc in getlicence-postgrest getlicence-auth; do
+  if ! systemctl is-active --quiet "$svc"; then
+    warn "$svc não iniciou. Últimos logs:"
+    journalctl -u "$svc" -n 100 --no-pager || true
+    exit 1
+  fi
+done
+
+systemctl enable --now getlicence-app >/dev/null
 for i in $(seq 1 30); do
   curl -fsS http://127.0.0.1:3000 >/dev/null 2>&1 && break
   sleep 2
@@ -289,6 +302,8 @@ done
 if ! curl -fsS http://127.0.0.1:3000 >/dev/null; then
   warn "App não respondeu na porta 3000. Últimos logs:"
   journalctl -u getlicence-app -n 80 --no-pager || true
+  journalctl -u getlicence-postgrest -n 80 --no-pager || true
+  journalctl -u getlicence-auth -n 80 --no-pager || true
   exit 1
 fi
 
