@@ -36,7 +36,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
 });
 
 interface Product { id: string; name: string; description: string | null; price_monthly: number; price_yearly: number; active: boolean; cost_vps?: number; cost_storage?: number; cost_other?: number; profit_margin?: number; vps_specs?: string | null; storage_amount?: number; storage_unit?: string; vps_storage_amount?: number; vps_storage_unit?: string; }
-interface Profile { user_id: string; full_name: string | null; email: string | null; address_city?: string | null; address_state?: string | null; customer_number?: number | null; }
+interface Profile { user_id: string; full_name: string | null; email: string | null; address_city?: string | null; address_state?: string | null; customer_number?: number | null; cpf_cnpj?: string | null; phone?: string | null; address_zip?: string | null; address_street?: string | null; address_number?: string | null; address_complement?: string | null; address_neighborhood?: string | null; }
 interface LicenseRow {
   id: string; license_key: string; plan: string; status: string;
   starts_at: string; expires_at: string; user_id: string; product_id: string;
