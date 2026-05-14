@@ -62,12 +62,19 @@ async function handle(request: Request, params: { license_key?: string; hostname
   await sb.from("licenses").update(update).eq("id", lic.id);
 
   const allowed = newStatus === "active";
+  const prod: any = (lic as any).products ?? null;
   return Response.json({
     ok: allowed,
     status: newStatus,
     expires_at: lic.expires_at,
     blocked: newStatus === "blocked",
     expired: newStatus === "expired",
+    storage: prod ? {
+      amount: Number(prod.storage_amount ?? 0),
+      unit: prod.storage_unit ?? "GB",
+      vps_amount: Number(prod.vps_storage_amount ?? 0),
+      vps_unit: prod.vps_storage_unit ?? "GB",
+    } : null,
   });
 }
 
