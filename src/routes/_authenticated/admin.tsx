@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Package, KeyRound, CreditCard, Users, DollarSign, Pencil, Trash2, Landmark, Copy, FileText, ExternalLink, XCircle } from "lucide-react";
+import { Plus, Package, KeyRound, CreditCard, Users, DollarSign, Pencil, Trash2, Landmark, Copy, FileText, ExternalLink, XCircle, Search, TrendingUp, Clock, AlertTriangle, CheckCircle2, Receipt, Download } from "lucide-react";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { fetchCep } from "@/lib/cep";
 import { formatCpfCnpj, isValidCpfCnpj } from "@/lib/mask";
