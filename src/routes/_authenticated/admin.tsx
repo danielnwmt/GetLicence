@@ -1435,25 +1435,37 @@ function PaymentsTab({
     if (!newForm.user_id || !newForm.license_id) return toast.error("Selecione cliente e licença");
     const amount = Number(newForm.amount);
     if (!amount || amount <= 0) return toast.error("Informe um valor válido");
+    const qty = Math.max(1, Math.floor(Number(newForm.quantity) || 1));
+    const baseDue = newForm.due_date ? new Date(newForm.due_date + "T00:00:00") : null;
     setCreating(true);
     try {
-      const { data: pay, error } = await supabase
-        .from("payments")
-        .insert({
-          user_id: newForm.user_id,
-          license_id: newForm.license_id,
-          amount,
-          status: "pending" as const,
-          due_date: newForm.due_date || null,
-        })
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      const r = await issueBoleto({ data: { payment_id: pay.id } });
-      toast.success("Boleto emitido");
-      if (r.boleto_url) window.open(r.boleto_url, "_blank");
+      let firstUrl: string | null = null;
+      for (let i = 0; i < qty; i++) {
+        const due =
+          baseDue
+            ? new Date(baseDue.getFullYear(), baseDue.getMonth() + i, baseDue.getDate())
+                .toISOString()
+                .slice(0, 10)
+            : null;
+        const { data: pay, error } = await supabase
+          .from("payments")
+          .insert({
+            user_id: newForm.user_id,
+            license_id: newForm.license_id,
+            amount,
+            status: "pending" as const,
+            due_date: due,
+          })
+          .select()
+          .single();
+        if (error) throw new Error(error.message);
+        const r = await issueBoleto({ data: { payment_id: pay.id } });
+        if (!firstUrl && r.boleto_url) firstUrl = r.boleto_url;
+      }
+      toast.success(qty > 1 ? `${qty} boletos emitidos` : "Boleto emitido");
+      if (firstUrl) window.open(firstUrl, "_blank");
       setNewOpen(false);
-      setNewForm({ user_id: "", license_id: "", amount: "", due_date: "" });
+      setNewForm({ user_id: "", license_id: "", amount: "", due_date: "", quantity: "1" });
       onChange();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao emitir boleto");
