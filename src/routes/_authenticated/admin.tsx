@@ -2366,6 +2366,10 @@ function IntegrationsTab() {
         sicoob_access_token: settings.sicoob_access_token,
         sicoob_cert_pem: settings.sicoob_cert_pem,
         sicoob_cert_key: settings.sicoob_cert_key,
+        coplan_url: settings.coplan_url,
+        coplan_username: settings.coplan_username,
+        coplan_password: settings.coplan_password,
+        coplan_token: settings.coplan_token,
       })
       .eq("id", settings.id);
     setSaving(false);
