@@ -506,7 +506,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                   >
                     <option value="">Nenhuma</option>
                     {vpsProducts.map((v) => (
-                      <option key={v.id} value={v.id}>{v.name} — {v.vps_specs} ({formatBRL(Number(v.price_monthly))}/mês)</option>
+                      <option key={v.id} value={v.id}>{v.name} — {v.vps_specs} (custo {formatBRL(Number(v.cost_vps ?? 0))} / venda {formatBRL(Number(v.price_monthly))}/mês)</option>
                     ))}
                   </select>
                 </div>
