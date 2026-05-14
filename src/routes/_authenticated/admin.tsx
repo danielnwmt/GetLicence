@@ -168,6 +168,7 @@ interface PaymentRow {
   barcode: string | null;
   provider_charge_id: string | null;
   due_date?: string | null;
+  notes?: string | null;
   license: { license_key: string } | null;
 }
 interface PayableRow {
@@ -1838,7 +1839,7 @@ function PaymentsTab({
                 return (
                   <tr
                     key={p.id}
-                    className="border-t border-border hover:bg-muted/30 transition-colors"
+                    className={`border-t border-border hover:bg-muted/30 transition-colors ${overdue ? "bg-destructive/5 text-destructive" : ""}`}
                   >
                     <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
                       {formatDate(p.created_at)}
@@ -1883,6 +1884,8 @@ function PaymentsTab({
                         <Badge className="gap-1 bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/20 border-transparent">
                           <CheckCircle2 className="h-3 w-3" /> Pago
                         </Badge>
+                      ) : p.status === "failed" && p.notes === "Boleto cancelado" ? (
+                        <Badge variant="outline">Cancelado</Badge>
                       ) : p.status === "failed" ? (
                         <Badge variant="destructive">Falhou</Badge>
                       ) : (
