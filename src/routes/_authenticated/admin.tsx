@@ -3008,7 +3008,7 @@ function PayablesTab({
         }
         if (Number(prod.cost_other ?? 0) > 0) {
           rows.push({
-            description: `Outros custos — ${ref}`,
+            description: `Software — ${ref}`,
             supplier: null,
             category: "other",
             amount: Number(prod.cost_other),
