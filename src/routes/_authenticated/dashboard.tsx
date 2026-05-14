@@ -5,9 +5,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { KeyRound, Calendar, CreditCard, Package, Copy, Check, FileText, Server, HardDrive } from "lucide-react";
+import { KeyRound, Calendar, CreditCard, Package, Copy, Check, FileText, Server, HardDrive, ArrowUpCircle } from "lucide-react";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Minhas licenças — GetLicence" }] }),
@@ -50,6 +53,29 @@ function Dashboard() {
   const [licenses, setLicenses] = useState<License[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
+  const [upgradeLicense, setUpgradeLicense] = useState<License | null>(null);
+  const [upgradeAmount, setUpgradeAmount] = useState<string>("100");
+  const [upgradeSubmitting, setUpgradeSubmitting] = useState(false);
+
+  const upgradeOptions = [
+    { value: "50", label: "+50 GB" },
+    { value: "100", label: "+100 GB" },
+    { value: "250", label: "+250 GB" },
+    { value: "500", label: "+500 GB" },
+    { value: "1000", label: "+1 TB" },
+  ];
+
+  const submitUpgrade = async () => {
+    if (!upgradeLicense) return;
+    setUpgradeSubmitting(true);
+    try {
+      await new Promise((r) => setTimeout(r, 600));
+      toast.success("Solicitação de upgrade enviada. Em breve entraremos em contato.");
+      setUpgradeLicense(null);
+    } finally {
+      setUpgradeSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -148,10 +174,16 @@ function Dashboard() {
                     )}
                   </div>
                 )}
-                <Button size="sm" variant="outline" className="mt-4" onClick={() => copyKey(l.license_key)}>
-                  {copied === l.license_key ? <Check className="mr-2 h-3.5 w-3.5" /> : <Copy className="mr-2 h-3.5 w-3.5" />}
-                  Copiar chave
-                </Button>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" onClick={() => copyKey(l.license_key)}>
+                    {copied === l.license_key ? <Check className="mr-2 h-3.5 w-3.5" /> : <Copy className="mr-2 h-3.5 w-3.5" />}
+                    Copiar chave
+                  </Button>
+                  <Button size="sm" onClick={() => { setUpgradeLicense(l); setUpgradeAmount("100"); }}>
+                    <ArrowUpCircle className="mr-2 h-3.5 w-3.5" />
+                    Upgrade de armazenamento
+                  </Button>
+                </div>
               </Card>
             ))}
           </div>
@@ -206,6 +238,45 @@ function Dashboard() {
           </Card>
         )}
       </section>
+
+      <Dialog open={!!upgradeLicense} onOpenChange={(o) => !o && setUpgradeLicense(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upgrade de armazenamento</DialogTitle>
+            <DialogDescription>
+              {upgradeLicense?.product?.name} — {upgradeLicense?.license_key}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="rounded-md border bg-muted/30 p-3 text-sm">
+              <div className="text-muted-foreground">Armazenamento atual</div>
+              <div className="font-medium">
+                {Number(upgradeLicense?.product?.storage_amount ?? 0)} {upgradeLicense?.product?.storage_unit ?? "GB"}
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Quanto deseja adicionar?</Label>
+              <Select value={upgradeAmount} onValueChange={setUpgradeAmount}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {upgradeOptions.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                A cobrança proporcional será calculada e enviada por boleto.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUpgradeLicense(null)}>Cancelar</Button>
+            <Button onClick={submitUpgrade} disabled={upgradeSubmitting}>
+              {upgradeSubmitting ? "Enviando..." : "Solicitar upgrade"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
