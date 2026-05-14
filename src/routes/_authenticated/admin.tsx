@@ -610,12 +610,25 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
   };
   const openEdit = (p: Product) => {
     setEditing(p);
+    const matchedVps = vpsProducts.find(
+      (v) =>
+        (v.vps_specs ?? "") === (p.vps_specs ?? "") &&
+        Number(v.cost_vps ?? 0) === Number(p.cost_vps ?? 0) &&
+        Number(v.vps_storage_amount ?? 0) === Number(p.vps_storage_amount ?? 0) &&
+        (v.vps_storage_unit ?? "GB") === (p.vps_storage_unit ?? "GB"),
+    );
+    const matchedStorage = storageProducts.find(
+      (s) =>
+        Number(s.storage_amount ?? 0) === Number(p.storage_amount ?? 0) &&
+        (s.storage_unit ?? "GB") === (p.storage_unit ?? "GB") &&
+        Number(s.cost_storage ?? 0) === Number(p.cost_storage ?? 0),
+    );
     setForm({
       kind: p.kind ?? "license",
       name: p.name,
       description: p.description ?? "",
-      vps_id: "",
-      storage_id: "",
+      vps_id: matchedVps?.id ?? "",
+      storage_id: matchedStorage?.id ?? "",
       vps_specs: p.vps_specs ?? "",
       vps_storage_amount: String(p.vps_storage_amount ?? 0),
       vps_storage_unit: p.vps_storage_unit ?? "GB",
