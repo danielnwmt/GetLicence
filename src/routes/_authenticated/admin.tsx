@@ -663,7 +663,7 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
               <div className="space-y-2"><Label>Produto</Label>
                 <Select value={form.product_id} onValueChange={(v) => setForm({ ...form, product_id: v })}>
                   <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                  <SelectContent>{products.map((p) => (
+                  <SelectContent>{products.filter((p) => (p.kind ?? "license") === "license").map((p) => (
                     <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                   ))}</SelectContent>
                 </Select>
