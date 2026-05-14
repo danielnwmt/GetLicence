@@ -500,7 +500,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                   </select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Armazenamento extra (cadastrado)</Label>
+                  <Label>Armazenamento</Label>
                   <select
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
                     value={storageProducts.find((s) => Number(s.storage_amount) === Number(form.storage_amount) && s.storage_unit === form.storage_unit && Number(s.price_monthly) === Number(form.cost_storage))?.id ?? ""}
