@@ -51,7 +51,9 @@ import {
   Download,
   Ban,
   ShieldOff,
+  CloudUpload,
 } from "lucide-react";
+import { runBackupNow } from "@/lib/backup.functions";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { fetchCep } from "@/lib/cep";
 import { formatCpfCnpj, isValidCpfCnpj } from "@/lib/mask";
