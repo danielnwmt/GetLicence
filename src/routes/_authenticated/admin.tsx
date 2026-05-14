@@ -361,6 +361,8 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
       price_monthly: computedMonthly,
       price_semestral: computedSemestral,
       price_yearly: computedYearly,
+      price_storage_gb: Number(form.price_storage_gb) || 0,
+      price_vps_monthly: Number(form.price_vps_monthly) || 0,
     };
     const { error } = editing
       ? await supabase.from("products").update(payload).eq("id", editing.id)
