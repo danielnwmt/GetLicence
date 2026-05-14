@@ -684,8 +684,13 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
   const licenseProducts = products.filter((p) => (p.kind ?? "license") === "license");
   const storageProducts = products.filter((p) => p.kind === "storage");
   const vpsProducts = products.filter((p) => p.kind === "vps");
+  const implantacaoProducts = products.filter((p) => p.kind === "implantacao");
 
-  const renderTable = (rows: Product[], emptyMsg: string, kind: "license" | "storage" | "vps") => (
+  const renderTable = (
+    rows: Product[],
+    emptyMsg: string,
+    kind: "license" | "storage" | "vps" | "implantacao",
+  ) => (
     <Card className="overflow-hidden">
       <table className="w-full text-sm">
         <thead className="bg-muted/50 text-left">
@@ -749,7 +754,9 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                 ? "upgrade de armazenamento"
                 : form.kind === "vps"
                   ? "upgrade de VPS"
-                  : "produto de licença"}
+                  : form.kind === "implantacao"
+                    ? "produto de implantação"
+                    : "produto de licença"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
@@ -835,7 +842,11 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
             {isUpgrade && (
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-2">
-                  <Label>Preço de venda (R$/mês)</Label>
+                  <Label>
+                    {form.kind === "implantacao"
+                      ? "Preço de venda (R$)"
+                      : "Preço de venda (R$/mês)"}
+                  </Label>
                   <Input
                     type="number"
                     step="0.01"
@@ -844,17 +855,25 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Custo (R$/mês)</Label>
+                  <Label>{form.kind === "implantacao" ? "Custo (R$)" : "Custo (R$/mês)"}</Label>
                   <Input
                     type="number"
                     step="0.01"
-                    value={form.kind === "vps" ? form.cost_vps : form.cost_storage}
+                    value={
+                      form.kind === "vps"
+                        ? form.cost_vps
+                        : form.kind === "implantacao"
+                          ? form.cost_other
+                          : form.cost_storage
+                    }
                     onChange={(e) =>
                       setForm({
                         ...form,
                         ...(form.kind === "vps"
                           ? { cost_vps: e.target.value }
-                          : { cost_storage: e.target.value }),
+                          : form.kind === "implantacao"
+                            ? { cost_other: e.target.value }
+                            : { cost_storage: e.target.value }),
                       })
                     }
                   />
@@ -1046,6 +1065,12 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
               {vpsProducts.length}
             </Badge>
           </TabsTrigger>
+          <TabsTrigger value="implantacao">
+            Implantação{" "}
+            <Badge variant="secondary" className="ml-2">
+              {implantacaoProducts.length}
+            </Badge>
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="licenses" className="space-y-3">
           <div className="flex justify-end">
@@ -1070,6 +1095,14 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
             </Button>
           </div>
           {renderTable(vpsProducts, "Nenhum upgrade de VPS.", "vps")}
+        </TabsContent>
+        <TabsContent value="implantacao" className="space-y-3">
+          <div className="flex justify-end">
+            <Button onClick={() => openNew("implantacao")}>
+              <Plus className="mr-2 h-4 w-4" /> Novo produto de implantação
+            </Button>
+          </div>
+          {renderTable(implantacaoProducts, "Nenhum produto de implantação.", "implantacao")}
         </TabsContent>
       </Tabs>
     </div>
@@ -1352,7 +1385,13 @@ function PaymentsTab({
   }, []);
   const [newOpen, setNewOpen] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [newForm, setNewForm] = useState({ user_id: "", license_id: "", amount: "", due_date: "" });
+  const [newForm, setNewForm] = useState({
+    user_id: "",
+    license_id: "",
+    amount: "",
+    due_date: "",
+    quantity: "1",
+  });
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "paid" | "pending" | "failed" | "overdue"
@@ -1396,25 +1435,37 @@ function PaymentsTab({
     if (!newForm.user_id || !newForm.license_id) return toast.error("Selecione cliente e licença");
     const amount = Number(newForm.amount);
     if (!amount || amount <= 0) return toast.error("Informe um valor válido");
+    const qty = Math.max(1, Math.floor(Number(newForm.quantity) || 1));
+    const baseDue = newForm.due_date ? new Date(newForm.due_date + "T00:00:00") : null;
     setCreating(true);
     try {
-      const { data: pay, error } = await supabase
-        .from("payments")
-        .insert({
-          user_id: newForm.user_id,
-          license_id: newForm.license_id,
-          amount,
-          status: "pending" as const,
-          due_date: newForm.due_date || null,
-        })
-        .select()
-        .single();
-      if (error) throw new Error(error.message);
-      const r = await issueBoleto({ data: { payment_id: pay.id } });
-      toast.success("Boleto emitido");
-      if (r.boleto_url) window.open(r.boleto_url, "_blank");
+      let firstUrl: string | null = null;
+      for (let i = 0; i < qty; i++) {
+        const due =
+          baseDue
+            ? new Date(baseDue.getFullYear(), baseDue.getMonth() + i, baseDue.getDate())
+                .toISOString()
+                .slice(0, 10)
+            : null;
+        const { data: pay, error } = await supabase
+          .from("payments")
+          .insert({
+            user_id: newForm.user_id,
+            license_id: newForm.license_id,
+            amount,
+            status: "pending" as const,
+            due_date: due,
+          })
+          .select()
+          .single();
+        if (error) throw new Error(error.message);
+        const r = await issueBoleto({ data: { payment_id: pay.id } });
+        if (!firstUrl && r.boleto_url) firstUrl = r.boleto_url;
+      }
+      toast.success(qty > 1 ? `${qty} boletos emitidos` : "Boleto emitido");
+      if (firstUrl) window.open(firstUrl, "_blank");
       setNewOpen(false);
-      setNewForm({ user_id: "", license_id: "", amount: "", due_date: "" });
+      setNewForm({ user_id: "", license_id: "", amount: "", due_date: "", quantity: "1" });
       onChange();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao emitir boleto");
@@ -1644,6 +1695,19 @@ function PaymentsTab({
                       onChange={(e) => setNewForm({ ...newForm, due_date: e.target.value })}
                     />
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Quantidade de boletos</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={newForm.quantity}
+                    onChange={(e) => setNewForm({ ...newForm, quantity: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Para mais de 1, vencimentos são gerados mês a mês a partir da data informada.
+                  </p>
                 </div>
               </div>
               <DialogFooter>
