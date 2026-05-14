@@ -686,9 +686,15 @@ function PaymentsTab({ payments, licenses, products, profiles, onChange }: { pay
   const [creating, setCreating] = useState(false);
   const [newForm, setNewForm] = useState({ user_id: "", license_id: "", amount: "", due_date: "" });
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "paid" | "pending" | "failed" | "overdue">("all");
   const profileById = new Map(profiles.map((p) => [p.user_id, p]));
   const q = search.trim().toLowerCase();
-  const filteredPayments = !q ? payments : payments.filter((p) => {
+  const now = new Date();
+  const isOverdue = (p: PaymentRow) => p.status === "pending" && !!p.due_date && new Date(p.due_date) < now;
+  const filteredPayments = payments.filter((p) => {
+    if (statusFilter === "overdue" && !isOverdue(p)) return false;
+    if (statusFilter !== "all" && statusFilter !== "overdue" && p.status !== statusFilter) return false;
+    if (!q) return true;
     const prof = profileById.get(p.user_id);
     return (
       (prof?.full_name || "").toLowerCase().includes(q) ||
@@ -697,6 +703,14 @@ function PaymentsTab({ payments, licenses, products, profiles, onChange }: { pay
       (p.license?.license_key || "").toLowerCase().includes(q)
     );
   });
+
+  // KPIs
+  const totalRevenue = payments.filter((p) => p.status === "paid").reduce((s, p) => s + Number(p.amount), 0);
+  const pendingTotal = payments.filter((p) => p.status === "pending").reduce((s, p) => s + Number(p.amount), 0);
+  const overdueList = payments.filter(isOverdue);
+  const overdueTotal = overdueList.reduce((s, p) => s + Number(p.amount), 0);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthRevenue = payments.filter((p) => p.status === "paid" && p.paid_at && new Date(p.paid_at) >= monthStart).reduce((s, p) => s + Number(p.amount), 0);
 
   const clientLicenses = licenses.filter((l) => l.user_id === newForm.user_id);
 
