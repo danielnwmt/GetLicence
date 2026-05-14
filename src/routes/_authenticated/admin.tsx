@@ -3248,7 +3248,7 @@ function PayablesTab({
                   <SelectContent>
                     <SelectItem value="vps">VPS</SelectItem>
                     <SelectItem value="storage">Armazenamento</SelectItem>
-                    <SelectItem value="other">Outros</SelectItem>
+                    <SelectItem value="other">Software</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
