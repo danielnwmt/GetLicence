@@ -23,8 +23,8 @@ import { toast } from "sonner";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, Cell, PieChart, Pie, Legend } from "recharts";
 import { QRCodeSVG } from "qrcode.react";
 
-type AdminTab = "dashboard" | "licenses" | "customers" | "payments" | "products" | "settings";
-const ADMIN_TABS: AdminTab[] = ["dashboard", "licenses", "customers", "payments", "products", "settings"];
+type AdminTab = "dashboard" | "licenses" | "customers" | "payments" | "payables" | "products" | "settings";
+const ADMIN_TABS: AdminTab[] = ["dashboard", "licenses", "customers", "payments", "payables", "products", "settings"];
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — GetLicence" }] }),
