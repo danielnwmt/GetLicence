@@ -3167,6 +3167,69 @@ function BlockRulesTab() {
   );
 }
 
+function LicenseApiTab() {
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const endpoint = `${baseUrl}/api/public/license/check`;
+  const curlExample = `curl -X POST ${endpoint} \\
+  -H "Content-Type: application/json" \\
+  -d '{"license_key":"XXXX-XXXX-XXXX-XXXX","hostname":"maquina-01"}'`;
+  const responseExample = `{
+  "ok": true,
+  "status": "active",
+  "expires_at": "2026-12-31T00:00:00.000Z",
+  "blocked": false,
+  "expired": false
+}`;
+  const copy = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copiado`);
+  };
+  return (
+    <Card className="p-6 space-y-5">
+      <div>
+        <h3 className="text-lg font-semibold">API de Verificação de Licença</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          Endpoint público para o sistema cliente verificar se a licença está ativa.
+          Sem autenticação — a chave da licença é o segredo.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Endpoint</Label>
+        <div className="flex gap-2">
+          <Input readOnly value={endpoint} className="font-mono text-sm" />
+          <Button variant="outline" onClick={() => copy(endpoint, "Endpoint")}>Copiar</Button>
+        </div>
+        <p className="text-xs text-muted-foreground">Aceita POST (JSON) ou GET (query string)</p>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Exemplo de requisição (cURL)</Label>
+        <div className="relative">
+          <pre className="bg-muted p-3 rounded text-xs overflow-x-auto font-mono">{curlExample}</pre>
+          <Button size="sm" variant="outline" className="absolute top-2 right-2" onClick={() => copy(curlExample, "cURL")}>Copiar</Button>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Exemplo de resposta</Label>
+        <pre className="bg-muted p-3 rounded text-xs overflow-x-auto font-mono">{responseExample}</pre>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Regras de retorno</Label>
+        <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+          <li><code className="text-foreground">ok: true</code> → libera o uso do sistema</li>
+          <li><code className="text-foreground">blocked: true</code> → boleto vencido, bloquear acesso</li>
+          <li><code className="text-foreground">expired: true</code> → licença expirou</li>
+          <li>Primeira chamada com licença <code>pending</code> ativa automaticamente</li>
+          <li>Cada chamada atualiza <code>last_seen_at</code>, IP e hostname do dispositivo</li>
+        </ul>
+      </div>
+    </Card>
+  );
+}
+
 function MobileAppTab() {
   const [url, setUrl] = useState("");
   useEffect(() => {
