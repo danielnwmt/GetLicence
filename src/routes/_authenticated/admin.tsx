@@ -1385,6 +1385,9 @@ function PaymentsTab({
   }, []);
   const [newOpen, setNewOpen] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [notaOpen, setNotaOpen] = useState(false);
+  const [notaDesc, setNotaDesc] = useState("");
+  const [notaPayment, setNotaPayment] = useState<PaymentRow | null>(null);
   const [newForm, setNewForm] = useState({
     user_id: "",
     license_id: "",
