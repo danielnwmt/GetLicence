@@ -2583,6 +2583,57 @@ function IntegrationsTab() {
         </div>
       </Card>
 
+      <Card className="p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <FileText className="h-5 w-5 text-primary" />
+          <div>
+            <h3 className="text-lg font-semibold">Emissão de notas fiscais — Coplan</h3>
+            <p className="text-sm text-muted-foreground">
+              Configure o acesso ao sistema Coplan usado para emitir notas fiscais dos clientes.
+            </p>
+          </div>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="space-y-2 md:col-span-2">
+            <Label>URL do sistema Coplan</Label>
+            <Input
+              value={settings.coplan_url ?? ""}
+              onChange={(e) => update("coplan_url", e.target.value)}
+              placeholder="https://coplan.exemplo.com.br"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Usuário</Label>
+            <Input
+              value={settings.coplan_username ?? ""}
+              onChange={(e) => update("coplan_username", e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Senha</Label>
+            <Input
+              type="password"
+              value={settings.coplan_password ?? ""}
+              onChange={(e) => update("coplan_password", e.target.value)}
+            />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label>Token de API (opcional)</Label>
+            <Input
+              type="password"
+              value={settings.coplan_token ?? ""}
+              onChange={(e) => update("coplan_token", e.target.value)}
+              placeholder="Token de integração, se aplicável"
+            />
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <Button onClick={save} disabled={saving}>
+            {saving ? "Salvando..." : "Salvar integração Coplan"}
+          </Button>
+        </div>
+      </Card>
+
       <Card className="p-6 space-y-3">
         <div>
           <h3 className="text-lg font-semibold">URL do Webhook</h3>
