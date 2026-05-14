@@ -948,7 +948,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Outros (R$)</Label>
+                      <Label>Software (R$)</Label>
                       <Input
                         type="number"
                         step="0.01"
