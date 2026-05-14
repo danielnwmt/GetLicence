@@ -13,42 +13,173 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Package, KeyRound, CreditCard, Users, DollarSign, Pencil, Trash2, Landmark, Copy, FileText, ExternalLink, XCircle, Search, TrendingUp, Clock, AlertTriangle, CheckCircle2, Receipt, Download } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Plus,
+  Package,
+  KeyRound,
+  CreditCard,
+  Users,
+  DollarSign,
+  Pencil,
+  Trash2,
+  Landmark,
+  Copy,
+  FileText,
+  ExternalLink,
+  XCircle,
+  Search,
+  TrendingUp,
+  Clock,
+  AlertTriangle,
+  CheckCircle2,
+  Receipt,
+  Download,
+} from "lucide-react";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { fetchCep } from "@/lib/cep";
 import { formatCpfCnpj, isValidCpfCnpj } from "@/lib/mask";
 import { toast } from "sonner";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, AreaChart, Area, Cell, PieChart, Pie, Legend } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  AreaChart,
+  Area,
+  Cell,
+  PieChart,
+  Pie,
+  Legend,
+} from "recharts";
 import { QRCodeSVG } from "qrcode.react";
 
-type AdminTab = "dashboard" | "licenses" | "customers" | "payments" | "products" | "settings";
-const ADMIN_TABS: AdminTab[] = ["dashboard", "licenses", "customers", "payments", "products", "settings"];
+type AdminTab =
+  | "dashboard"
+  | "licenses"
+  | "customers"
+  | "payments"
+  | "payables"
+  | "products"
+  | "settings";
+const ADMIN_TABS: AdminTab[] = [
+  "dashboard",
+  "licenses",
+  "customers",
+  "payments",
+  "payables",
+  "products",
+  "settings",
+];
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({ meta: [{ title: "Admin — GetLicence" }] }),
   validateSearch: (s: Record<string, unknown>): { tab?: AdminTab } => {
     const t = s.tab;
-    return { tab: typeof t === "string" && (ADMIN_TABS as string[]).includes(t) ? (t as AdminTab) : undefined };
+    return {
+      tab:
+        typeof t === "string" && (ADMIN_TABS as string[]).includes(t) ? (t as AdminTab) : undefined,
+    };
   },
   component: AdminPage,
 });
 
-interface Product { id: string; name: string; description: string | null; price_monthly: number; price_semestral: number; price_yearly: number; active: boolean; cost_vps?: number; cost_storage?: number; cost_other?: number; profit_margin?: number; vps_specs?: string | null; storage_amount?: number; storage_unit?: string; vps_storage_amount?: number; vps_storage_unit?: string; kind?: string; }
-interface Profile { user_id: string; full_name: string | null; email: string | null; address_city?: string | null; address_state?: string | null; customer_number?: number | null; cpf_cnpj?: string | null; phone?: string | null; address_zip?: string | null; address_street?: string | null; address_number?: string | null; address_complement?: string | null; address_neighborhood?: string | null; }
+interface Product {
+  id: string;
+  name: string;
+  description: string | null;
+  price_monthly: number;
+  price_semestral: number;
+  price_yearly: number;
+  active: boolean;
+  cost_vps?: number;
+  cost_storage?: number;
+  cost_other?: number;
+  profit_margin?: number;
+  vps_specs?: string | null;
+  storage_amount?: number;
+  storage_unit?: string;
+  vps_storage_amount?: number;
+  vps_storage_unit?: string;
+  kind?: string;
+}
+interface Profile {
+  user_id: string;
+  full_name: string | null;
+  email: string | null;
+  address_city?: string | null;
+  address_state?: string | null;
+  customer_number?: number | null;
+  cpf_cnpj?: string | null;
+  phone?: string | null;
+  address_zip?: string | null;
+  address_street?: string | null;
+  address_number?: string | null;
+  address_complement?: string | null;
+  address_neighborhood?: string | null;
+}
 interface LicenseRow {
-  id: string; license_key: string; plan: string; status: string;
-  starts_at: string; expires_at: string; user_id: string; product_id: string;
-  device_ip?: string | null; last_seen_at?: string | null; activated_at?: string | null;
-  product: { name: string } | null; profile?: Profile | null;
+  id: string;
+  license_key: string;
+  plan: string;
+  status: string;
+  starts_at: string;
+  expires_at: string;
+  user_id: string;
+  product_id: string;
+  device_ip?: string | null;
+  last_seen_at?: string | null;
+  activated_at?: string | null;
+  product: { name: string } | null;
+  profile?: Profile | null;
 }
 interface PaymentRow {
-  id: string; amount: number; status: string; method: string | null;
-  paid_at: string | null; created_at: string; license_id: string; user_id: string;
-  boleto_url: string | null; invoice_url: string | null; barcode: string | null;
-  provider_charge_id: string | null; due_date?: string | null;
+  id: string;
+  amount: number;
+  status: string;
+  method: string | null;
+  paid_at: string | null;
+  created_at: string;
+  license_id: string;
+  user_id: string;
+  boleto_url: string | null;
+  invoice_url: string | null;
+  barcode: string | null;
+  provider_charge_id: string | null;
+  due_date?: string | null;
   license: { license_key: string } | null;
+}
+interface PayableRow {
+  id: string;
+  description: string;
+  supplier: string | null;
+  category: "vps" | "storage" | "other";
+  amount: number;
+  due_date: string | null;
+  paid_at: string | null;
+  status: "pending" | "paid" | "overdue" | "cancelled";
+  recurrence: string;
+  license_id: string | null;
+  product_id: string | null;
+  notes: string | null;
+  created_at: string;
 }
 
 function AdminPage() {
@@ -57,7 +188,8 @@ function AdminPage() {
   const navigate = useNavigate();
   const search = Route.useSearch();
   const currentTab: AdminTab = search.tab ?? "dashboard";
-  const setTab = (t: string) => navigate({ to: "/admin", search: { tab: t as AdminTab }, replace: true });
+  const setTab = (t: string) =>
+    navigate({ to: "/admin", search: { tab: t as AdminTab }, replace: true });
 
   useEffect(() => {
     if (!loading && role && role !== "admin") {
@@ -71,36 +203,52 @@ function AdminPage() {
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [adminIds, setAdminIds] = useState<string[]>([]);
+  const [payables, setPayables] = useState<PayableRow[]>([]);
 
   const reload = useCallback(async () => {
     try {
-      const [p, l, pay, pr, ur] = await Promise.all([
+      const [p, l, pay, pr, ur, pb] = await Promise.all([
         supabase.from("products").select("*").order("created_at", { ascending: false }),
-        supabase.from("licenses").select("*, product:products(name)").order("created_at", { ascending: false }),
-        supabase.from("payments").select("*, license:licenses(license_key)").order("created_at", { ascending: false }),
+        supabase
+          .from("licenses")
+          .select("*, product:products(name)")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("payments")
+          .select("*, license:licenses(license_key)")
+          .order("created_at", { ascending: false }),
         listAdminProfilesFn().catch((e) => {
           console.error("listAdminProfiles failed:", e);
           return [] as Profile[];
         }),
         supabase.from("user_roles").select("user_id, role").eq("role", "admin"),
+        (supabase as any)
+          .from("payables")
+          .select("*")
+          .order("due_date", { ascending: true, nullsFirst: false }),
       ]);
       setProducts((p.data as Product[]) || []);
       setLicenses((l.data as unknown as LicenseRow[]) || []);
       setPayments((pay.data as unknown as PaymentRow[]) || []);
       setProfiles(Array.isArray(pr) ? (pr as Profile[]) : []);
       setAdminIds(((ur.data as { user_id: string }[]) || []).map((r) => r.user_id));
+      setPayables((pb.data as unknown as PayableRow[]) || []);
     } catch (e) {
       console.error("Admin reload failed:", e);
     }
   }, [listAdminProfilesFn]);
 
-  useEffect(() => { if (role === "admin") reload(); }, [role, reload]);
+  useEffect(() => {
+    if (role === "admin") reload();
+  }, [role, reload]);
 
   if (loading || role !== "admin") {
     return <div className="text-muted-foreground">Verificando permissões...</div>;
   }
 
-  const totalRevenue = payments.filter((p) => p.status === "paid").reduce((sum, p) => sum + Number(p.amount), 0);
+  const totalRevenue = payments
+    .filter((p) => p.status === "paid")
+    .reduce((sum, p) => sum + Number(p.amount), 0);
   const activeCount = licenses.filter((l) => l.status === "active").length;
 
   return (
@@ -111,50 +259,97 @@ function AdminPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
-        <StatCard icon={Users} label="Clientes" value={profiles.filter((p) => !adminIds.includes(p.user_id)).length.toString()} />
+        <StatCard
+          icon={Users}
+          label="Clientes"
+          value={profiles.filter((p) => !adminIds.includes(p.user_id)).length.toString()}
+        />
         <StatCard icon={KeyRound} label="Licenças ativas" value={activeCount.toString()} />
         <StatCard icon={Package} label="Produtos" value={products.length.toString()} />
         <StatCard icon={DollarSign} label="Receita paga" value={formatBRL(totalRevenue)} />
       </div>
 
-        <TabsContent value="dashboard" className="mt-6">
-          <DashboardCharts licenses={licenses} payments={payments} profiles={profiles.filter((p) => !adminIds.includes(p.user_id))} products={products} />
-        </TabsContent>
-        <TabsContent value="licenses" className="mt-6">
-          <LicensesTab licenses={licenses} products={products} profiles={profiles.filter((p) => !adminIds.includes(p.user_id))} onChange={reload} />
-        </TabsContent>
-        <TabsContent value="payments" className="mt-6">
-          <PaymentsTab payments={payments} licenses={licenses} products={products} profiles={profiles.filter((p) => !adminIds.includes(p.user_id))} onChange={reload} />
-        </TabsContent>
-        <TabsContent value="products" className="mt-6">
-          <ProductsTab products={products} onChange={reload} />
-        </TabsContent>
-        <TabsContent value="customers" className="mt-6">
-          <CustomersTab profiles={profiles.filter((p) => !adminIds.includes(p.user_id))} licenses={licenses} payments={payments} onChange={reload} />
-        </TabsContent>
-        <TabsContent value="settings" className="mt-6">
-          <Tabs defaultValue="users" className="space-y-4">
-            <TabsList>
-             <TabsTrigger value="users">Usuários</TabsTrigger>
-              <TabsTrigger value="integrations">Integrações</TabsTrigger>
-              <TabsTrigger value="mobile">App Mobile</TabsTrigger>
-            </TabsList>
-            <TabsContent value="users">
-              <SystemUsersTab profiles={profiles.filter((p) => adminIds.includes(p.user_id))} onChange={reload} />
-            </TabsContent>
-            <TabsContent value="integrations">
-              <IntegrationsTab />
-            </TabsContent>
-            <TabsContent value="mobile">
-              <MobileAppTab />
-            </TabsContent>
-          </Tabs>
-        </TabsContent>
+      <TabsContent value="dashboard" className="mt-6">
+        <DashboardCharts
+          licenses={licenses}
+          payments={payments}
+          profiles={profiles.filter((p) => !adminIds.includes(p.user_id))}
+          products={products}
+        />
+      </TabsContent>
+      <TabsContent value="licenses" className="mt-6">
+        <LicensesTab
+          licenses={licenses}
+          products={products}
+          profiles={profiles.filter((p) => !adminIds.includes(p.user_id))}
+          onChange={reload}
+        />
+      </TabsContent>
+      <TabsContent value="payments" className="mt-6">
+        <PaymentsTab
+          payments={payments}
+          licenses={licenses}
+          products={products}
+          profiles={profiles.filter((p) => !adminIds.includes(p.user_id))}
+          onChange={reload}
+        />
+      </TabsContent>
+      <TabsContent value="payables" className="mt-6">
+        <PayablesTab
+          payables={payables}
+          licenses={licenses}
+          products={products}
+          profiles={profiles}
+          onChange={reload}
+        />
+      </TabsContent>
+      <TabsContent value="products" className="mt-6">
+        <ProductsTab products={products} onChange={reload} />
+      </TabsContent>
+      <TabsContent value="customers" className="mt-6">
+        <CustomersTab
+          profiles={profiles.filter((p) => !adminIds.includes(p.user_id))}
+          licenses={licenses}
+          payments={payments}
+          onChange={reload}
+        />
+      </TabsContent>
+      <TabsContent value="settings" className="mt-6">
+        <Tabs defaultValue="users" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="users">Usuários</TabsTrigger>
+            <TabsTrigger value="integrations">Integrações</TabsTrigger>
+            <TabsTrigger value="mobile">App Mobile</TabsTrigger>
+          </TabsList>
+          <TabsContent value="users">
+            <SystemUsersTab
+              profiles={profiles.filter((p) => adminIds.includes(p.user_id))}
+              onChange={reload}
+            />
+          </TabsContent>
+          <TabsContent value="integrations">
+            <IntegrationsTab />
+          </TabsContent>
+          <TabsContent value="mobile">
+            <MobileAppTab />
+          </TabsContent>
+        </Tabs>
+      </TabsContent>
     </Tabs>
   );
 }
 
-function DashboardCharts({ licenses, payments, profiles, products }: { licenses: LicenseRow[]; payments: PaymentRow[]; profiles: Profile[]; products: Product[] }) {
+function DashboardCharts({
+  licenses,
+  payments,
+  profiles,
+  products,
+}: {
+  licenses: LicenseRow[];
+  payments: PaymentRow[];
+  profiles: Profile[];
+  products: Product[];
+}) {
   // Top products by license count
   const productCounts = new Map<string, number>();
   for (const l of licenses) {
@@ -187,14 +382,25 @@ function DashboardCharts({ licenses, payments, profiles, products }: { licenses:
 
   const totalClients = profiles.length;
   const totalLicenses = licenses.length;
-  const totalRevenue = payments.filter((p) => p.status === "paid").reduce((s, p) => s + Number(p.amount), 0);
+  const totalRevenue = payments
+    .filter((p) => p.status === "paid")
+    .reduce((s, p) => s + Number(p.amount), 0);
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Total de clientes</div><div className="mt-1 text-2xl font-bold">{totalClients}</div></Card>
-        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Total de licenças</div><div className="mt-1 text-2xl font-bold">{totalLicenses}</div></Card>
-        <Card className="p-5"><div className="text-xs uppercase text-muted-foreground">Faturamento total</div><div className="mt-1 text-2xl font-bold">{formatBRL(totalRevenue)}</div></Card>
+        <Card className="p-5">
+          <div className="text-xs uppercase text-muted-foreground">Total de clientes</div>
+          <div className="mt-1 text-2xl font-bold">{totalClients}</div>
+        </Card>
+        <Card className="p-5">
+          <div className="text-xs uppercase text-muted-foreground">Total de licenças</div>
+          <div className="mt-1 text-2xl font-bold">{totalLicenses}</div>
+        </Card>
+        <Card className="p-5">
+          <div className="text-xs uppercase text-muted-foreground">Faturamento total</div>
+          <div className="mt-1 text-2xl font-bold">{formatBRL(totalRevenue)}</div>
+        </Card>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="p-5 bg-gradient-card border-border/60 shadow-elegant">
@@ -203,49 +409,71 @@ function DashboardCharts({ licenses, payments, profiles, products }: { licenses:
               <div className="font-semibold">Licenças mais vendidas</div>
               <div className="text-xs text-muted-foreground">Top produtos por nº de licenças</div>
             </div>
-            <Badge variant="secondary" className="font-normal">{topProducts.length} produtos</Badge>
+            <Badge variant="secondary" className="font-normal">
+              {topProducts.length} produtos
+            </Badge>
           </div>
           {topProducts.length === 0 ? (
-            <div className="py-16 text-center text-sm text-muted-foreground">Sem licenças emitidas.</div>
-          ) : (() => {
-            const PIE_COLORS = [
-              "oklch(0.6 0.18 255)",
-              "oklch(0.7 0.16 200)",
-              "oklch(0.65 0.18 300)",
-              "oklch(0.72 0.17 160)",
-              "oklch(0.68 0.18 30)",
-              "oklch(0.62 0.2 350)",
-              "oklch(0.74 0.16 90)",
-              "oklch(0.55 0.18 230)",
-            ];
-            const total = topProducts.reduce((s, p) => s + p.count, 0);
-            return (
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Tooltip
-                    contentStyle={{ borderRadius: 12, border: "1px solid oklch(0.9 0.01 255)", boxShadow: "0 8px 24px -8px oklch(0.55 0.18 255 / 0.25)", padding: "8px 12px" }}
-                    labelStyle={{ fontWeight: 600, marginBottom: 4 }}
-                    formatter={(v, n) => [`${Number(v)} (${((Number(v) / total) * 100).toFixed(1)}%)`, n as string]}
-                  />
-                  <Legend verticalAlign="middle" align="right" layout="vertical" iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-                  <Pie
-                    data={topProducts}
-                    dataKey="count"
-                    nameKey="name"
-                    cx="40%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={110}
-                    paddingAngle={2}
-                    stroke="oklch(1 0 0)"
-                    strokeWidth={2}
-                  >
-                    {topProducts.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-            );
-          })()}
+            <div className="py-16 text-center text-sm text-muted-foreground">
+              Sem licenças emitidas.
+            </div>
+          ) : (
+            (() => {
+              const PIE_COLORS = [
+                "oklch(0.6 0.18 255)",
+                "oklch(0.7 0.16 200)",
+                "oklch(0.65 0.18 300)",
+                "oklch(0.72 0.17 160)",
+                "oklch(0.68 0.18 30)",
+                "oklch(0.62 0.2 350)",
+                "oklch(0.74 0.16 90)",
+                "oklch(0.55 0.18 230)",
+              ];
+              const total = topProducts.reduce((s, p) => s + p.count, 0);
+              return (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: 12,
+                        border: "1px solid oklch(0.9 0.01 255)",
+                        boxShadow: "0 8px 24px -8px oklch(0.55 0.18 255 / 0.25)",
+                        padding: "8px 12px",
+                      }}
+                      labelStyle={{ fontWeight: 600, marginBottom: 4 }}
+                      formatter={(v, n) => [
+                        `${Number(v)} (${((Number(v) / total) * 100).toFixed(1)}%)`,
+                        n as string,
+                      ]}
+                    />
+                    <Legend
+                      verticalAlign="middle"
+                      align="right"
+                      layout="vertical"
+                      iconType="circle"
+                      wrapperStyle={{ fontSize: 12 }}
+                    />
+                    <Pie
+                      data={topProducts}
+                      dataKey="count"
+                      nameKey="name"
+                      cx="40%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={110}
+                      paddingAngle={2}
+                      stroke="oklch(1 0 0)"
+                      strokeWidth={2}
+                    >
+                      {topProducts.map((_, i) => (
+                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              );
+            })()
+          )}
         </Card>
         <Card className="p-5 bg-gradient-card border-border/60 shadow-elegant">
           <div className="mb-1 flex items-center justify-between">
@@ -253,7 +481,9 @@ function DashboardCharts({ licenses, payments, profiles, products }: { licenses:
               <div className="font-semibold">Faturamento</div>
               <div className="text-xs text-muted-foreground">Últimos 6 meses (pagos)</div>
             </div>
-            <Badge variant="secondary" className="font-normal">{formatBRL(months.reduce((s, m) => s + m.total, 0))}</Badge>
+            <Badge variant="secondary" className="font-normal">
+              {formatBRL(months.reduce((s, m) => s + m.total, 0))}
+            </Badge>
           </div>
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={months} margin={{ top: 16, right: 8, left: -8, bottom: 4 }}>
@@ -264,15 +494,38 @@ function DashboardCharts({ licenses, payments, profiles, products }: { licenses:
                 </linearGradient>
               </defs>
               <CartesianGrid vertical={false} stroke="oklch(0.92 0.01 255)" strokeDasharray="4 4" />
-              <XAxis dataKey="label" tick={{ fontSize: 12, fill: "oklch(0.45 0.02 260)" }} tickLine={false} axisLine={false} />
-              <YAxis tick={{ fontSize: 12, fill: "oklch(0.45 0.02 260)" }} tickLine={false} axisLine={false} width={56} tickFormatter={(v) => v >= 1000 ? `R$${(v / 1000).toFixed(1)}k` : `R$${v}`} />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 12, fill: "oklch(0.45 0.02 260)" }}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                tick={{ fontSize: 12, fill: "oklch(0.45 0.02 260)" }}
+                tickLine={false}
+                axisLine={false}
+                width={56}
+                tickFormatter={(v) => (v >= 1000 ? `R$${(v / 1000).toFixed(1)}k` : `R$${v}`)}
+              />
               <Tooltip
                 cursor={{ stroke: "oklch(0.55 0.18 255)", strokeWidth: 1, strokeDasharray: "4 4" }}
-                contentStyle={{ borderRadius: 12, border: "1px solid oklch(0.9 0.01 255)", boxShadow: "0 8px 24px -8px oklch(0.55 0.18 255 / 0.25)", padding: "8px 12px" }}
+                contentStyle={{
+                  borderRadius: 12,
+                  border: "1px solid oklch(0.9 0.01 255)",
+                  boxShadow: "0 8px 24px -8px oklch(0.55 0.18 255 / 0.25)",
+                  padding: "8px 12px",
+                }}
                 labelStyle={{ fontWeight: 600, marginBottom: 4 }}
                 formatter={(v) => [formatBRL(Number(v)), "Faturamento"]}
               />
-              <Area type="monotone" dataKey="total" stroke="oklch(0.55 0.18 255)" strokeWidth={2.5} fill="url(#areaFill)" activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }} />
+              <Area
+                type="monotone"
+                dataKey="total"
+                stroke="oklch(0.55 0.18 255)"
+                strokeWidth={2.5}
+                fill="url(#areaFill)"
+                activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }}
+              />
             </AreaChart>
           </ResponsiveContainer>
         </Card>
@@ -281,7 +534,15 @@ function DashboardCharts({ licenses, payments, profiles, products }: { licenses:
   );
 }
 
-function StatCard({ icon: Icon, label, value }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string }) {
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+}) {
   return (
     <Card className="bg-gradient-card p-5">
       <div className="flex items-center justify-between">
@@ -311,23 +572,50 @@ const statusBadge: Record<string, string> = {
 function ProductsTab({ products, onChange }: { products: Product[]; onChange: () => void }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
-  const emptyForm = { kind: "license", name: "", description: "", vps_specs: "", vps_storage_amount: "0", vps_storage_unit: "GB", storage_amount: "0", storage_unit: "GB", cost_vps: "0", cost_storage: "0", cost_other: "0", profit_margin: "30", price_monthly: "0", price_semestral: "0", price_yearly: "0" };
+  const emptyForm = {
+    kind: "license",
+    name: "",
+    description: "",
+    vps_id: "",
+    storage_id: "",
+    vps_specs: "",
+    vps_storage_amount: "0",
+    vps_storage_unit: "GB",
+    storage_amount: "0",
+    storage_unit: "GB",
+    cost_vps: "0",
+    cost_storage: "0",
+    cost_other: "0",
+    profit_margin: "30",
+    price_monthly: "0",
+    price_semestral: "0",
+    price_yearly: "0",
+  };
   const [form, setForm] = useState(emptyForm);
 
-  const totalCost = (Number(form.cost_vps) || 0) + (Number(form.cost_storage) || 0) + (Number(form.cost_other) || 0);
+  const totalCost =
+    (Number(form.cost_vps) || 0) +
+    (Number(form.cost_storage) || 0) +
+    (Number(form.cost_other) || 0);
   const margin = Number(form.profit_margin) || 0;
   const computedMonthly = +(totalCost * (1 + margin / 100)).toFixed(2);
   const computedSemestral = +(computedMonthly * 6 * 0.95).toFixed(2);
   const computedYearly = +(computedMonthly * 12 * 0.9).toFixed(2);
   const isUpgrade = form.kind !== "license";
 
-  const openNew = (kind: string = "license") => { setEditing(null); setForm({ ...emptyForm, kind }); setOpen(true); };
+  const openNew = (kind: string = "license") => {
+    setEditing(null);
+    setForm({ ...emptyForm, kind });
+    setOpen(true);
+  };
   const openEdit = (p: Product) => {
     setEditing(p);
     setForm({
       kind: p.kind ?? "license",
       name: p.name,
       description: p.description ?? "",
+      vps_id: "",
+      storage_id: "",
       vps_specs: p.vps_specs ?? "",
       vps_storage_amount: String(p.vps_storage_amount ?? 0),
       vps_storage_unit: p.vps_storage_unit ?? "GB",
@@ -387,29 +675,51 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
   const renderTable = (rows: Product[], emptyMsg: string, kind: "license" | "storage" | "vps") => (
     <Card className="overflow-hidden">
       <table className="w-full text-sm">
-        <thead className="bg-muted/50 text-left"><tr>
-          <th className="p-3 font-medium">Produto</th>
-          <th className="p-3 font-medium">Mensal</th>
-          {kind === "license" && <th className="p-3 font-medium">Semestral</th>}
-          {kind === "license" && <th className="p-3 font-medium">Anual</th>}
-          <th className="p-3 font-medium">Status</th>
-          <th className="p-3"></th>
-        </tr></thead>
+        <thead className="bg-muted/50 text-left">
+          <tr>
+            <th className="p-3 font-medium">Produto</th>
+            <th className="p-3 font-medium">Mensal</th>
+            {kind === "license" && <th className="p-3 font-medium">Semestral</th>}
+            {kind === "license" && <th className="p-3 font-medium">Anual</th>}
+            <th className="p-3 font-medium">Status</th>
+            <th className="p-3"></th>
+          </tr>
+        </thead>
         <tbody>
           {rows.map((p) => (
             <tr key={p.id} className="border-t border-border">
-              <td className="p-3"><div className="font-medium">{p.name}</div><div className="text-xs text-muted-foreground">{p.description}</div></td>
+              <td className="p-3">
+                <div className="font-medium">{p.name}</div>
+                <div className="text-xs text-muted-foreground">{p.description}</div>
+              </td>
               <td className="p-3">{formatBRL(Number(p.price_monthly))}</td>
-              {kind === "license" && <td className="p-3">{formatBRL(Number(p.price_semestral))}</td>}
+              {kind === "license" && (
+                <td className="p-3">{formatBRL(Number(p.price_semestral))}</td>
+              )}
               {kind === "license" && <td className="p-3">{formatBRL(Number(p.price_yearly))}</td>}
-              <td className="p-3"><Badge variant="outline">{p.active ? "Ativo" : "Inativo"}</Badge></td>
+              <td className="p-3">
+                <Badge variant="outline">{p.active ? "Ativo" : "Inativo"}</Badge>
+              </td>
               <td className="p-3 text-right">
-                <Button size="sm" variant="ghost" onClick={() => openEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>
-                <Button size="sm" variant="ghost" onClick={() => remove(p.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                <Button size="sm" variant="ghost" onClick={() => openEdit(p)}>
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => remove(p.id)}>
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
               </td>
             </tr>
           ))}
-          {rows.length === 0 && <tr><td colSpan={kind === "license" ? 6 : 4} className="p-6 text-center text-muted-foreground">{emptyMsg}</td></tr>}
+          {rows.length === 0 && (
+            <tr>
+              <td
+                colSpan={kind === "license" ? 6 : 4}
+                className="p-6 text-center text-muted-foreground"
+              >
+                {emptyMsg}
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </Card>
@@ -419,17 +729,48 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
     <div className="space-y-4">
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{editing ? "Editar" : "Novo"} {form.kind === "storage" ? "upgrade de armazenamento" : form.kind === "vps" ? "upgrade de VPS" : "produto de licença"}</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>
+              {editing ? "Editar" : "Novo"}{" "}
+              {form.kind === "storage"
+                ? "upgrade de armazenamento"
+                : form.kind === "vps"
+                  ? "upgrade de VPS"
+                  : "produto de licença"}
+            </DialogTitle>
+          </DialogHeader>
           <div className="space-y-3 py-2">
-            <div className="space-y-2"><Label>Nome</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-            <div className="space-y-2"><Label>Descrição</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+            <div className="space-y-2">
+              <Label>Nome</Label>
+              <Input
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Descrição</Label>
+              <Textarea
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+              />
+            </div>
 
             {isUpgrade && form.kind === "storage" && (
               <div className="rounded-md border p-3 space-y-3">
                 <div className="text-sm font-medium">Armazenamento oferecido</div>
                 <div className="flex gap-2">
-                  <Input type="number" step="0.01" placeholder="Qtd" value={form.storage_amount} onChange={(e) => setForm({ ...form, storage_amount: e.target.value })} />
-                  <select className="h-9 rounded-md border border-input bg-transparent px-2 text-sm" value={form.storage_unit} onChange={(e) => setForm({ ...form, storage_unit: e.target.value })}>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="Qtd"
+                    value={form.storage_amount}
+                    onChange={(e) => setForm({ ...form, storage_amount: e.target.value })}
+                  />
+                  <select
+                    className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
+                    value={form.storage_unit}
+                    onChange={(e) => setForm({ ...form, storage_unit: e.target.value })}
+                  >
                     <option value="GB">GB</option>
                     <option value="TB">TB</option>
                   </select>
@@ -440,7 +781,11 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
             {isUpgrade && form.kind === "vps" && (
               <div className="rounded-md border p-3 space-y-3">
                 <div className="text-sm font-medium">Recursos da VPS</div>
-                <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm" value={form.vps_specs} onChange={(e) => setForm({ ...form, vps_specs: e.target.value })}>
+                <select
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                  value={form.vps_specs}
+                  onChange={(e) => setForm({ ...form, vps_specs: e.target.value })}
+                >
                   <option value="">Selecione...</option>
                   <option value="1 vCPU, 1GB RAM">1 vCPU, 1GB RAM</option>
                   <option value="1 vCPU, 2GB RAM">1 vCPU, 2GB RAM</option>
@@ -455,8 +800,18 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                   <option value="16 vCPU, 64GB RAM">16 vCPU, 64GB RAM</option>
                 </select>
                 <div className="flex gap-2">
-                  <Input type="number" step="0.01" placeholder="Armaz. da VPS" value={form.vps_storage_amount} onChange={(e) => setForm({ ...form, vps_storage_amount: e.target.value })} />
-                  <select className="h-9 rounded-md border border-input bg-transparent px-2 text-sm" value={form.vps_storage_unit} onChange={(e) => setForm({ ...form, vps_storage_unit: e.target.value })}>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="Armaz. da VPS"
+                    value={form.vps_storage_amount}
+                    onChange={(e) => setForm({ ...form, vps_storage_amount: e.target.value })}
+                  />
+                  <select
+                    className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
+                    value={form.vps_storage_unit}
+                    onChange={(e) => setForm({ ...form, vps_storage_unit: e.target.value })}
+                  >
                     <option value="GB">GB</option>
                     <option value="TB">TB</option>
                   </select>
@@ -468,7 +823,12 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-2">
                   <Label>Preço de venda (R$/mês)</Label>
-                  <Input type="number" step="0.01" value={form.price_monthly} onChange={(e) => setForm({ ...form, price_monthly: e.target.value })} />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={form.price_monthly}
+                    onChange={(e) => setForm({ ...form, price_monthly: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Custo (R$/mês)</Label>
@@ -476,122 +836,225 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                     type="number"
                     step="0.01"
                     value={form.kind === "vps" ? form.cost_vps : form.cost_storage}
-                    onChange={(e) => setForm({ ...form, ...(form.kind === "vps" ? { cost_vps: e.target.value } : { cost_storage: e.target.value }) })}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        ...(form.kind === "vps"
+                          ? { cost_vps: e.target.value }
+                          : { cost_storage: e.target.value }),
+                      })
+                    }
                   />
                 </div>
               </div>
             )}
 
             {!isUpgrade && (
-            <>
-            <div className="rounded-md border p-3 space-y-3">
-              <div className="text-sm font-medium">Recursos & Custos mensais</div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>VPS</Label>
-                  <select
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
-                    value={vpsProducts.find((v) => v.vps_specs === form.vps_specs && Number(v.cost_vps ?? 0) === Number(form.cost_vps))?.id ?? ""}
-                    onChange={(e) => {
-                      const v = vpsProducts.find((x) => x.id === e.target.value);
-                      if (!v) { setForm({ ...form, vps_specs: "", vps_storage_amount: "0", vps_storage_unit: "GB", cost_vps: "0" }); return; }
-                      setForm({
-                        ...form,
-                        vps_specs: v.vps_specs ?? "",
-                        vps_storage_amount: String(v.vps_storage_amount ?? 0),
-                        vps_storage_unit: v.vps_storage_unit ?? "GB",
-                        cost_vps: String(v.cost_vps ?? 0),
-                      });
-                    }}
-                  >
-                    <option value="">Nenhuma</option>
-                    {vpsProducts.map((v) => (
-                      <option key={v.id} value={v.id}>{v.name} — {v.vps_specs} (custo {formatBRL(Number(v.cost_vps ?? 0))} / venda {formatBRL(Number(v.price_monthly))}/mês)</option>
-                    ))}
-                  </select>
+              <>
+                <div className="rounded-md border p-3 space-y-3">
+                  <div className="text-sm font-medium">Recursos & Custos mensais</div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>VPS</Label>
+                      <select
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                        value={form.vps_id}
+                        onChange={(e) => {
+                          const v = vpsProducts.find((x) => x.id === e.target.value);
+                          if (!v) {
+                            setForm({
+                              ...form,
+                              vps_id: "",
+                              vps_specs: "",
+                              vps_storage_amount: "0",
+                              vps_storage_unit: "GB",
+                              cost_vps: "0",
+                            });
+                            return;
+                          }
+                          setForm({
+                            ...form,
+                            vps_id: v.id,
+                            vps_specs: v.vps_specs ?? "",
+                            vps_storage_amount: String(v.vps_storage_amount ?? 0),
+                            vps_storage_unit: v.vps_storage_unit ?? "GB",
+                            cost_vps: String(v.cost_vps ?? 0),
+                          });
+                        }}
+                      >
+                        <option value="">Nenhuma</option>
+                        {vpsProducts.map((v) => (
+                          <option key={v.id} value={v.id}>
+                            {v.name} — {v.vps_specs} (custo {formatBRL(Number(v.cost_vps ?? 0))} /
+                            venda {formatBRL(Number(v.price_monthly))}/mês)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Armazenamento</Label>
+                      <select
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                        value={form.storage_id}
+                        onChange={(e) => {
+                          const s = storageProducts.find((x) => x.id === e.target.value);
+                          if (!s) {
+                            setForm({
+                              ...form,
+                              storage_id: "",
+                              storage_amount: "0",
+                              storage_unit: "GB",
+                              cost_storage: "0",
+                            });
+                            return;
+                          }
+                          setForm({
+                            ...form,
+                            storage_id: s.id,
+                            storage_amount: String(s.storage_amount ?? 0),
+                            storage_unit: s.storage_unit ?? "GB",
+                            cost_storage: String(s.cost_storage ?? 0),
+                          });
+                        }}
+                      >
+                        <option value="">Nenhum</option>
+                        {storageProducts.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.name} — {s.storage_amount}
+                            {s.storage_unit} (custo {formatBRL(Number(s.cost_storage ?? 0))} / venda{" "}
+                            {formatBRL(Number(s.price_monthly))}/mês)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-2">
+                      <Label>Custo VPS (R$)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={form.cost_vps}
+                        onChange={(e) => setForm({ ...form, cost_vps: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Custo Armaz. (R$)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={form.cost_storage}
+                        onChange={(e) => setForm({ ...form, cost_storage: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Outros (R$)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={form.cost_other}
+                        onChange={(e) => setForm({ ...form, cost_other: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Custo total: {formatBRL(totalCost)}
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Armazenamento</Label>
-                  <select
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
-                    value={storageProducts.find((s) => Number(s.storage_amount) === Number(form.storage_amount) && s.storage_unit === form.storage_unit && Number(s.cost_storage ?? 0) === Number(form.cost_storage))?.id ?? ""}
-                    onChange={(e) => {
-                      const s = storageProducts.find((x) => x.id === e.target.value);
-                      if (!s) { setForm({ ...form, storage_amount: "0", storage_unit: "GB", cost_storage: "0" }); return; }
-                      setForm({
-                        ...form,
-                        storage_amount: String(s.storage_amount ?? 0),
-                        storage_unit: s.storage_unit ?? "GB",
-                        cost_storage: String(s.cost_storage ?? 0),
-                      });
-                    }}
-                  >
-                    <option value="">Nenhum</option>
-                    {storageProducts.map((s) => (
-                      <option key={s.id} value={s.id}>{s.name} — {s.storage_amount}{s.storage_unit} (custo {formatBRL(Number(s.cost_storage ?? 0))} / venda {formatBRL(Number(s.price_monthly))}/mês)</option>
-                    ))}
-                  </select>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Margem de lucro (%)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={form.profit_margin}
+                      onChange={(e) => setForm({ ...form, profit_margin: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Preço de venda (R$)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={form.price_monthly}
+                      onChange={(e) => {
+                        const price = Number(e.target.value) || 0;
+                        const newMargin =
+                          totalCost > 0 ? +((price / totalCost - 1) * 100).toFixed(2) : 0;
+                        setForm({
+                          ...form,
+                          price_monthly: e.target.value,
+                          profit_margin: String(newMargin),
+                        });
+                      }}
+                    />
+                  </div>
                 </div>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-2"><Label>Custo VPS (R$)</Label><Input type="number" step="0.01" value={form.cost_vps} onChange={(e) => setForm({ ...form, cost_vps: e.target.value })} /></div>
-                <div className="space-y-2"><Label>Custo Armaz. (R$)</Label><Input type="number" step="0.01" value={form.cost_storage} onChange={(e) => setForm({ ...form, cost_storage: e.target.value })} /></div>
-                <div className="space-y-2"><Label>Outros (R$)</Label><Input type="number" step="0.01" value={form.cost_other} onChange={(e) => setForm({ ...form, cost_other: e.target.value })} /></div>
-              </div>
-              <div className="text-xs text-muted-foreground">Custo total: {formatBRL(totalCost)}</div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Margem de lucro (%)</Label>
-                <Input type="number" step="0.1" value={form.profit_margin} onChange={(e) => setForm({ ...form, profit_margin: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Preço de venda (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={form.price_monthly}
-                  onChange={(e) => {
-                    const price = Number(e.target.value) || 0;
-                    const newMargin = totalCost > 0 ? +(((price / totalCost) - 1) * 100).toFixed(2) : 0;
-                    setForm({ ...form, price_monthly: e.target.value, profit_margin: String(newMargin) });
-                  }}
-                />
-              </div>
-            </div>
-            <div className="rounded-md bg-muted/50 p-3 space-y-1 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Preço mensal calculado</span><span className="font-semibold">{formatBRL(computedMonthly)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Preço semestral (5% desc.)</span><span className="font-semibold">{formatBRL(computedSemestral)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Preço anual (10% desc.)</span><span className="font-semibold">{formatBRL(computedYearly)}</span></div>
-            </div>
-            </>
+                <div className="rounded-md bg-muted/50 p-3 space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Preço mensal calculado</span>
+                    <span className="font-semibold">{formatBRL(computedMonthly)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Preço semestral (5% desc.)</span>
+                    <span className="font-semibold">{formatBRL(computedSemestral)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Preço anual (10% desc.)</span>
+                    <span className="font-semibold">{formatBRL(computedYearly)}</span>
+                  </div>
+                </div>
+              </>
             )}
           </div>
-          <DialogFooter><Button onClick={save}>Salvar</Button></DialogFooter>
+          <DialogFooter>
+            <Button onClick={save}>Salvar</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Tabs defaultValue="licenses" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="licenses">Licenças <Badge variant="secondary" className="ml-2">{licenseProducts.length}</Badge></TabsTrigger>
-          <TabsTrigger value="storage">Armazenamento <Badge variant="secondary" className="ml-2">{storageProducts.length}</Badge></TabsTrigger>
-          <TabsTrigger value="vps">VPS <Badge variant="secondary" className="ml-2">{vpsProducts.length}</Badge></TabsTrigger>
+          <TabsTrigger value="licenses">
+            Licenças{" "}
+            <Badge variant="secondary" className="ml-2">
+              {licenseProducts.length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="storage">
+            Armazenamento{" "}
+            <Badge variant="secondary" className="ml-2">
+              {storageProducts.length}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="vps">
+            VPS{" "}
+            <Badge variant="secondary" className="ml-2">
+              {vpsProducts.length}
+            </Badge>
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="licenses" className="space-y-3">
           <div className="flex justify-end">
-            <Button onClick={() => openNew("license")}><Plus className="mr-2 h-4 w-4" /> Nova licença</Button>
+            <Button onClick={() => openNew("license")}>
+              <Plus className="mr-2 h-4 w-4" /> Nova licença
+            </Button>
           </div>
           {renderTable(licenseProducts, "Nenhuma licença cadastrada.", "license")}
         </TabsContent>
         <TabsContent value="storage" className="space-y-3">
           <div className="flex justify-end">
-            <Button onClick={() => openNew("storage")}><Plus className="mr-2 h-4 w-4" /> Novo upgrade de armazenamento</Button>
+            <Button onClick={() => openNew("storage")}>
+              <Plus className="mr-2 h-4 w-4" /> Novo upgrade de armazenamento
+            </Button>
           </div>
           {renderTable(storageProducts, "Nenhum upgrade de armazenamento.", "storage")}
         </TabsContent>
         <TabsContent value="vps" className="space-y-3">
           <div className="flex justify-end">
-            <Button onClick={() => openNew("vps")}><Plus className="mr-2 h-4 w-4" /> Novo upgrade de VPS</Button>
+            <Button onClick={() => openNew("vps")}>
+              <Plus className="mr-2 h-4 w-4" /> Novo upgrade de VPS
+            </Button>
           </div>
           {renderTable(vpsProducts, "Nenhum upgrade de VPS.", "vps")}
         </TabsContent>
@@ -601,11 +1064,25 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
 }
 
 // ---------- Licenses ----------
-function LicensesTab({ licenses, products, profiles, onChange }: {
-  licenses: LicenseRow[]; products: Product[]; profiles: Profile[]; onChange: () => void;
+function LicensesTab({
+  licenses,
+  products,
+  profiles,
+  onChange,
+}: {
+  licenses: LicenseRow[];
+  products: Product[];
+  profiles: Profile[];
+  onChange: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ user_id: "", product_id: "", plan: "monthly", status: "pending", auto_pay: true });
+  const [form, setForm] = useState({
+    user_id: "",
+    product_id: "",
+    plan: "monthly",
+    status: "pending",
+    auto_pay: true,
+  });
 
   const profileById = (id: string) => profiles.find((p) => p.user_id === id);
 
@@ -615,17 +1092,26 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
     const expires = new Date();
     expires.setMonth(expires.getMonth() + months);
     const product = products.find((p) => p.id === form.product_id);
-    const { data: lic, error } = await supabase.from("licenses").insert({
-      user_id: form.user_id,
-      product_id: form.product_id,
-      plan: form.plan as "monthly" | "semestral" | "yearly",
-      status: form.status as "active" | "pending" | "expired" | "cancelled" | "blocked",
-      expires_at: expires.toISOString(),
-    }).select().single();
+    const { data: lic, error } = await supabase
+      .from("licenses")
+      .insert({
+        user_id: form.user_id,
+        product_id: form.product_id,
+        plan: form.plan as "monthly" | "semestral" | "yearly",
+        status: form.status as "active" | "pending" | "expired" | "cancelled" | "blocked",
+        expires_at: expires.toISOString(),
+      })
+      .select()
+      .single();
     if (error) return toast.error(error.message);
 
     if (form.auto_pay && product) {
-      const amount = form.plan === "yearly" ? Number(product.price_yearly) : form.plan === "semestral" ? Number(product.price_semestral) : Number(product.price_monthly);
+      const amount =
+        form.plan === "yearly"
+          ? Number(product.price_yearly)
+          : form.plan === "semestral"
+            ? Number(product.price_semestral)
+            : Number(product.price_monthly);
       if (amount > 0) {
         await supabase.from("payments").insert({
           user_id: form.user_id,
@@ -642,7 +1128,10 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
   };
 
   const setStatus = async (id: string, status: string) => {
-    const { error } = await supabase.from("licenses").update({ status: status as "active" | "pending" | "expired" | "cancelled" | "blocked" }).eq("id", id);
+    const { error } = await supabase
+      .from("licenses")
+      .update({ status: status as "active" | "pending" | "expired" | "cancelled" | "blocked" })
+      .eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Status atualizado");
     onChange();
@@ -659,29 +1148,60 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
     <div className="space-y-4">
       <div className="flex justify-end">
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Emitir licença</Button></DialogTrigger>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" /> Emitir licença
+            </Button>
+          </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Nova licença</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>Nova licença</DialogTitle>
+            </DialogHeader>
             <div className="space-y-3 py-2">
-              <div className="space-y-2"><Label>Cliente</Label>
-                <Select value={form.user_id} onValueChange={(v) => setForm({ ...form, user_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                  <SelectContent>{profiles.map((p) => (
-                    <SelectItem key={p.user_id} value={p.user_id}>{p.full_name || p.email}</SelectItem>
-                  ))}</SelectContent>
+              <div className="space-y-2">
+                <Label>Cliente</Label>
+                <Select
+                  value={form.user_id}
+                  onValueChange={(v) => setForm({ ...form, user_id: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {profiles.map((p) => (
+                      <SelectItem key={p.user_id} value={p.user_id}>
+                        {p.full_name || p.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2"><Label>Produto</Label>
-                <Select value={form.product_id} onValueChange={(v) => setForm({ ...form, product_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                  <SelectContent>{products.filter((p) => (p.kind ?? "license") === "license").map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                  ))}</SelectContent>
+              <div className="space-y-2">
+                <Label>Produto</Label>
+                <Select
+                  value={form.product_id}
+                  onValueChange={(v) => setForm({ ...form, product_id: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {products
+                      .filter((p) => (p.kind ?? "license") === "license")
+                      .map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2"><Label>Plano</Label>
+              <div className="space-y-2">
+                <Label>Plano</Label>
                 <Select value={form.plan} onValueChange={(v) => setForm({ ...form, plan: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="monthly">Mensal (1 mês)</SelectItem>
                     <SelectItem value="semestral">Semestral (6 meses)</SelectItem>
@@ -689,9 +1209,12 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2"><Label>Status inicial</Label>
+              <div className="space-y-2">
+                <Label>Status inicial</Label>
                 <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Ativa</SelectItem>
                     <SelectItem value="pending">Pendente</SelectItem>
@@ -699,39 +1222,63 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
                 </Select>
               </div>
               <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={form.auto_pay} onChange={(e) => setForm({ ...form, auto_pay: e.target.checked })} />
+                <input
+                  type="checkbox"
+                  checked={form.auto_pay}
+                  onChange={(e) => setForm({ ...form, auto_pay: e.target.checked })}
+                />
                 Criar registro de pagamento automático
               </label>
             </div>
-            <DialogFooter><Button onClick={create}>Emitir</Button></DialogFooter>
+            <DialogFooter>
+              <Button onClick={create}>Emitir</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
       <Card className="overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-left"><tr>
-            <th className="p-3 font-medium">Cliente</th><th className="p-3 font-medium">Produto</th>
-            <th className="p-3 font-medium">Chave</th><th className="p-3 font-medium">Plano</th>
-            
-            <th className="p-3 font-medium">IP</th>
-            <th className="p-3 font-medium">Último contato</th>
-            <th className="p-3 font-medium">Status</th><th className="p-3"></th>
-          </tr></thead>
+          <thead className="bg-muted/50 text-left">
+            <tr>
+              <th className="p-3 font-medium">Cliente</th>
+              <th className="p-3 font-medium">Produto</th>
+              <th className="p-3 font-medium">Chave</th>
+              <th className="p-3 font-medium">Plano</th>
+
+              <th className="p-3 font-medium">IP</th>
+              <th className="p-3 font-medium">Último contato</th>
+              <th className="p-3 font-medium">Status</th>
+              <th className="p-3"></th>
+            </tr>
+          </thead>
           <tbody>
             {licenses.map((l) => {
               const prof = profileById(l.user_id);
               return (
                 <tr key={l.id} className="border-t border-border">
-                  <td className="p-3"><div className="font-medium">{prof?.full_name || "—"}</div><div className="text-xs text-muted-foreground">{prof?.email}</div></td>
+                  <td className="p-3">
+                    <div className="font-medium">{prof?.full_name || "—"}</div>
+                    <div className="text-xs text-muted-foreground">{prof?.email}</div>
+                  </td>
                   <td className="p-3">{l.product?.name}</td>
                   <td className="p-3 font-mono text-xs">{l.license_key}</td>
-                  <td className="p-3 capitalize">{l.plan === "monthly" ? "Mensal" : l.plan === "semestral" ? "Semestral" : "Anual"}</td>
-                  
+                  <td className="p-3 capitalize">
+                    {l.plan === "monthly"
+                      ? "Mensal"
+                      : l.plan === "semestral"
+                        ? "Semestral"
+                        : "Anual"}
+                  </td>
+
                   <td className="p-3 font-mono text-xs">{l.device_ip || "—"}</td>
-                  <td className="p-3 text-xs">{l.last_seen_at ? new Date(l.last_seen_at).toLocaleString("pt-BR") : "—"}</td>
+                  <td className="p-3 text-xs">
+                    {l.last_seen_at ? new Date(l.last_seen_at).toLocaleString("pt-BR") : "—"}
+                  </td>
                   <td className="p-3">
                     <Select value={l.status} onValueChange={(v) => setStatus(l.id, v)}>
-                      <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-8 w-32">
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="active">Ativa</SelectItem>
                         <SelectItem value="pending">Pendente</SelectItem>
@@ -742,12 +1289,20 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
                     </Select>
                   </td>
                   <td className="p-3 text-right">
-                    <Button size="sm" variant="ghost" onClick={() => remove(l.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                    <Button size="sm" variant="ghost" onClick={() => remove(l.id)}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </td>
                 </tr>
               );
             })}
-            {licenses.length === 0 && <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">Nenhuma licença emitida.</td></tr>}
+            {licenses.length === 0 && (
+              <tr>
+                <td colSpan={9} className="p-6 text-center text-muted-foreground">
+                  Nenhuma licença emitida.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </Card>
@@ -756,7 +1311,19 @@ function LicensesTab({ licenses, products, profiles, onChange }: {
 }
 
 // ---------- Payments ----------
-function PaymentsTab({ payments, licenses, products, profiles, onChange }: { payments: PaymentRow[]; licenses: LicenseRow[]; products: Product[]; profiles: Profile[]; onChange: () => void }) {
+function PaymentsTab({
+  payments,
+  licenses,
+  products,
+  profiles,
+  onChange,
+}: {
+  payments: PaymentRow[];
+  licenses: LicenseRow[];
+  products: Product[];
+  profiles: Profile[];
+  onChange: () => void;
+}) {
   const issueBoleto = useServerFn(issueAsaasBoleto);
   const cancelBoleto = useServerFn(cancelAsaasBoleto);
   const [issuingId, setIssuingId] = useState<string | null>(null);
@@ -765,14 +1332,18 @@ function PaymentsTab({ payments, licenses, products, profiles, onChange }: { pay
   const [creating, setCreating] = useState(false);
   const [newForm, setNewForm] = useState({ user_id: "", license_id: "", amount: "", due_date: "" });
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "paid" | "pending" | "failed" | "overdue">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "paid" | "pending" | "failed" | "overdue"
+  >("all");
   const profileById = new Map(profiles.map((p) => [p.user_id, p]));
   const q = search.trim().toLowerCase();
   const now = new Date();
-  const isOverdue = (p: PaymentRow) => p.status === "pending" && !!p.due_date && new Date(p.due_date) < now;
+  const isOverdue = (p: PaymentRow) =>
+    p.status === "pending" && !!p.due_date && new Date(p.due_date) < now;
   const filteredPayments = payments.filter((p) => {
     if (statusFilter === "overdue" && !isOverdue(p)) return false;
-    if (statusFilter !== "all" && statusFilter !== "overdue" && p.status !== statusFilter) return false;
+    if (statusFilter !== "all" && statusFilter !== "overdue" && p.status !== statusFilter)
+      return false;
     if (!q) return true;
     const prof = profileById.get(p.user_id);
     return (
@@ -784,12 +1355,18 @@ function PaymentsTab({ payments, licenses, products, profiles, onChange }: { pay
   });
 
   // KPIs
-  const totalRevenue = payments.filter((p) => p.status === "paid").reduce((s, p) => s + Number(p.amount), 0);
-  const pendingTotal = payments.filter((p) => p.status === "pending").reduce((s, p) => s + Number(p.amount), 0);
+  const totalRevenue = payments
+    .filter((p) => p.status === "paid")
+    .reduce((s, p) => s + Number(p.amount), 0);
+  const pendingTotal = payments
+    .filter((p) => p.status === "pending")
+    .reduce((s, p) => s + Number(p.amount), 0);
   const overdueList = payments.filter(isOverdue);
   const overdueTotal = overdueList.reduce((s, p) => s + Number(p.amount), 0);
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const monthRevenue = payments.filter((p) => p.status === "paid" && p.paid_at && new Date(p.paid_at) >= monthStart).reduce((s, p) => s + Number(p.amount), 0);
+  const monthRevenue = payments
+    .filter((p) => p.status === "paid" && p.paid_at && new Date(p.paid_at) >= monthStart)
+    .reduce((s, p) => s + Number(p.amount), 0);
 
   const clientLicenses = licenses.filter((l) => l.user_id === newForm.user_id);
 
@@ -799,13 +1376,17 @@ function PaymentsTab({ payments, licenses, products, profiles, onChange }: { pay
     if (!amount || amount <= 0) return toast.error("Informe um valor válido");
     setCreating(true);
     try {
-      const { data: pay, error } = await supabase.from("payments").insert({
-        user_id: newForm.user_id,
-        license_id: newForm.license_id,
-        amount,
-        status: "pending" as const,
-        due_date: newForm.due_date || null,
-      }).select().single();
+      const { data: pay, error } = await supabase
+        .from("payments")
+        .insert({
+          user_id: newForm.user_id,
+          license_id: newForm.license_id,
+          amount,
+          status: "pending" as const,
+          due_date: newForm.due_date || null,
+        })
+        .select()
+        .single();
       if (error) throw new Error(error.message);
       const r = await issueBoleto({ data: { payment_id: pay.id } });
       toast.success("Boleto emitido");
@@ -855,7 +1436,19 @@ function PaymentsTab({ payments, licenses, products, profiles, onChange }: { pay
   };
 
   const exportCsv = () => {
-    const rows = [["Data", "Cliente", "Email", "CPF/CNPJ", "Licença", "Valor", "Vencimento", "Pago em", "Status"]];
+    const rows = [
+      [
+        "Data",
+        "Cliente",
+        "Email",
+        "CPF/CNPJ",
+        "Licença",
+        "Valor",
+        "Vencimento",
+        "Pago em",
+        "Status",
+      ],
+    ];
     filteredPayments.forEach((p) => {
       const prof = profileById.get(p.user_id);
       rows.push([
@@ -870,24 +1463,56 @@ function PaymentsTab({ payments, licenses, products, profiles, onChange }: { pay
         statusLabel[p.status] ?? p.status,
       ]);
     });
-    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const csv = rows
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
     const blob = new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `financeiro-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    a.href = url;
+    a.download = `financeiro-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
     URL.revokeObjectURL(url);
   };
 
   const kpis = [
-    { label: "Receita total", value: formatBRL(totalRevenue), icon: DollarSign, tone: "text-emerald-600", bg: "bg-emerald-500/10" },
-    { label: "Receita do mês", value: formatBRL(monthRevenue), icon: TrendingUp, tone: "text-primary", bg: "bg-primary/10" },
-    { label: "A receber", value: formatBRL(pendingTotal), icon: Clock, tone: "text-amber-600", bg: "bg-amber-500/10" },
-    { label: `Vencidos (${overdueList.length})`, value: formatBRL(overdueTotal), icon: AlertTriangle, tone: "text-destructive", bg: "bg-destructive/10" },
+    {
+      label: "Receita total",
+      value: formatBRL(totalRevenue),
+      icon: DollarSign,
+      tone: "text-emerald-600",
+      bg: "bg-emerald-500/10",
+    },
+    {
+      label: "Receita do mês",
+      value: formatBRL(monthRevenue),
+      icon: TrendingUp,
+      tone: "text-primary",
+      bg: "bg-primary/10",
+    },
+    {
+      label: "A receber",
+      value: formatBRL(pendingTotal),
+      icon: Clock,
+      tone: "text-amber-600",
+      bg: "bg-amber-500/10",
+    },
+    {
+      label: `Vencidos (${overdueList.length})`,
+      value: formatBRL(overdueTotal),
+      icon: AlertTriangle,
+      tone: "text-destructive",
+      bg: "bg-destructive/10",
+    },
   ];
 
   const filterTabs: { key: typeof statusFilter; label: string; count: number }[] = [
     { key: "all", label: "Todos", count: payments.length },
-    { key: "pending", label: "Pendentes", count: payments.filter((p) => p.status === "pending").length },
+    {
+      key: "pending",
+      label: "Pendentes",
+      count: payments.filter((p) => p.status === "pending").length,
+    },
     { key: "overdue", label: "Vencidos", count: overdueList.length },
     { key: "paid", label: "Pagos", count: payments.filter((p) => p.status === "paid").length },
     { key: "failed", label: "Falhou", count: payments.filter((p) => p.status === "failed").length },
@@ -901,54 +1526,108 @@ function PaymentsTab({ payments, licenses, products, profiles, onChange }: { pay
           <h2 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
             <Receipt className="h-6 w-6 text-primary" /> Financeiro
           </h2>
-          <p className="text-sm text-muted-foreground mt-1">Gerencie cobranças, boletos e acompanhe o fluxo de receita.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Gerencie cobranças, boletos e acompanhe o fluxo de receita.
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={exportCsv}><Download className="mr-2 h-4 w-4" /> Exportar CSV</Button>
+          <Button variant="outline" onClick={exportCsv}>
+            <Download className="mr-2 h-4 w-4" /> Exportar CSV
+          </Button>
           <Dialog open={newOpen} onOpenChange={setNewOpen}>
             <DialogTrigger asChild>
-              <Button><Plus className="mr-2 h-4 w-4" /> Novo boleto</Button>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" /> Novo boleto
+              </Button>
             </DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>Emitir novo boleto</DialogTitle></DialogHeader>
+              <DialogHeader>
+                <DialogTitle>Emitir novo boleto</DialogTitle>
+              </DialogHeader>
               <div className="space-y-3 py-2">
-                <div className="space-y-2"><Label>Cliente</Label>
-                  <Select value={newForm.user_id} onValueChange={(v) => setNewForm({ ...newForm, user_id: v, license_id: "" })}>
-                    <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                    <SelectContent>{profiles.map((p) => (
-                      <SelectItem key={p.user_id} value={p.user_id}>{p.full_name || p.email}</SelectItem>
-                    ))}</SelectContent>
+                <div className="space-y-2">
+                  <Label>Cliente</Label>
+                  <Select
+                    value={newForm.user_id}
+                    onValueChange={(v) => setNewForm({ ...newForm, user_id: v, license_id: "" })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {profiles.map((p) => (
+                        <SelectItem key={p.user_id} value={p.user_id}>
+                          {p.full_name || p.email}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2"><Label>Licença</Label>
-                  <Select value={newForm.license_id} onValueChange={(v) => {
-                    const lic = licenses.find((l) => l.id === v);
-                    const prod = lic ? products.find((p) => p.id === lic.product_id) : null;
-                    let amt = "";
-                    if (prod) {
-                      if (lic?.plan === "yearly") amt = String(Number(prod.price_yearly) || +(Number(prod.price_monthly) * 12 * 0.9).toFixed(2));
-                      else if (lic?.plan === "semestral") amt = String(Number(prod.price_semestral) || +(Number(prod.price_monthly) * 6 * 0.95).toFixed(2));
-                      else amt = String(prod.price_monthly);
-                    }
-                    setNewForm({ ...newForm, license_id: v, amount: amt });
-                  }} disabled={!newForm.user_id}>
-                    <SelectTrigger><SelectValue placeholder={newForm.user_id ? "Selecione..." : "Escolha o cliente primeiro"} /></SelectTrigger>
-                    <SelectContent>{clientLicenses.map((l) => (
-                      <SelectItem key={l.id} value={l.id}>{l.product?.name ?? "Licença"} — {l.license_key}</SelectItem>
-                    ))}</SelectContent>
+                <div className="space-y-2">
+                  <Label>Licença</Label>
+                  <Select
+                    value={newForm.license_id}
+                    onValueChange={(v) => {
+                      const lic = licenses.find((l) => l.id === v);
+                      const prod = lic ? products.find((p) => p.id === lic.product_id) : null;
+                      let amt = "";
+                      if (prod) {
+                        if (lic?.plan === "yearly")
+                          amt = String(
+                            Number(prod.price_yearly) ||
+                              +(Number(prod.price_monthly) * 12 * 0.9).toFixed(2),
+                          );
+                        else if (lic?.plan === "semestral")
+                          amt = String(
+                            Number(prod.price_semestral) ||
+                              +(Number(prod.price_monthly) * 6 * 0.95).toFixed(2),
+                          );
+                        else amt = String(prod.price_monthly);
+                      }
+                      setNewForm({ ...newForm, license_id: v, amount: amt });
+                    }}
+                    disabled={!newForm.user_id}
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={
+                          newForm.user_id ? "Selecione..." : "Escolha o cliente primeiro"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clientLicenses.map((l) => (
+                        <SelectItem key={l.id} value={l.id}>
+                          {l.product?.name ?? "Licença"} — {l.license_key}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2"><Label>Valor (R$)</Label>
-                    <Input type="number" step="0.01" value={newForm.amount} onChange={(e) => setNewForm({ ...newForm, amount: e.target.value })} />
+                  <div className="space-y-2">
+                    <Label>Valor (R$)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={newForm.amount}
+                      onChange={(e) => setNewForm({ ...newForm, amount: e.target.value })}
+                    />
                   </div>
-                  <div className="space-y-2"><Label>Vencimento</Label>
-                    <Input type="date" value={newForm.due_date} onChange={(e) => setNewForm({ ...newForm, due_date: e.target.value })} />
+                  <div className="space-y-2">
+                    <Label>Vencimento</Label>
+                    <Input
+                      type="date"
+                      value={newForm.due_date}
+                      onChange={(e) => setNewForm({ ...newForm, due_date: e.target.value })}
+                    />
                   </div>
                 </div>
               </div>
               <DialogFooter>
-                <Button onClick={createBoleto} disabled={creating}>{creating ? "Emitindo..." : "Emitir boleto"}</Button>
+                <Button onClick={createBoleto} disabled={creating}>
+                  {creating ? "Emitindo..." : "Emitir boleto"}
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -961,7 +1640,9 @@ function PaymentsTab({ payments, licenses, products, profiles, onChange }: { pay
           <Card key={k.label} className="p-5">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">{k.label}</p>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+                  {k.label}
+                </p>
                 <p className="mt-2 text-2xl font-semibold tracking-tight">{k.value}</p>
               </div>
               <div className={`rounded-lg p-2.5 ${k.bg}`}>
@@ -987,7 +1668,9 @@ function PaymentsTab({ payments, licenses, products, profiles, onChange }: { pay
                 }`}
               >
                 {t.label}
-                <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${statusFilter === t.key ? "bg-primary-foreground/20" : "bg-background"}`}>
+                <span
+                  className={`rounded-full px-1.5 py-0.5 text-[10px] ${statusFilter === t.key ? "bg-primary-foreground/20" : "bg-background"}`}
+                >
                   {t.count}
                 </span>
               </button>
@@ -1027,8 +1710,13 @@ function PaymentsTab({ payments, licenses, products, profiles, onChange }: { pay
                 const prof = profileById.get(p.user_id);
                 const overdue = isOverdue(p);
                 return (
-                  <tr key={p.id} className="border-t border-border hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">{formatDate(p.created_at)}</td>
+                  <tr
+                    key={p.id}
+                    className="border-t border-border hover:bg-muted/30 transition-colors"
+                  >
+                    <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                      {formatDate(p.created_at)}
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2.5">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">
@@ -1036,32 +1724,55 @@ function PaymentsTab({ payments, licenses, products, profiles, onChange }: { pay
                         </div>
                         <div className="min-w-0">
                           <div className="font-medium truncate">{prof?.full_name || "—"}</div>
-                          <div className="text-xs text-muted-foreground truncate">{prof?.email || "—"}</div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            {prof?.email || "—"}
+                          </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.license?.license_key ?? "—"}</td>
-                    <td className="px-4 py-3 text-right font-semibold tabular-nums">{formatBRL(Number(p.amount))}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                      {p.license?.license_key ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 text-right font-semibold tabular-nums">
+                      {formatBRL(Number(p.amount))}
+                    </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       {p.due_date ? (
-                        <span className={overdue ? "text-destructive font-medium" : ""}>{formatDate(p.due_date)}</span>
-                      ) : <span className="text-muted-foreground">—</span>}
+                        <span className={overdue ? "text-destructive font-medium" : ""}>
+                          {formatDate(p.due_date)}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">{p.paid_at ? formatDate(p.paid_at) : "—"}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
+                      {p.paid_at ? formatDate(p.paid_at) : "—"}
+                    </td>
                     <td className="px-4 py-3">
                       {overdue ? (
-                        <Badge variant="destructive" className="gap-1"><AlertTriangle className="h-3 w-3" /> Vencido</Badge>
+                        <Badge variant="destructive" className="gap-1">
+                          <AlertTriangle className="h-3 w-3" /> Vencido
+                        </Badge>
                       ) : p.status === "paid" ? (
-                        <Badge className="gap-1 bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/20 border-transparent"><CheckCircle2 className="h-3 w-3" /> Pago</Badge>
+                        <Badge className="gap-1 bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/20 border-transparent">
+                          <CheckCircle2 className="h-3 w-3" /> Pago
+                        </Badge>
                       ) : p.status === "failed" ? (
                         <Badge variant="destructive">Falhou</Badge>
                       ) : (
-                        <Badge variant="secondary" className="gap-1"><Clock className="h-3 w-3" /> {statusLabel[p.status] ?? p.status}</Badge>
+                        <Badge variant="secondary" className="gap-1">
+                          <Clock className="h-3 w-3" /> {statusLabel[p.status] ?? p.status}
+                        </Badge>
                       )}
                     </td>
                     <td className="px-4 py-3">
                       {p.boleto_url ? (
-                        <a href={p.boleto_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline text-xs font-medium">
+                        <a
+                          href={p.boleto_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-primary hover:underline text-xs font-medium"
+                        >
                           <FileText className="h-3.5 w-3.5" /> Abrir
                         </a>
                       ) : (
@@ -1070,13 +1781,26 @@ function PaymentsTab({ payments, licenses, products, profiles, onChange }: { pay
                     </td>
                     <td className="px-4 py-3 text-right space-x-1 whitespace-nowrap">
                       {!p.boleto_url && p.status !== "paid" && (
-                        <Button size="sm" variant="outline" onClick={() => emitir(p.id)} disabled={issuingId === p.id}>
-                          <FileText className="mr-1 h-3.5 w-3.5" /> {issuingId === p.id ? "Emitindo..." : "Emitir"}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => emitir(p.id)}
+                          disabled={issuingId === p.id}
+                        >
+                          <FileText className="mr-1 h-3.5 w-3.5" />{" "}
+                          {issuingId === p.id ? "Emitindo..." : "Emitir"}
                         </Button>
                       )}
                       {p.boleto_url && p.status !== "paid" && (
-                        <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => cancelar(p.id)} disabled={cancelingId === p.id}>
-                          <XCircle className="mr-1 h-3.5 w-3.5" /> {cancelingId === p.id ? "Cancelando..." : "Cancelar"}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => cancelar(p.id)}
+                          disabled={cancelingId === p.id}
+                        >
+                          <XCircle className="mr-1 h-3.5 w-3.5" />{" "}
+                          {cancelingId === p.id ? "Cancelando..." : "Cancelar"}
                         </Button>
                       )}
                     </td>
@@ -1084,10 +1808,12 @@ function PaymentsTab({ payments, licenses, products, profiles, onChange }: { pay
                 );
               })}
               {filteredPayments.length === 0 && (
-                <tr><td colSpan={9} className="p-12 text-center">
-                  <Receipt className="mx-auto h-10 w-10 text-muted-foreground/40 mb-2" />
-                  <p className="text-sm text-muted-foreground">Nenhum pagamento encontrado.</p>
-                </td></tr>
+                <tr>
+                  <td colSpan={9} className="p-12 text-center">
+                    <Receipt className="mx-auto h-10 w-10 text-muted-foreground/40 mb-2" />
+                    <p className="text-sm text-muted-foreground">Nenhum pagamento encontrado.</p>
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
@@ -1099,13 +1825,31 @@ function PaymentsTab({ payments, licenses, products, profiles, onChange }: { pay
 
 // ---------- Customers ----------
 const emptyCustomerForm = {
-  full_name: "", email: "", password: "",
-  cpf_cnpj: "", phone: "",
-  address_zip: "", address_street: "", address_number: "",
-  address_complement: "", address_neighborhood: "", address_city: "", address_state: "",
+  full_name: "",
+  email: "",
+  password: "",
+  cpf_cnpj: "",
+  phone: "",
+  address_zip: "",
+  address_street: "",
+  address_number: "",
+  address_complement: "",
+  address_neighborhood: "",
+  address_city: "",
+  address_state: "",
 };
 
-function CustomersTab({ profiles, licenses, payments, onChange }: { profiles: Profile[]; licenses: LicenseRow[]; payments: PaymentRow[]; onChange: () => void }) {
+function CustomersTab({
+  profiles,
+  licenses,
+  payments,
+  onChange,
+}: {
+  profiles: Profile[];
+  licenses: LicenseRow[];
+  payments: PaymentRow[];
+  onChange: () => void;
+}) {
   const createCustomerFn = useServerFn(createCustomer);
   const updateCustomerFn = useServerFn(updateCustomer);
   const [open, setOpen] = useState(false);
@@ -1118,18 +1862,24 @@ function CustomersTab({ profiles, licenses, payments, onChange }: { profiles: Pr
   const isEdit = !!editing;
 
   const q = search.trim().toLowerCase();
-  const filteredProfiles = !q ? profiles : profiles.filter((p) =>
-    (p.full_name || "").toLowerCase().includes(q) ||
-    (p.email || "").toLowerCase().includes(q) ||
-    (p.cpf_cnpj || "").toLowerCase().includes(q) ||
-    String(p.customer_number ?? "").includes(q)
-  );
+  const filteredProfiles = !q
+    ? profiles
+    : profiles.filter(
+        (p) =>
+          (p.full_name || "").toLowerCase().includes(q) ||
+          (p.email || "").toLowerCase().includes(q) ||
+          (p.cpf_cnpj || "").toLowerCase().includes(q) ||
+          String(p.customer_number ?? "").includes(q),
+      );
 
   const detailLicenses = detail ? licenses.filter((l) => l.user_id === detail.user_id) : [];
   const detailPayments = detail ? payments.filter((p) => p.user_id === detail.user_id) : [];
-  const detailTotalPaid = detailPayments.filter((p) => p.status === "paid").reduce((s, p) => s + Number(p.amount), 0);
-  const detailPending = detailPayments.filter((p) => p.status === "pending").reduce((s, p) => s + Number(p.amount), 0);
-
+  const detailTotalPaid = detailPayments
+    .filter((p) => p.status === "paid")
+    .reduce((s, p) => s + Number(p.amount), 0);
+  const detailPending = detailPayments
+    .filter((p) => p.status === "pending")
+    .reduce((s, p) => s + Number(p.amount), 0);
 
   const openCreate = () => {
     setEditing(null);
@@ -1192,62 +1942,143 @@ function CustomersTab({ profiles, licenses, payments, onChange }: { profiles: Pr
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <Button onClick={openCreate}><Plus className="mr-2 h-4 w-4" /> Novo cliente</Button>
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditing(null); setForm(emptyCustomerForm); } }}>
+        <Button onClick={openCreate}>
+          <Plus className="mr-2 h-4 w-4" /> Novo cliente
+        </Button>
+        <Dialog
+          open={open}
+          onOpenChange={(o) => {
+            setOpen(o);
+            if (!o) {
+              setEditing(null);
+              setForm(emptyCustomerForm);
+            }
+          }}
+        >
           <DialogContent className="max-w-2xl">
-            <DialogHeader><DialogTitle>{isEdit ? "Editar cliente" : "Cadastrar cliente"}</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>{isEdit ? "Editar cliente" : "Cadastrar cliente"}</DialogTitle>
+            </DialogHeader>
             <div className="space-y-3 py-2 max-h-[70vh] overflow-y-auto pr-1">
               <div className="grid gap-3 md:grid-cols-2">
-                <div className="space-y-2"><Label>Nome completo / Razão social *</Label>
-                  <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+                <div className="space-y-2">
+                  <Label>Nome completo / Razão social *</Label>
+                  <Input
+                    value={form.full_name}
+                    onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                  />
                 </div>
-                <div className="space-y-2"><Label>CPF / CNPJ *</Label>
-                  <Input value={form.cpf_cnpj} onChange={(e) => setForm({ ...form, cpf_cnpj: formatCpfCnpj(e.target.value) })} placeholder="000.000.000-00" />
+                <div className="space-y-2">
+                  <Label>CPF / CNPJ *</Label>
+                  <Input
+                    value={form.cpf_cnpj}
+                    onChange={(e) => setForm({ ...form, cpf_cnpj: formatCpfCnpj(e.target.value) })}
+                    placeholder="000.000.000-00"
+                  />
                 </div>
-                <div className="space-y-2"><Label>E-mail *</Label>
-                  <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                <div className="space-y-2">
+                  <Label>E-mail *</Label>
+                  <Input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  />
                 </div>
-                <div className="space-y-2"><Label>Telefone</Label>
-                  <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="(11) 99999-0000" />
+                <div className="space-y-2">
+                  <Label>Telefone</Label>
+                  <Input
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    placeholder="(11) 99999-0000"
+                  />
                 </div>
-                <div className="space-y-2 md:col-span-2"><Label>{isEdit ? "Nova senha (deixe em branco para manter)" : "Senha inicial *"}</Label>
-                  <Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="mín. 6 caracteres" />
+                <div className="space-y-2 md:col-span-2">
+                  <Label>
+                    {isEdit ? "Nova senha (deixe em branco para manter)" : "Senha inicial *"}
+                  </Label>
+                  <Input
+                    type="text"
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    placeholder="mín. 6 caracteres"
+                  />
                 </div>
               </div>
 
-              <div className="pt-2 text-xs uppercase tracking-wide text-muted-foreground">Endereço</div>
+              <div className="pt-2 text-xs uppercase tracking-wide text-muted-foreground">
+                Endereço
+              </div>
               <div className="grid gap-3 md:grid-cols-3">
-                <div className="space-y-2"><Label>CEP</Label>
+                <div className="space-y-2">
+                  <Label>CEP</Label>
                   <Input
                     value={form.address_zip}
                     onChange={(e) => setForm({ ...form, address_zip: e.target.value })}
                     onBlur={async (e) => {
                       const r = await fetchCep(e.target.value);
-                      if (r) setForm((f) => ({ ...f, address_street: r.street || f.address_street, address_neighborhood: r.neighborhood || f.address_neighborhood, address_city: r.city || f.address_city, address_state: r.state || f.address_state }));
+                      if (r)
+                        setForm((f) => ({
+                          ...f,
+                          address_street: r.street || f.address_street,
+                          address_neighborhood: r.neighborhood || f.address_neighborhood,
+                          address_city: r.city || f.address_city,
+                          address_state: r.state || f.address_state,
+                        }));
                     }}
                   />
                 </div>
-                <div className="space-y-2 md:col-span-2"><Label>Rua / Logradouro</Label>
-                  <Input value={form.address_street} onChange={(e) => setForm({ ...form, address_street: e.target.value })} />
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Rua / Logradouro</Label>
+                  <Input
+                    value={form.address_street}
+                    onChange={(e) => setForm({ ...form, address_street: e.target.value })}
+                  />
                 </div>
-                <div className="space-y-2"><Label>Número</Label>
-                  <Input value={form.address_number} onChange={(e) => setForm({ ...form, address_number: e.target.value })} />
+                <div className="space-y-2">
+                  <Label>Número</Label>
+                  <Input
+                    value={form.address_number}
+                    onChange={(e) => setForm({ ...form, address_number: e.target.value })}
+                  />
                 </div>
-                <div className="space-y-2"><Label>Complemento</Label>
-                  <Input value={form.address_complement} onChange={(e) => setForm({ ...form, address_complement: e.target.value })} />
+                <div className="space-y-2">
+                  <Label>Complemento</Label>
+                  <Input
+                    value={form.address_complement}
+                    onChange={(e) => setForm({ ...form, address_complement: e.target.value })}
+                  />
                 </div>
-                <div className="space-y-2"><Label>Bairro</Label>
-                  <Input value={form.address_neighborhood} onChange={(e) => setForm({ ...form, address_neighborhood: e.target.value })} />
+                <div className="space-y-2">
+                  <Label>Bairro</Label>
+                  <Input
+                    value={form.address_neighborhood}
+                    onChange={(e) => setForm({ ...form, address_neighborhood: e.target.value })}
+                  />
                 </div>
-                <div className="space-y-2 md:col-span-2"><Label>Cidade</Label>
-                  <Input value={form.address_city} onChange={(e) => setForm({ ...form, address_city: e.target.value })} />
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Cidade</Label>
+                  <Input
+                    value={form.address_city}
+                    onChange={(e) => setForm({ ...form, address_city: e.target.value })}
+                  />
                 </div>
-                <div className="space-y-2"><Label>UF</Label>
-                  <Input maxLength={2} value={form.address_state} onChange={(e) => setForm({ ...form, address_state: e.target.value.toUpperCase() })} />
+                <div className="space-y-2">
+                  <Label>UF</Label>
+                  <Input
+                    maxLength={2}
+                    value={form.address_state}
+                    onChange={(e) =>
+                      setForm({ ...form, address_state: e.target.value.toUpperCase() })
+                    }
+                  />
                 </div>
               </div>
             </div>
-            <DialogFooter><Button onClick={save} disabled={saving}>{saving ? "Salvando..." : (isEdit ? "Salvar" : "Cadastrar")}</Button></DialogFooter>
+            <DialogFooter>
+              <Button onClick={save} disabled={saving}>
+                {saving ? "Salvando..." : isEdit ? "Salvar" : "Cadastrar"}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
@@ -1261,34 +2092,52 @@ function CustomersTab({ profiles, licenses, payments, onChange }: { profiles: Pr
       </div>
       <Card className="overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-left"><tr>
-            <th className="p-3 font-medium w-16">ID</th>
-            <th className="p-3 font-medium">Nome</th>
-            <th className="p-3 font-medium">E-mail</th>
-            <th className="p-3 font-medium">Cidade</th>
-            <th className="p-3 font-medium">UF</th>
-            <th className="p-3 font-medium">Licenças</th>
-            <th className="p-3 font-medium w-32 text-right">Ações</th>
-          </tr></thead>
+          <thead className="bg-muted/50 text-left">
+            <tr>
+              <th className="p-3 font-medium w-16">ID</th>
+              <th className="p-3 font-medium">Nome</th>
+              <th className="p-3 font-medium">E-mail</th>
+              <th className="p-3 font-medium">Cidade</th>
+              <th className="p-3 font-medium">UF</th>
+              <th className="p-3 font-medium">Licenças</th>
+              <th className="p-3 font-medium w-32 text-right">Ações</th>
+            </tr>
+          </thead>
           <tbody>
             {filteredProfiles.map((p) => {
               const count = licenses.filter((l) => l.user_id === p.user_id).length;
               return (
-                <tr key={p.user_id} className="border-t border-border hover:bg-muted/30 cursor-pointer" onClick={() => setDetail(p)}>
-                  <td className="p-3 font-mono text-xs text-muted-foreground">#{p.customer_number ?? "—"}</td>
+                <tr
+                  key={p.user_id}
+                  className="border-t border-border hover:bg-muted/30 cursor-pointer"
+                  onClick={() => setDetail(p)}
+                >
+                  <td className="p-3 font-mono text-xs text-muted-foreground">
+                    #{p.customer_number ?? "—"}
+                  </td>
                   <td className="p-3 font-medium">{p.full_name || "—"}</td>
                   <td className="p-3">{p.email}</td>
                   <td className="p-3">{p.address_city || "—"}</td>
                   <td className="p-3">{p.address_state || "—"}</td>
                   <td className="p-3">{count}</td>
                   <td className="p-3 text-right space-x-1" onClick={(e) => e.stopPropagation()}>
-                    <Button variant="ghost" size="sm" onClick={() => setDetail(p)}><DollarSign className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="sm" onClick={() => openEdit(p)}><Pencil className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="sm" onClick={() => setDetail(p)}>
+                      <DollarSign className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => openEdit(p)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
                   </td>
                 </tr>
               );
             })}
-            {filteredProfiles.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Nenhum cliente.</td></tr>}
+            {filteredProfiles.length === 0 && (
+              <tr>
+                <td colSpan={7} className="p-6 text-center text-muted-foreground">
+                  Nenhum cliente.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </Card>
@@ -1301,33 +2150,52 @@ function CustomersTab({ profiles, licenses, payments, onChange }: { profiles: Pr
           {detail && (
             <div className="space-y-6 py-2">
               <div className="grid grid-cols-3 gap-3">
-                <Card className="p-3"><div className="text-xs text-muted-foreground">Pago</div><div className="text-lg font-semibold">{formatBRL(detailTotalPaid)}</div></Card>
-                <Card className="p-3"><div className="text-xs text-muted-foreground">Pendente</div><div className="text-lg font-semibold">{formatBRL(detailPending)}</div></Card>
-                <Card className="p-3"><div className="text-xs text-muted-foreground">Licenças</div><div className="text-lg font-semibold">{detailLicenses.length}</div></Card>
+                <Card className="p-3">
+                  <div className="text-xs text-muted-foreground">Pago</div>
+                  <div className="text-lg font-semibold">{formatBRL(detailTotalPaid)}</div>
+                </Card>
+                <Card className="p-3">
+                  <div className="text-xs text-muted-foreground">Pendente</div>
+                  <div className="text-lg font-semibold">{formatBRL(detailPending)}</div>
+                </Card>
+                <Card className="p-3">
+                  <div className="text-xs text-muted-foreground">Licenças</div>
+                  <div className="text-lg font-semibold">{detailLicenses.length}</div>
+                </Card>
               </div>
 
               <div>
                 <h3 className="font-medium mb-2">Licenças</h3>
                 <Card className="overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-muted/50 text-left"><tr>
-                      <th className="p-2 font-medium">Chave</th>
-                      <th className="p-2 font-medium">Produto</th>
-                      <th className="p-2 font-medium">Plano</th>
-                      <th className="p-2 font-medium">Status</th>
-                      <th className="p-2 font-medium">Expira em</th>
-                    </tr></thead>
+                    <thead className="bg-muted/50 text-left">
+                      <tr>
+                        <th className="p-2 font-medium">Chave</th>
+                        <th className="p-2 font-medium">Produto</th>
+                        <th className="p-2 font-medium">Plano</th>
+                        <th className="p-2 font-medium">Status</th>
+                        <th className="p-2 font-medium">Expira em</th>
+                      </tr>
+                    </thead>
                     <tbody>
                       {detailLicenses.map((l) => (
                         <tr key={l.id} className="border-t border-border">
                           <td className="p-2 font-mono text-xs">{l.license_key}</td>
                           <td className="p-2">{l.product?.name ?? "—"}</td>
                           <td className="p-2">{l.plan}</td>
-                          <td className="p-2"><Badge variant="secondary">{statusLabel[l.status] ?? l.status}</Badge></td>
+                          <td className="p-2">
+                            <Badge variant="secondary">{statusLabel[l.status] ?? l.status}</Badge>
+                          </td>
                           <td className="p-2">{formatDate(l.expires_at)}</td>
                         </tr>
                       ))}
-                      {detailLicenses.length === 0 && <tr><td colSpan={5} className="p-3 text-center text-muted-foreground">Sem licenças.</td></tr>}
+                      {detailLicenses.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="p-3 text-center text-muted-foreground">
+                            Sem licenças.
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </Card>
@@ -1337,14 +2205,16 @@ function CustomersTab({ profiles, licenses, payments, onChange }: { profiles: Pr
                 <h3 className="font-medium mb-2">Financeiro</h3>
                 <Card className="overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-muted/50 text-left"><tr>
-                      <th className="p-2 font-medium">Data</th>
-                      <th className="p-2 font-medium">Licença</th>
-                      <th className="p-2 font-medium">Valor</th>
-                      <th className="p-2 font-medium">Pago em</th>
-                      <th className="p-2 font-medium">Status</th>
-                      <th className="p-2 font-medium">Boleto</th>
-                    </tr></thead>
+                    <thead className="bg-muted/50 text-left">
+                      <tr>
+                        <th className="p-2 font-medium">Data</th>
+                        <th className="p-2 font-medium">Licença</th>
+                        <th className="p-2 font-medium">Valor</th>
+                        <th className="p-2 font-medium">Pago em</th>
+                        <th className="p-2 font-medium">Status</th>
+                        <th className="p-2 font-medium">Boleto</th>
+                      </tr>
+                    </thead>
                     <tbody>
                       {detailPayments.map((p) => (
                         <tr key={p.id} className="border-t border-border">
@@ -1352,11 +2222,43 @@ function CustomersTab({ profiles, licenses, payments, onChange }: { profiles: Pr
                           <td className="p-2 font-mono text-xs">{p.license?.license_key ?? "—"}</td>
                           <td className="p-2">{formatBRL(Number(p.amount))}</td>
                           <td className="p-2">{p.paid_at ? formatDate(p.paid_at) : "—"}</td>
-                          <td className="p-2"><Badge variant={p.status === "paid" ? "default" : p.status === "failed" ? "destructive" : "secondary"}>{statusLabel[p.status] ?? p.status}</Badge></td>
-                          <td className="p-2">{p.boleto_url ? <a href={p.boleto_url} target="_blank" rel="noreferrer" className="text-primary hover:underline inline-flex items-center gap-1 text-xs"><FileText className="h-3.5 w-3.5" />Abrir</a> : "—"}</td>
+                          <td className="p-2">
+                            <Badge
+                              variant={
+                                p.status === "paid"
+                                  ? "default"
+                                  : p.status === "failed"
+                                    ? "destructive"
+                                    : "secondary"
+                              }
+                            >
+                              {statusLabel[p.status] ?? p.status}
+                            </Badge>
+                          </td>
+                          <td className="p-2">
+                            {p.boleto_url ? (
+                              <a
+                                href={p.boleto_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-primary hover:underline inline-flex items-center gap-1 text-xs"
+                              >
+                                <FileText className="h-3.5 w-3.5" />
+                                Abrir
+                              </a>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
                         </tr>
                       ))}
-                      {detailPayments.length === 0 && <tr><td colSpan={6} className="p-3 text-center text-muted-foreground">Sem pagamentos.</td></tr>}
+                      {detailPayments.length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="p-3 text-center text-muted-foreground">
+                            Sem pagamentos.
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </Card>
@@ -1411,14 +2313,19 @@ function IntegrationsTab() {
         .insert({})
         .select(SETTINGS_COLS)
         .single();
-      if (insErr) { toast.error(insErr.message); return; }
+      if (insErr) {
+        toast.error(insErr.message);
+        return;
+      }
       setSettings(created as unknown as SettingsRow);
     } else {
       setSettings(data as unknown as SettingsRow);
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const update = <K extends keyof SettingsRow>(key: K, value: SettingsRow[K]) => {
     setSettings((s) => (s ? { ...s, [key]: value } : s));
@@ -1445,7 +2352,10 @@ function IntegrationsTab() {
       })
       .eq("id", settings.id);
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Configurações salvas");
     load();
   };
@@ -1467,15 +2377,22 @@ function IntegrationsTab() {
           <Landmark className="h-5 w-5 text-primary" />
           <div>
             <h3 className="text-lg font-semibold">Provedor de pagamento ativo</h3>
-            <p className="text-sm text-muted-foreground">Escolha qual banco/gateway será usado para emitir cobranças.</p>
+            <p className="text-sm text-muted-foreground">
+              Escolha qual banco/gateway será usado para emitir cobranças.
+            </p>
           </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label>Provedor</Label>
-            <Select value={settings.active_provider} onValueChange={(v) => setSettings({ ...settings, active_provider: v as Provider })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Select
+              value={settings.active_provider}
+              onValueChange={(v) => setSettings({ ...settings, active_provider: v as Provider })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="manual">Manual (sem integração)</SelectItem>
                 <SelectItem value="asaas">Asaas</SelectItem>
@@ -1487,8 +2404,13 @@ function IntegrationsTab() {
           {settings.active_provider === "asaas" && (
             <div className="space-y-2">
               <Label>Ambiente Asaas</Label>
-              <Select value={settings.asaas_env} onValueChange={(v) => setSettings({ ...settings, asaas_env: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={settings.asaas_env}
+                onValueChange={(v) => setSettings({ ...settings, asaas_env: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="sandbox">Sandbox (testes)</SelectItem>
                   <SelectItem value="production">Produção</SelectItem>
@@ -1500,11 +2422,17 @@ function IntegrationsTab() {
 
         <div className="space-y-2">
           <Label>Observações internas</Label>
-          <Textarea value={settings.notes ?? ""} onChange={(e) => setSettings({ ...settings, notes: e.target.value })} placeholder="Anotações sobre a conta bancária, contato do gerente, etc." />
+          <Textarea
+            value={settings.notes ?? ""}
+            onChange={(e) => setSettings({ ...settings, notes: e.target.value })}
+            placeholder="Anotações sobre a conta bancária, contato do gerente, etc."
+          />
         </div>
 
         <div className="flex justify-end">
-          <Button onClick={save} disabled={saving}>{saving ? "Salvando..." : "Salvar configurações"}</Button>
+          <Button onClick={save} disabled={saving}>
+            {saving ? "Salvando..." : "Salvar configurações"}
+          </Button>
         </div>
       </Card>
 
@@ -1512,7 +2440,8 @@ function IntegrationsTab() {
         <div>
           <h3 className="text-lg font-semibold">Credenciais do banco</h3>
           <p className="text-sm text-muted-foreground">
-            Cole abaixo as chaves de API / tokens do provedor selecionado. Apenas administradores enxergam estes dados.
+            Cole abaixo as chaves de API / tokens do provedor selecionado. Apenas administradores
+            enxergam estes dados.
           </p>
         </div>
 
@@ -1527,7 +2456,9 @@ function IntegrationsTab() {
                 onChange={(e) => update("asaas_api_key", e.target.value)}
                 placeholder="$aact_..."
               />
-              <p className="text-xs text-muted-foreground">Gerada em Asaas → Integrações → API Asaas.</p>
+              <p className="text-xs text-muted-foreground">
+                Gerada em Asaas → Integrações → API Asaas.
+              </p>
             </div>
           </div>
         )}
@@ -1538,20 +2469,39 @@ function IntegrationsTab() {
             <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>Client ID</Label>
-                <Input value={settings.sicredi_client_id ?? ""} onChange={(e) => update("sicredi_client_id", e.target.value)} />
+                <Input
+                  value={settings.sicredi_client_id ?? ""}
+                  onChange={(e) => update("sicredi_client_id", e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Client Secret</Label>
-                <Input type="password" value={settings.sicredi_client_secret ?? ""} onChange={(e) => update("sicredi_client_secret", e.target.value)} />
+                <Input
+                  type="password"
+                  value={settings.sicredi_client_secret ?? ""}
+                  onChange={(e) => update("sicredi_client_secret", e.target.value)}
+                />
               </div>
             </div>
             <div className="space-y-2">
               <Label>Certificado mTLS (.pem)</Label>
-              <Textarea rows={4} className="font-mono text-xs" value={settings.sicredi_cert_pem ?? ""} onChange={(e) => update("sicredi_cert_pem", e.target.value)} placeholder="-----BEGIN CERTIFICATE-----" />
+              <Textarea
+                rows={4}
+                className="font-mono text-xs"
+                value={settings.sicredi_cert_pem ?? ""}
+                onChange={(e) => update("sicredi_cert_pem", e.target.value)}
+                placeholder="-----BEGIN CERTIFICATE-----"
+              />
             </div>
             <div className="space-y-2">
               <Label>Chave privada (.key)</Label>
-              <Textarea rows={4} className="font-mono text-xs" value={settings.sicredi_cert_key ?? ""} onChange={(e) => update("sicredi_cert_key", e.target.value)} placeholder="-----BEGIN PRIVATE KEY-----" />
+              <Textarea
+                rows={4}
+                className="font-mono text-xs"
+                value={settings.sicredi_cert_key ?? ""}
+                onChange={(e) => update("sicredi_cert_key", e.target.value)}
+                placeholder="-----BEGIN PRIVATE KEY-----"
+              />
             </div>
           </div>
         )}
@@ -1562,41 +2512,68 @@ function IntegrationsTab() {
             <div className="grid gap-3 md:grid-cols-2">
               <div className="space-y-2">
                 <Label>Client ID</Label>
-                <Input value={settings.sicoob_client_id ?? ""} onChange={(e) => update("sicoob_client_id", e.target.value)} />
+                <Input
+                  value={settings.sicoob_client_id ?? ""}
+                  onChange={(e) => update("sicoob_client_id", e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Access Token</Label>
-                <Input type="password" value={settings.sicoob_access_token ?? ""} onChange={(e) => update("sicoob_access_token", e.target.value)} />
+                <Input
+                  type="password"
+                  value={settings.sicoob_access_token ?? ""}
+                  onChange={(e) => update("sicoob_access_token", e.target.value)}
+                />
               </div>
             </div>
             <div className="space-y-2">
               <Label>Certificado mTLS (.pem)</Label>
-              <Textarea rows={4} className="font-mono text-xs" value={settings.sicoob_cert_pem ?? ""} onChange={(e) => update("sicoob_cert_pem", e.target.value)} placeholder="-----BEGIN CERTIFICATE-----" />
+              <Textarea
+                rows={4}
+                className="font-mono text-xs"
+                value={settings.sicoob_cert_pem ?? ""}
+                onChange={(e) => update("sicoob_cert_pem", e.target.value)}
+                placeholder="-----BEGIN CERTIFICATE-----"
+              />
             </div>
             <div className="space-y-2">
               <Label>Chave privada (.key)</Label>
-              <Textarea rows={4} className="font-mono text-xs" value={settings.sicoob_cert_key ?? ""} onChange={(e) => update("sicoob_cert_key", e.target.value)} placeholder="-----BEGIN PRIVATE KEY-----" />
+              <Textarea
+                rows={4}
+                className="font-mono text-xs"
+                value={settings.sicoob_cert_key ?? ""}
+                onChange={(e) => update("sicoob_cert_key", e.target.value)}
+                placeholder="-----BEGIN PRIVATE KEY-----"
+              />
             </div>
           </div>
         )}
 
         {settings.active_provider === "manual" && (
-          <p className="text-sm text-muted-foreground">Modo manual selecionado — nenhuma credencial necessária.</p>
+          <p className="text-sm text-muted-foreground">
+            Modo manual selecionado — nenhuma credencial necessária.
+          </p>
         )}
 
         <div className="flex justify-end">
-          <Button onClick={save} disabled={saving}>{saving ? "Salvando..." : "Salvar credenciais"}</Button>
+          <Button onClick={save} disabled={saving}>
+            {saving ? "Salvando..." : "Salvar credenciais"}
+          </Button>
         </div>
       </Card>
 
       <Card className="p-6 space-y-3">
         <div>
           <h3 className="text-lg font-semibold">URL do Webhook</h3>
-          <p className="text-sm text-muted-foreground">Configure esta URL no painel do provedor para receber confirmações de pagamento.</p>
+          <p className="text-sm text-muted-foreground">
+            Configure esta URL no painel do provedor para receber confirmações de pagamento.
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Input readOnly value={webhookUrl} className="font-mono text-xs" />
-          <Button variant="outline" size="icon" onClick={() => copy(webhookUrl)}><Copy className="h-4 w-4" /></Button>
+          <Button variant="outline" size="icon" onClick={() => copy(webhookUrl)}>
+            <Copy className="h-4 w-4" />
+          </Button>
         </div>
         <p className="text-xs text-muted-foreground">
           Token de validação: <code className="font-mono">{settings.webhook_token}</code>
@@ -1605,7 +2582,6 @@ function IntegrationsTab() {
     </div>
   );
 }
-
 
 // ---------- System Users (admins) ----------
 function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange: () => void }) {
@@ -1693,61 +2669,115 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold">Usuários do sistema</h2>
-          <p className="text-sm text-muted-foreground">Administradores com acesso ao painel. Não aparecem como clientes.</p>
+          <p className="text-sm text-muted-foreground">
+            Administradores com acesso ao painel. Não aparecem como clientes.
+          </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="mr-2 h-4 w-4" /> Novo usuário</Button></DialogTrigger>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" /> Novo usuário
+            </Button>
+          </DialogTrigger>
           <DialogContent className="max-w-md">
-            <DialogHeader><DialogTitle>Cadastrar usuário do sistema</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>Cadastrar usuário do sistema</DialogTitle>
+            </DialogHeader>
             <div className="space-y-3 py-2">
-              <div className="space-y-2"><Label>Nome completo *</Label>
-                <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+              <div className="space-y-2">
+                <Label>Nome completo *</Label>
+                <Input
+                  value={form.full_name}
+                  onChange={(e) => setForm({ ...form, full_name: e.target.value })}
+                />
               </div>
-              <div className="space-y-2"><Label>E-mail *</Label>
-                <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              <div className="space-y-2">
+                <Label>E-mail *</Label>
+                <Input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                />
               </div>
-              <div className="space-y-2"><Label>Senha inicial *</Label>
-                <Input type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="mín. 6 caracteres" />
+              <div className="space-y-2">
+                <Label>Senha inicial *</Label>
+                <Input
+                  type="text"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  placeholder="mín. 6 caracteres"
+                />
               </div>
-              <p className="text-xs text-muted-foreground">O usuário será criado com perfil de administrador.</p>
+              <p className="text-xs text-muted-foreground">
+                O usuário será criado com perfil de administrador.
+              </p>
             </div>
-            <DialogFooter><Button onClick={save} disabled={saving}>{saving ? "Salvando..." : "Cadastrar"}</Button></DialogFooter>
+            <DialogFooter>
+              <Button onClick={save} disabled={saving}>
+                {saving ? "Salvando..." : "Cadastrar"}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Editar usuário do sistema</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Editar usuário do sistema</DialogTitle>
+          </DialogHeader>
           <div className="space-y-3 py-2">
-            <div className="space-y-2"><Label>Nome completo *</Label>
-              <Input value={editForm.full_name} onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })} />
+            <div className="space-y-2">
+              <Label>Nome completo *</Label>
+              <Input
+                value={editForm.full_name}
+                onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
+              />
             </div>
-            <div className="space-y-2"><Label>E-mail *</Label>
-              <Input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
+            <div className="space-y-2">
+              <Label>E-mail *</Label>
+              <Input
+                type="email"
+                value={editForm.email}
+                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+              />
             </div>
-            <div className="space-y-2"><Label>Nova senha</Label>
-              <Input type="text" value={editForm.password} onChange={(e) => setEditForm({ ...editForm, password: e.target.value })} placeholder="deixe vazio para não alterar" />
+            <div className="space-y-2">
+              <Label>Nova senha</Label>
+              <Input
+                type="text"
+                value={editForm.password}
+                onChange={(e) => setEditForm({ ...editForm, password: e.target.value })}
+                placeholder="deixe vazio para não alterar"
+              />
             </div>
           </div>
-          <DialogFooter><Button onClick={saveEdit} disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button></DialogFooter>
+          <DialogFooter>
+            <Button onClick={saveEdit} disabled={saving}>
+              {saving ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Card className="overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-left"><tr>
-            <th className="p-3 font-medium">Nome</th>
-            <th className="p-3 font-medium">E-mail</th>
-            <th className="p-3 font-medium">Função</th>
-            <th className="p-3 font-medium w-24">Ações</th>
-          </tr></thead>
+          <thead className="bg-muted/50 text-left">
+            <tr>
+              <th className="p-3 font-medium">Nome</th>
+              <th className="p-3 font-medium">E-mail</th>
+              <th className="p-3 font-medium">Função</th>
+              <th className="p-3 font-medium w-24">Ações</th>
+            </tr>
+          </thead>
           <tbody>
             {profiles.map((p) => (
               <tr key={p.user_id} className="border-t border-border">
                 <td className="p-3 font-medium">{p.full_name || "—"}</td>
                 <td className="p-3">{p.email}</td>
-                <td className="p-3"><Badge variant="outline">admin</Badge></td>
+                <td className="p-3">
+                  <Badge variant="outline">admin</Badge>
+                </td>
                 <td className="p-3">
                   <div className="flex gap-1">
                     <Button variant="ghost" size="sm" onClick={() => openEdit(p)} title="Editar">
@@ -1758,7 +2788,11 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
                       size="sm"
                       onClick={() => handleDelete(p)}
                       disabled={p.user_id === currentUser?.id}
-                      title={p.user_id === currentUser?.id ? "Não é possível excluir o próprio usuário" : "Excluir"}
+                      title={
+                        p.user_id === currentUser?.id
+                          ? "Não é possível excluir o próprio usuário"
+                          : "Excluir"
+                      }
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
@@ -1766,7 +2800,13 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
                 </td>
               </tr>
             ))}
-            {profiles.length === 0 && <tr><td colSpan={4} className="p-6 text-center text-muted-foreground">Nenhum usuário do sistema.</td></tr>}
+            {profiles.length === 0 && (
+              <tr>
+                <td colSpan={4} className="p-6 text-center text-muted-foreground">
+                  Nenhum usuário do sistema.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </Card>
@@ -1789,19 +2829,477 @@ function MobileAppTab() {
     <Card className="p-6">
       <div className="flex flex-col items-center gap-6 md:flex-row md:items-start">
         <div className="rounded-lg bg-white p-4 shadow-sm">
-          {url ? <QRCodeSVG value={url} size={200} level="M" /> : <div className="h-[200px] w-[200px]" />}
+          {url ? (
+            <QRCodeSVG value={url} size={200} level="M" />
+          ) : (
+            <div className="h-[200px] w-[200px]" />
+          )}
         </div>
         <div className="flex-1 space-y-3">
           <h3 className="text-lg font-semibold">Acesso ao App Mobile</h3>
           <p className="text-sm text-muted-foreground">
-            Escaneie o QR Code com a câmera do celular para abrir o aplicativo no domínio configurado nesta instalação.
+            Escaneie o QR Code com a câmera do celular para abrir o aplicativo no domínio
+            configurado nesta instalação.
           </p>
           <div className="flex items-center gap-2">
             <Input readOnly value={url} />
-            <Button variant="outline" size="icon" onClick={copy}><Copy className="h-4 w-4" /></Button>
+            <Button variant="outline" size="icon" onClick={copy}>
+              <Copy className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </div>
     </Card>
+  );
+}
+
+// ---------- Payables (Contas a Pagar) ----------
+function PayablesTab({
+  payables,
+  licenses,
+  products,
+  profiles,
+  onChange,
+}: {
+  payables: PayableRow[];
+  licenses: LicenseRow[];
+  products: Product[];
+  profiles: Profile[];
+  onChange: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<PayableRow | null>(null);
+  const empty = {
+    description: "",
+    supplier: "",
+    category: "other" as "vps" | "storage" | "other",
+    amount: "0",
+    due_date: "",
+    recurrence: "none",
+    notes: "",
+  };
+  const [form, setForm] = useState(empty);
+  const [filter, setFilter] = useState<"all" | "pending" | "paid" | "overdue">("all");
+  const [generating, setGenerating] = useState(false);
+
+  const today = new Date();
+  const isOverdue = (p: PayableRow) =>
+    p.status === "pending" && !!p.due_date && new Date(p.due_date) < today;
+
+  const filtered = payables.filter((p) => {
+    if (filter === "all") return true;
+    if (filter === "overdue") return isOverdue(p);
+    return p.status === filter;
+  });
+
+  const totalPending = payables
+    .filter((p) => p.status === "pending")
+    .reduce((s, p) => s + Number(p.amount), 0);
+  const totalOverdue = payables.filter(isOverdue).reduce((s, p) => s + Number(p.amount), 0);
+  const totalPaidMonth = payables
+    .filter(
+      (p) =>
+        p.status === "paid" &&
+        p.paid_at &&
+        new Date(p.paid_at).getMonth() === today.getMonth() &&
+        new Date(p.paid_at).getFullYear() === today.getFullYear(),
+    )
+    .reduce((s, p) => s + Number(p.amount), 0);
+  const monthlyRecurring = payables
+    .filter((p) => p.recurrence === "monthly" && p.status !== "cancelled")
+    .reduce((s, p) => s + Number(p.amount), 0);
+
+  const openNew = () => {
+    setEditing(null);
+    setForm(empty);
+    setOpen(true);
+  };
+  const openEdit = (p: PayableRow) => {
+    setEditing(p);
+    setForm({
+      description: p.description,
+      supplier: p.supplier ?? "",
+      category: p.category,
+      amount: String(p.amount),
+      due_date: p.due_date ?? "",
+      recurrence: p.recurrence ?? "none",
+      notes: p.notes ?? "",
+    });
+    setOpen(true);
+  };
+
+  const save = async () => {
+    if (!form.description.trim()) return toast.error("Descrição obrigatória");
+    const payload = {
+      description: form.description.trim(),
+      supplier: form.supplier.trim() || null,
+      category: form.category,
+      amount: Number(form.amount) || 0,
+      due_date: form.due_date || null,
+      recurrence: form.recurrence,
+      notes: form.notes.trim() || null,
+    };
+    const { error } = editing
+      ? await (supabase as any).from("payables").update(payload).eq("id", editing.id)
+      : await (supabase as any).from("payables").insert(payload);
+    if (error) return toast.error(error.message);
+    toast.success(editing ? "Atualizado" : "Conta criada");
+    setOpen(false);
+    onChange();
+  };
+
+  const setStatus = async (id: string, status: "pending" | "paid" | "overdue" | "cancelled") => {
+    const patch: { status: typeof status; paid_at: string | null } = {
+      status,
+      paid_at: status === "paid" ? new Date().toISOString() : null,
+    };
+    const { error } = await (supabase as any).from("payables").update(patch).eq("id", id);
+    if (error) return toast.error(error.message);
+    onChange();
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm("Excluir esta conta?")) return;
+    const { error } = await (supabase as any).from("payables").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    onChange();
+  };
+
+  // Auto-gera contas mensais a partir das licenças ativas (cost_vps + cost_storage por licença)
+  const generateFromLicenses = async () => {
+    if (
+      !confirm(
+        "Gerar contas mensais recorrentes a partir das licenças ativas? Apenas custos > 0 serão criados.",
+      )
+    )
+      return;
+    setGenerating(true);
+    try {
+      const rows: Array<Record<string, unknown>> = [];
+      const due = new Date(today.getFullYear(), today.getMonth(), 10).toISOString().slice(0, 10);
+      for (const lic of licenses.filter((l) => l.status === "active")) {
+        const prod = products.find((p) => p.id === lic.product_id);
+        if (!prod) continue;
+        const prof = profiles.find((p) => p.user_id === lic.user_id);
+        const ref = `${prof?.full_name || prof?.email || "Cliente"} — ${prod.name} (${lic.license_key})`;
+        if (Number(prod.cost_vps ?? 0) > 0) {
+          rows.push({
+            description: `VPS — ${ref}`,
+            supplier: "Provedor VPS",
+            category: "vps",
+            amount: Number(prod.cost_vps),
+            due_date: due,
+            recurrence: "monthly",
+            license_id: lic.id,
+            product_id: prod.id,
+          });
+        }
+        if (Number(prod.cost_storage ?? 0) > 0) {
+          rows.push({
+            description: `Armazenamento — ${ref}`,
+            supplier: "Provedor Storage",
+            category: "storage",
+            amount: Number(prod.cost_storage),
+            due_date: due,
+            recurrence: "monthly",
+            license_id: lic.id,
+            product_id: prod.id,
+          });
+        }
+        if (Number(prod.cost_other ?? 0) > 0) {
+          rows.push({
+            description: `Outros custos — ${ref}`,
+            supplier: null,
+            category: "other",
+            amount: Number(prod.cost_other),
+            due_date: due,
+            recurrence: "monthly",
+            license_id: lic.id,
+            product_id: prod.id,
+          });
+        }
+      }
+      if (!rows.length) {
+        toast.info("Nenhum custo a gerar");
+        setGenerating(false);
+        return;
+      }
+      const { error } = await (supabase as any).from("payables").insert(rows);
+      if (error) throw new Error(error.message);
+      toast.success(`${rows.length} contas geradas`);
+      onChange();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao gerar");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const catLabel = (c: string) =>
+    c === "vps" ? "VPS" : c === "storage" ? "Armazenamento" : "Outros";
+  const statusBadge = (p: PayableRow) => {
+    if (isOverdue(p))
+      return (
+        <Badge className="bg-destructive/15 text-destructive border-destructive/30">Vencida</Badge>
+      );
+    if (p.status === "paid")
+      return (
+        <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30">Paga</Badge>
+      );
+    if (p.status === "cancelled") return <Badge variant="outline">Cancelada</Badge>;
+    return <Badge variant="secondary">Pendente</Badge>;
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
+            <Receipt className="h-6 w-6 text-primary" /> Contas a Pagar
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Custos da operação: VPS, armazenamento e demais despesas.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={generateFromLicenses} disabled={generating}>
+            <Plus className="mr-2 h-4 w-4" />{" "}
+            {generating ? "Gerando..." : "Gerar das licenças ativas"}
+          </Button>
+          <Button onClick={openNew}>
+            <Plus className="mr-2 h-4 w-4" /> Nova conta
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          {
+            label: "A pagar",
+            value: formatBRL(totalPending),
+            icon: Clock,
+            tone: "text-amber-600",
+            bg: "bg-amber-500/10",
+          },
+          {
+            label: "Vencidas",
+            value: formatBRL(totalOverdue),
+            icon: AlertTriangle,
+            tone: "text-destructive",
+            bg: "bg-destructive/10",
+          },
+          {
+            label: "Pago no mês",
+            value: formatBRL(totalPaidMonth),
+            icon: CheckCircle2,
+            tone: "text-emerald-600",
+            bg: "bg-emerald-500/10",
+          },
+          {
+            label: "Recorrente mensal",
+            value: formatBRL(monthlyRecurring),
+            icon: TrendingUp,
+            tone: "text-primary",
+            bg: "bg-primary/10",
+          },
+        ].map((k) => (
+          <Card key={k.label} className="p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+                  {k.label}
+                </p>
+                <p className="mt-2 text-2xl font-semibold tracking-tight">{k.value}</p>
+              </div>
+              <div className={`rounded-lg p-2.5 ${k.bg}`}>
+                <k.icon className={`h-5 w-5 ${k.tone}`} />
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="p-4">
+        <div className="flex flex-wrap gap-1.5">
+          {(["all", "pending", "overdue", "paid"] as const).map((k) => (
+            <button
+              key={k}
+              onClick={() => setFilter(k)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                filter === k
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-muted text-muted-foreground hover:bg-muted/70"
+              }`}
+            >
+              {k === "all"
+                ? "Todas"
+                : k === "pending"
+                  ? "Pendentes"
+                  : k === "overdue"
+                    ? "Vencidas"
+                    : "Pagas"}
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      <Card className="overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/50 text-left">
+            <tr>
+              <th className="p-3 font-medium">Descrição</th>
+              <th className="p-3 font-medium">Categoria</th>
+              <th className="p-3 font-medium">Fornecedor</th>
+              <th className="p-3 font-medium">Valor</th>
+              <th className="p-3 font-medium">Vencimento</th>
+              <th className="p-3 font-medium">Status</th>
+              <th className="p-3"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((p) => (
+              <tr key={p.id} className="border-t border-border">
+                <td className="p-3">
+                  <div className="font-medium">{p.description}</div>
+                  {p.recurrence === "monthly" && (
+                    <div className="text-xs text-muted-foreground">Mensal recorrente</div>
+                  )}
+                </td>
+                <td className="p-3">
+                  <Badge variant="outline">{catLabel(p.category)}</Badge>
+                </td>
+                <td className="p-3 text-muted-foreground">{p.supplier || "—"}</td>
+                <td className="p-3 font-medium">{formatBRL(Number(p.amount))}</td>
+                <td className="p-3 text-xs">{p.due_date ? formatDate(p.due_date) : "—"}</td>
+                <td className="p-3">{statusBadge(p)}</td>
+                <td className="p-3 text-right">
+                  {p.status !== "paid" && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setStatus(p.id, "paid")}
+                      title="Marcar como pago"
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                    </Button>
+                  )}
+                  {p.status === "paid" && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setStatus(p.id, "pending")}
+                      title="Reabrir"
+                    >
+                      <Clock className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                  <Button size="sm" variant="ghost" onClick={() => openEdit(p)}>
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => remove(p.id)}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </td>
+              </tr>
+            ))}
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={7} className="p-6 text-center text-muted-foreground">
+                  Nenhuma conta encontrada.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </Card>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editing ? "Editar conta" : "Nova conta a pagar"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-2">
+              <Label>Descrição</Label>
+              <Input
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Fornecedor</Label>
+                <Input
+                  value={form.supplier}
+                  onChange={(e) => setForm({ ...form, supplier: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Categoria</Label>
+                <Select
+                  value={form.category}
+                  onValueChange={(v) =>
+                    setForm({ ...form, category: v as "vps" | "storage" | "other" })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="vps">VPS</SelectItem>
+                    <SelectItem value="storage">Armazenamento</SelectItem>
+                    <SelectItem value="other">Outros</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Valor (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={form.amount}
+                  onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Vencimento</Label>
+                <Input
+                  type="date"
+                  value={form.due_date}
+                  onChange={(e) => setForm({ ...form, due_date: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Recorrência</Label>
+              <Select
+                value={form.recurrence}
+                onValueChange={(v) => setForm({ ...form, recurrence: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Única</SelectItem>
+                  <SelectItem value="monthly">Mensal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Notas</Label>
+              <Textarea
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={save}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
