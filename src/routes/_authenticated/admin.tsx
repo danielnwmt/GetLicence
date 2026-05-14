@@ -2546,6 +2546,8 @@ function IntegrationsTab() {
         coplan_username: settings.coplan_username,
         coplan_password: settings.coplan_password,
         coplan_token: settings.coplan_token,
+        block_grace_days: settings.block_grace_days,
+        block_auto: settings.block_auto,
       })
       .eq("id", settings.id);
     setSaving(false);
