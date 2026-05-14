@@ -49,6 +49,8 @@ import {
   CheckCircle2,
   Receipt,
   Download,
+  Ban,
+  ShieldOff,
 } from "lucide-react";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { fetchCep } from "@/lib/cep";
@@ -1335,9 +1337,30 @@ function LicensesTab({
                     </Select>
                   </td>
                   <td className="p-3 text-right">
-                    <Button size="sm" variant="ghost" onClick={() => remove(l.id)}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    <div className="flex justify-end gap-1">
+                      {l.status === "blocked" ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          title="Desbloquear licença"
+                          onClick={() => setStatus(l.id, "active")}
+                        >
+                          <ShieldOff className="h-3.5 w-3.5 text-emerald-500" />
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          title="Bloquear licença"
+                          onClick={() => setStatus(l.id, "blocked")}
+                        >
+                          <Ban className="h-3.5 w-3.5 text-destructive" />
+                        </Button>
+                      )}
+                      <Button size="sm" variant="ghost" onClick={() => remove(l.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -2456,10 +2479,12 @@ interface SettingsRow {
   coplan_username: string | null;
   coplan_password: string | null;
   coplan_token: string | null;
+  block_grace_days: number;
+  block_auto: boolean;
 }
 
 const SETTINGS_COLS =
-  "id, active_provider, asaas_env, webhook_token, notes, asaas_api_key, sicredi_client_id, sicredi_client_secret, sicredi_cert_pem, sicredi_cert_key, sicoob_client_id, sicoob_access_token, sicoob_cert_pem, sicoob_cert_key, coplan_url, coplan_username, coplan_password, coplan_token";
+  "id, active_provider, asaas_env, webhook_token, notes, asaas_api_key, sicredi_client_id, sicredi_client_secret, sicredi_cert_pem, sicredi_cert_key, sicoob_client_id, sicoob_access_token, sicoob_cert_pem, sicoob_cert_key, coplan_url, coplan_username, coplan_password, coplan_token, block_grace_days, block_auto";
 
 function IntegrationsTab() {
   const [settings, setSettings] = useState<SettingsRow | null>(null);
@@ -2521,6 +2546,8 @@ function IntegrationsTab() {
         coplan_username: settings.coplan_username,
         coplan_password: settings.coplan_password,
         coplan_token: settings.coplan_token,
+        block_grace_days: settings.block_grace_days,
+        block_auto: settings.block_auto,
       })
       .eq("id", settings.id);
     setSaving(false);
@@ -2781,6 +2808,51 @@ function IntegrationsTab() {
         <div className="flex justify-end">
           <Button onClick={save} disabled={saving}>
             {saving ? "Salvando..." : "Salvar integração Coplan"}
+          </Button>
+        </div>
+      </Card>
+
+      <Card className="p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <Ban className="h-5 w-5 text-destructive" />
+          <div>
+            <h3 className="text-lg font-semibold">Regra de bloqueio de licenças</h3>
+            <p className="text-sm text-muted-foreground">
+              Define quando uma licença é bloqueada automaticamente por inadimplência.
+              Licenças bloqueadas deixam de ser validadas pelo sistema cliente.
+            </p>
+          </div>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Bloqueio automático</Label>
+            <Select
+              value={settings.block_auto ? "on" : "off"}
+              onValueChange={(v) => update("block_auto", v === "on")}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="on">Ativado</SelectItem>
+                <SelectItem value="off">Desativado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Dias de tolerância após vencimento</Label>
+            <Input
+              type="number"
+              min={0}
+              value={settings.block_grace_days ?? 0}
+              onChange={(e) => update("block_grace_days", Math.max(0, Number(e.target.value) || 0))}
+            />
+            <p className="text-xs text-muted-foreground">
+              0 = bloqueia no dia seguinte ao vencimento.
+            </p>
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <Button onClick={save} disabled={saving}>
+            {saving ? "Salvando..." : "Salvar regra de bloqueio"}
           </Button>
         </div>
       </Card>
