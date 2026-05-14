@@ -13,6 +13,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   UserCircle,
+  Receipt,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "@tanstack/react-router";
