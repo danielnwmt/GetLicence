@@ -1385,7 +1385,13 @@ function PaymentsTab({
   }, []);
   const [newOpen, setNewOpen] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [newForm, setNewForm] = useState({ user_id: "", license_id: "", amount: "", due_date: "" });
+  const [newForm, setNewForm] = useState({
+    user_id: "",
+    license_id: "",
+    amount: "",
+    due_date: "",
+    quantity: "1",
+  });
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "paid" | "pending" | "failed" | "overdue"
