@@ -1825,6 +1825,22 @@ function PaymentsTab({
                           {cancelingId === p.id ? "Cancelando..." : "Cancelar"}
                         </Button>
                       )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          if (!coplanUrl) {
+                            toast.error(
+                              "Configure a URL do Coplan em Configurações → Integrações.",
+                            );
+                            return;
+                          }
+                          window.open(coplanUrl, "_blank", "noopener,noreferrer");
+                        }}
+                        title="Emitir nota fiscal no Coplan"
+                      >
+                        <FileText className="mr-1 h-3.5 w-3.5" /> Nota fiscal
+                      </Button>
                     </td>
                   </tr>
                 );
