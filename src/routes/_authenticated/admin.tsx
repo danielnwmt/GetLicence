@@ -49,6 +49,11 @@ interface PaymentRow {
   boleto_url: string | null; invoice_url: string | null; barcode: string | null;
   provider_charge_id: string | null; due_date?: string | null;
   license: { license_key: string } | null;
+interface PayableRow {
+  id: string; description: string; supplier: string | null; category: "vps" | "storage" | "other";
+  amount: number; due_date: string | null; paid_at: string | null;
+  status: "pending" | "paid" | "overdue" | "cancelled"; recurrence: string;
+  license_id: string | null; product_id: string | null; notes: string | null; created_at: string;
 }
 
 function AdminPage() {
