@@ -328,6 +328,8 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
       kind: p.kind ?? "license",
       name: p.name,
       description: p.description ?? "",
+      vps_id: "",
+      storage_id: "",
       vps_specs: p.vps_specs ?? "",
       vps_storage_amount: String(p.vps_storage_amount ?? 0),
       vps_storage_unit: p.vps_storage_unit ?? "GB",
