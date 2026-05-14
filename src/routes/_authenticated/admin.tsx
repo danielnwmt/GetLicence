@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-interface Product { id: string; name: string; description: string | null; price_monthly: number; price_semestral: number; price_yearly: number; active: boolean; cost_vps?: number; cost_storage?: number; cost_other?: number; profit_margin?: number; vps_specs?: string | null; storage_amount?: number; storage_unit?: string; vps_storage_amount?: number; vps_storage_unit?: string; price_storage_gb?: number; price_vps_monthly?: number; }
+interface Product { id: string; name: string; description: string | null; price_monthly: number; price_semestral: number; price_yearly: number; active: boolean; cost_vps?: number; cost_storage?: number; cost_other?: number; profit_margin?: number; vps_specs?: string | null; storage_amount?: number; storage_unit?: string; vps_storage_amount?: number; vps_storage_unit?: string; kind?: string; }
 interface Profile { user_id: string; full_name: string | null; email: string | null; address_city?: string | null; address_state?: string | null; customer_number?: number | null; cpf_cnpj?: string | null; phone?: string | null; address_zip?: string | null; address_street?: string | null; address_number?: string | null; address_complement?: string | null; address_neighborhood?: string | null; }
 interface LicenseRow {
   id: string; license_key: string; plan: string; status: string;
@@ -311,7 +311,7 @@ const statusBadge: Record<string, string> = {
 function ProductsTab({ products, onChange }: { products: Product[]; onChange: () => void }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
-  const emptyForm = { name: "", description: "", vps_specs: "", vps_storage_amount: "0", vps_storage_unit: "GB", storage_amount: "0", storage_unit: "GB", cost_vps: "0", cost_storage: "0", cost_other: "0", profit_margin: "30", price_monthly: "0", price_semestral: "0", price_yearly: "0", price_storage_gb: "0", price_vps_monthly: "0" };
+  const emptyForm = { kind: "license", name: "", description: "", vps_specs: "", vps_storage_amount: "0", vps_storage_unit: "GB", storage_amount: "0", storage_unit: "GB", cost_vps: "0", cost_storage: "0", cost_other: "0", profit_margin: "30", price_monthly: "0", price_semestral: "0", price_yearly: "0" };
   const [form, setForm] = useState(emptyForm);
 
   const totalCost = (Number(form.cost_vps) || 0) + (Number(form.cost_storage) || 0) + (Number(form.cost_other) || 0);
@@ -319,11 +319,13 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
   const computedMonthly = +(totalCost * (1 + margin / 100)).toFixed(2);
   const computedSemestral = +(computedMonthly * 6 * 0.95).toFixed(2);
   const computedYearly = +(computedMonthly * 12 * 0.9).toFixed(2);
+  const isUpgrade = form.kind !== "license";
 
   const openNew = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
   const openEdit = (p: Product) => {
     setEditing(p);
     setForm({
+      kind: p.kind ?? "license",
       name: p.name,
       description: p.description ?? "",
       vps_specs: p.vps_specs ?? "",
@@ -338,8 +340,6 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
       price_monthly: String(p.price_monthly),
       price_semestral: String(p.price_semestral ?? 0),
       price_yearly: String(p.price_yearly),
-      price_storage_gb: String(p.price_storage_gb ?? 0),
-      price_vps_monthly: String(p.price_vps_monthly ?? 0),
     });
     setOpen(true);
   };
@@ -347,6 +347,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
   const save = async () => {
     if (!form.name.trim()) return toast.error("Nome é obrigatório");
     const payload = {
+      kind: form.kind,
       name: form.name.trim(),
       description: form.description.trim() || null,
       vps_specs: form.vps_specs.trim(),
@@ -358,11 +359,9 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
       cost_storage: Number(form.cost_storage) || 0,
       cost_other: Number(form.cost_other) || 0,
       profit_margin: margin,
-      price_monthly: computedMonthly,
-      price_semestral: computedSemestral,
-      price_yearly: computedYearly,
-      price_storage_gb: Number(form.price_storage_gb) || 0,
-      price_vps_monthly: Number(form.price_vps_monthly) || 0,
+      price_monthly: isUpgrade ? Number(form.price_monthly) || 0 : computedMonthly,
+      price_semestral: isUpgrade ? 0 : computedSemestral,
+      price_yearly: isUpgrade ? 0 : computedYearly,
     };
     const { error } = editing
       ? await supabase.from("products").update(payload).eq("id", editing.id)
@@ -391,8 +390,70 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
           <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editing ? "Editar produto" : "Novo produto"}</DialogTitle></DialogHeader>
             <div className="space-y-3 py-2">
+              <div className="space-y-2">
+                <Label>Tipo de produto</Label>
+                <select
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                  value={form.kind}
+                  onChange={(e) => setForm({ ...form, kind: e.target.value })}
+                >
+                  <option value="license">Licença / Plano</option>
+                  <option value="storage">Upgrade de armazenamento</option>
+                  <option value="vps">Upgrade de VPS</option>
+                </select>
+              </div>
               <div className="space-y-2"><Label>Nome</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
               <div className="space-y-2"><Label>Descrição</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+
+              {isUpgrade && form.kind === "storage" && (
+                <div className="rounded-md border p-3 space-y-3">
+                  <div className="text-sm font-medium">Armazenamento oferecido</div>
+                  <div className="flex gap-2">
+                    <Input type="number" step="0.01" placeholder="Qtd" value={form.storage_amount} onChange={(e) => setForm({ ...form, storage_amount: e.target.value })} />
+                    <select className="h-9 rounded-md border border-input bg-transparent px-2 text-sm" value={form.storage_unit} onChange={(e) => setForm({ ...form, storage_unit: e.target.value })}>
+                      <option value="GB">GB</option>
+                      <option value="TB">TB</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {isUpgrade && form.kind === "vps" && (
+                <div className="rounded-md border p-3 space-y-3">
+                  <div className="text-sm font-medium">Recursos da VPS</div>
+                  <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm" value={form.vps_specs} onChange={(e) => setForm({ ...form, vps_specs: e.target.value })}>
+                    <option value="">Selecione...</option>
+                    <option value="1 vCPU, 1GB RAM">1 vCPU, 1GB RAM</option>
+                    <option value="1 vCPU, 2GB RAM">1 vCPU, 2GB RAM</option>
+                    <option value="2 vCPU, 2GB RAM">2 vCPU, 2GB RAM</option>
+                    <option value="2 vCPU, 4GB RAM">2 vCPU, 4GB RAM</option>
+                    <option value="4 vCPU, 4GB RAM">4 vCPU, 4GB RAM</option>
+                    <option value="4 vCPU, 8GB RAM">4 vCPU, 8GB RAM</option>
+                    <option value="6 vCPU, 12GB RAM">6 vCPU, 12GB RAM</option>
+                    <option value="8 vCPU, 16GB RAM">8 vCPU, 16GB RAM</option>
+                    <option value="8 vCPU, 32GB RAM">8 vCPU, 32GB RAM</option>
+                    <option value="16 vCPU, 32GB RAM">16 vCPU, 32GB RAM</option>
+                    <option value="16 vCPU, 64GB RAM">16 vCPU, 64GB RAM</option>
+                  </select>
+                  <div className="flex gap-2">
+                    <Input type="number" step="0.01" placeholder="Armaz. da VPS" value={form.vps_storage_amount} onChange={(e) => setForm({ ...form, vps_storage_amount: e.target.value })} />
+                    <select className="h-9 rounded-md border border-input bg-transparent px-2 text-sm" value={form.vps_storage_unit} onChange={(e) => setForm({ ...form, vps_storage_unit: e.target.value })}>
+                      <option value="GB">GB</option>
+                      <option value="TB">TB</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {isUpgrade && (
+                <div className="space-y-2">
+                  <Label>Preço (R$/mês)</Label>
+                  <Input type="number" step="0.01" value={form.price_monthly} onChange={(e) => setForm({ ...form, price_monthly: e.target.value })} />
+                </div>
+              )}
+
+              {!isUpgrade && (
+              <>
               <div className="rounded-md border p-3 space-y-3">
                 <div className="text-sm font-medium">Recursos & Custos mensais</div>
                 <div className="grid grid-cols-2 gap-3">
@@ -462,31 +523,6 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                 </div>
                 <div className="text-xs text-muted-foreground">Custo total: {formatBRL(totalCost)}</div>
               </div>
-              <div className="rounded-md border p-3 space-y-3">
-                <div className="text-sm font-medium">Preços de upgrade</div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label>Preço por GB extra (R$/mês)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={form.price_storage_gb}
-                      onChange={(e) => setForm({ ...form, price_storage_gb: e.target.value })}
-                    />
-                    <p className="text-xs text-muted-foreground">Usado quando o cliente solicita mais armazenamento.</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Preço da VPS (R$/mês)</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={form.price_vps_monthly}
-                      onChange={(e) => setForm({ ...form, price_vps_monthly: e.target.value })}
-                    />
-                    <p className="text-xs text-muted-foreground">Mensalidade da VPS associada a este plano.</p>
-                  </div>
-                </div>
-              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Margem de lucro (%)</Label>
@@ -516,6 +552,8 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                 <div className="flex justify-between"><span className="text-muted-foreground">Preço semestral (5% desc.)</span><span className="font-semibold">{formatBRL(computedSemestral)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Preço anual (10% desc.)</span><span className="font-semibold">{formatBRL(computedYearly)}</span></div>
               </div>
+              </>
+              )}
             </div>
             <DialogFooter><Button onClick={save}>Salvar</Button></DialogFooter>
           </DialogContent>
@@ -524,25 +562,31 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
       <Card className="overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left"><tr>
-            <th className="p-3 font-medium">Produto</th><th className="p-3 font-medium">Mensal</th>
+            <th className="p-3 font-medium">Produto</th>
+            <th className="p-3 font-medium">Tipo</th>
+            <th className="p-3 font-medium">Mensal</th>
             <th className="p-3 font-medium">Semestral</th>
             <th className="p-3 font-medium">Anual</th><th className="p-3 font-medium">Status</th><th className="p-3"></th>
           </tr></thead>
           <tbody>
-            {products.map((p) => (
+            {products.map((p) => {
+              const k = p.kind ?? "license";
+              const kindLabel = k === "storage" ? "Armaz." : k === "vps" ? "VPS" : "Licença";
+              return (
               <tr key={p.id} className="border-t border-border">
                 <td className="p-3"><div className="font-medium">{p.name}</div><div className="text-xs text-muted-foreground">{p.description}</div></td>
+                <td className="p-3"><Badge variant="outline">{kindLabel}</Badge></td>
                 <td className="p-3">{formatBRL(Number(p.price_monthly))}</td>
-                <td className="p-3">{formatBRL(Number(p.price_semestral))}</td>
-                <td className="p-3">{formatBRL(Number(p.price_yearly))}</td>
+                <td className="p-3">{k === "license" ? formatBRL(Number(p.price_semestral)) : "—"}</td>
+                <td className="p-3">{k === "license" ? formatBRL(Number(p.price_yearly)) : "—"}</td>
                 <td className="p-3"><Badge variant="outline">{p.active ? "Ativo" : "Inativo"}</Badge></td>
                 <td className="p-3 text-right">
                   <Button size="sm" variant="ghost" onClick={() => openEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>
                   <Button size="sm" variant="ghost" onClick={() => remove(p.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                 </td>
               </tr>
-            ))}
-            {products.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Nenhum produto. Crie o primeiro.</td></tr>}
+            );})}
+            {products.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Nenhum produto. Crie o primeiro.</td></tr>}
           </tbody>
         </table>
       </Card>
