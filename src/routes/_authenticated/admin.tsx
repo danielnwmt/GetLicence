@@ -90,7 +90,7 @@ function AdminPage() {
           return [] as Profile[];
         }),
         supabase.from("user_roles").select("user_id, role").eq("role", "admin"),
-        supabase.from("payables" as never).select("*").order("due_date", { ascending: true, nullsFirst: false }),
+        (supabase as any).from("payables").select("*").order("due_date", { ascending: true, nullsFirst: false }),
       ]);
       setProducts((p.data as Product[]) || []);
       setLicenses((l.data as unknown as LicenseRow[]) || []);
@@ -1874,8 +1874,8 @@ function PayablesTab({ payables, licenses, products, profiles, onChange }: {
       notes: form.notes.trim() || null,
     };
     const { error } = editing
-      ? await supabase.from("payables" as never).update(payload).eq("id", editing.id)
-      : await supabase.from("payables" as never).insert(payload);
+      ? await (supabase as any).from("payables").update(payload).eq("id", editing.id)
+      : await (supabase as any).from("payables").insert(payload);
     if (error) return toast.error(error.message);
     toast.success(editing ? "Atualizado" : "Conta criada");
     setOpen(false);
@@ -1884,14 +1884,14 @@ function PayablesTab({ payables, licenses, products, profiles, onChange }: {
 
   const setStatus = async (id: string, status: "pending" | "paid" | "overdue" | "cancelled") => {
     const patch: { status: typeof status; paid_at: string | null } = { status, paid_at: status === "paid" ? new Date().toISOString() : null };
-    const { error } = await supabase.from("payables" as never).update(patch).eq("id", id);
+    const { error } = await (supabase as any).from("payables").update(patch).eq("id", id);
     if (error) return toast.error(error.message);
     onChange();
   };
 
   const remove = async (id: string) => {
     if (!confirm("Excluir esta conta?")) return;
-    const { error } = await supabase.from("payables" as never).delete().eq("id", id);
+    const { error } = await (supabase as any).from("payables").delete().eq("id", id);
     if (error) return toast.error(error.message);
     onChange();
   };
@@ -1919,7 +1919,7 @@ function PayablesTab({ payables, licenses, products, profiles, onChange }: {
         }
       }
       if (!rows.length) { toast.info("Nenhum custo a gerar"); setGenerating(false); return; }
-      const { error } = await supabase.from("payables" as never).insert(rows);
+      const { error } = await (supabase as any).from("payables").insert(rows);
       if (error) throw new Error(error.message);
       toast.success(`${rows.length} contas geradas`);
       onChange();
