@@ -322,6 +322,7 @@ function AdminPage() {
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="integrations">Integrações</TabsTrigger>
             <TabsTrigger value="block">Bloqueio</TabsTrigger>
+            <TabsTrigger value="backup">Backup</TabsTrigger>
             <TabsTrigger value="mobile">App Mobile</TabsTrigger>
           </TabsList>
           <TabsContent value="users">
@@ -335,6 +336,9 @@ function AdminPage() {
           </TabsContent>
           <TabsContent value="block">
             <BlockRulesTab />
+          </TabsContent>
+          <TabsContent value="backup">
+            <BackupTab />
           </TabsContent>
           <TabsContent value="mobile">
             <MobileAppTab />
