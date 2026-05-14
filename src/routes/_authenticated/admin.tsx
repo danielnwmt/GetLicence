@@ -842,7 +842,11 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
             {isUpgrade && (
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-2">
-                  <Label>Preço de venda (R$/mês)</Label>
+                  <Label>
+                    {form.kind === "implantacao"
+                      ? "Preço de venda (R$)"
+                      : "Preço de venda (R$/mês)"}
+                  </Label>
                   <Input
                     type="number"
                     step="0.01"
@@ -851,17 +855,25 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Custo (R$/mês)</Label>
+                  <Label>{form.kind === "implantacao" ? "Custo (R$)" : "Custo (R$/mês)"}</Label>
                   <Input
                     type="number"
                     step="0.01"
-                    value={form.kind === "vps" ? form.cost_vps : form.cost_storage}
+                    value={
+                      form.kind === "vps"
+                        ? form.cost_vps
+                        : form.kind === "implantacao"
+                          ? form.cost_other
+                          : form.cost_storage
+                    }
                     onChange={(e) =>
                       setForm({
                         ...form,
                         ...(form.kind === "vps"
                           ? { cost_vps: e.target.value }
-                          : { cost_storage: e.target.value }),
+                          : form.kind === "implantacao"
+                            ? { cost_other: e.target.value }
+                            : { cost_storage: e.target.value }),
                       })
                     }
                   />
