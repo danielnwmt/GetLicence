@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
 });
 
-interface Product { id: string; name: string; description: string | null; price_monthly: number; price_semestral: number; price_yearly: number; active: boolean; cost_vps?: number; cost_storage?: number; cost_other?: number; profit_margin?: number; vps_specs?: string | null; storage_amount?: number; storage_unit?: string; vps_storage_amount?: number; vps_storage_unit?: string; }
+interface Product { id: string; name: string; description: string | null; price_monthly: number; price_semestral: number; price_yearly: number; active: boolean; cost_vps?: number; cost_storage?: number; cost_other?: number; profit_margin?: number; vps_specs?: string | null; storage_amount?: number; storage_unit?: string; vps_storage_amount?: number; vps_storage_unit?: string; price_storage_gb?: number; price_vps_monthly?: number; }
 interface Profile { user_id: string; full_name: string | null; email: string | null; address_city?: string | null; address_state?: string | null; customer_number?: number | null; cpf_cnpj?: string | null; phone?: string | null; address_zip?: string | null; address_street?: string | null; address_number?: string | null; address_complement?: string | null; address_neighborhood?: string | null; }
 interface LicenseRow {
   id: string; license_key: string; plan: string; status: string;
@@ -311,7 +311,7 @@ const statusBadge: Record<string, string> = {
 function ProductsTab({ products, onChange }: { products: Product[]; onChange: () => void }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
-  const emptyForm = { name: "", description: "", vps_specs: "", vps_storage_amount: "0", vps_storage_unit: "GB", storage_amount: "0", storage_unit: "GB", cost_vps: "0", cost_storage: "0", cost_other: "0", profit_margin: "30", price_monthly: "0", price_semestral: "0", price_yearly: "0" };
+  const emptyForm = { name: "", description: "", vps_specs: "", vps_storage_amount: "0", vps_storage_unit: "GB", storage_amount: "0", storage_unit: "GB", cost_vps: "0", cost_storage: "0", cost_other: "0", profit_margin: "30", price_monthly: "0", price_semestral: "0", price_yearly: "0", price_storage_gb: "0", price_vps_monthly: "0" };
   const [form, setForm] = useState(emptyForm);
 
   const totalCost = (Number(form.cost_vps) || 0) + (Number(form.cost_storage) || 0) + (Number(form.cost_other) || 0);
@@ -338,6 +338,8 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
       price_monthly: String(p.price_monthly),
       price_semestral: String(p.price_semestral ?? 0),
       price_yearly: String(p.price_yearly),
+      price_storage_gb: String(p.price_storage_gb ?? 0),
+      price_vps_monthly: String(p.price_vps_monthly ?? 0),
     });
     setOpen(true);
   };
@@ -359,6 +361,8 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
       price_monthly: computedMonthly,
       price_semestral: computedSemestral,
       price_yearly: computedYearly,
+      price_storage_gb: Number(form.price_storage_gb) || 0,
+      price_vps_monthly: Number(form.price_vps_monthly) || 0,
     };
     const { error } = editing
       ? await supabase.from("products").update(payload).eq("id", editing.id)
@@ -457,6 +461,31 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                   <div className="space-y-2"><Label>Outros (R$)</Label><Input type="number" step="0.01" value={form.cost_other} onChange={(e) => setForm({ ...form, cost_other: e.target.value })} /></div>
                 </div>
                 <div className="text-xs text-muted-foreground">Custo total: {formatBRL(totalCost)}</div>
+              </div>
+              <div className="rounded-md border p-3 space-y-3">
+                <div className="text-sm font-medium">Preços de upgrade</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Preço por GB extra (R$/mês)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={form.price_storage_gb}
+                      onChange={(e) => setForm({ ...form, price_storage_gb: e.target.value })}
+                    />
+                    <p className="text-xs text-muted-foreground">Usado quando o cliente solicita mais armazenamento.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Preço da VPS (R$/mês)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={form.price_vps_monthly}
+                      onChange={(e) => setForm({ ...form, price_vps_monthly: e.target.value })}
+                    />
+                    <p className="text-xs text-muted-foreground">Mensalidade da VPS associada a este plano.</p>
+                  </div>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">

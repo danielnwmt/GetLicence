@@ -228,6 +228,8 @@ export type Database = {
           name: string
           price_monthly: number
           price_semestral: number
+          price_storage_gb: number
+          price_vps_monthly: number
           price_yearly: number
           profit_margin: number
           storage_amount: number
@@ -248,6 +250,8 @@ export type Database = {
           name: string
           price_monthly?: number
           price_semestral?: number
+          price_storage_gb?: number
+          price_vps_monthly?: number
           price_yearly?: number
           profit_margin?: number
           storage_amount?: number
@@ -268,6 +272,8 @@ export type Database = {
           name?: string
           price_monthly?: number
           price_semestral?: number
+          price_storage_gb?: number
+          price_vps_monthly?: number
           price_yearly?: number
           profit_margin?: number
           storage_amount?: number
