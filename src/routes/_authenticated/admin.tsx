@@ -311,7 +311,7 @@ const statusBadge: Record<string, string> = {
 function ProductsTab({ products, onChange }: { products: Product[]; onChange: () => void }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
-  const emptyForm = { name: "", description: "", vps_specs: "", vps_storage_amount: "0", vps_storage_unit: "GB", storage_amount: "0", storage_unit: "GB", cost_vps: "0", cost_storage: "0", cost_other: "0", profit_margin: "30", price_monthly: "0", price_semestral: "0", price_yearly: "0", price_storage_gb: "0", price_vps_monthly: "0" };
+  const emptyForm = { kind: "license", name: "", description: "", vps_specs: "", vps_storage_amount: "0", vps_storage_unit: "GB", storage_amount: "0", storage_unit: "GB", cost_vps: "0", cost_storage: "0", cost_other: "0", profit_margin: "30", price_monthly: "0", price_semestral: "0", price_yearly: "0" };
   const [form, setForm] = useState(emptyForm);
 
   const totalCost = (Number(form.cost_vps) || 0) + (Number(form.cost_storage) || 0) + (Number(form.cost_other) || 0);
@@ -319,11 +319,13 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
   const computedMonthly = +(totalCost * (1 + margin / 100)).toFixed(2);
   const computedSemestral = +(computedMonthly * 6 * 0.95).toFixed(2);
   const computedYearly = +(computedMonthly * 12 * 0.9).toFixed(2);
+  const isUpgrade = form.kind !== "license";
 
   const openNew = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
   const openEdit = (p: Product) => {
     setEditing(p);
     setForm({
+      kind: p.kind ?? "license",
       name: p.name,
       description: p.description ?? "",
       vps_specs: p.vps_specs ?? "",
@@ -338,8 +340,6 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
       price_monthly: String(p.price_monthly),
       price_semestral: String(p.price_semestral ?? 0),
       price_yearly: String(p.price_yearly),
-      price_storage_gb: String(p.price_storage_gb ?? 0),
-      price_vps_monthly: String(p.price_vps_monthly ?? 0),
     });
     setOpen(true);
   };
@@ -347,6 +347,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
   const save = async () => {
     if (!form.name.trim()) return toast.error("Nome é obrigatório");
     const payload = {
+      kind: form.kind,
       name: form.name.trim(),
       description: form.description.trim() || null,
       vps_specs: form.vps_specs.trim(),
@@ -358,11 +359,9 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
       cost_storage: Number(form.cost_storage) || 0,
       cost_other: Number(form.cost_other) || 0,
       profit_margin: margin,
-      price_monthly: computedMonthly,
-      price_semestral: computedSemestral,
-      price_yearly: computedYearly,
-      price_storage_gb: Number(form.price_storage_gb) || 0,
-      price_vps_monthly: Number(form.price_vps_monthly) || 0,
+      price_monthly: isUpgrade ? Number(form.price_monthly) || 0 : computedMonthly,
+      price_semestral: isUpgrade ? 0 : computedSemestral,
+      price_yearly: isUpgrade ? 0 : computedYearly,
     };
     const { error } = editing
       ? await supabase.from("products").update(payload).eq("id", editing.id)
