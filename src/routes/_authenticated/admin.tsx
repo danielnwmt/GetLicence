@@ -343,6 +343,9 @@ function AdminPage() {
           <TabsContent value="backup">
             <BackupTab />
           </TabsContent>
+          <TabsContent value="api">
+            <LicenseApiTab />
+          </TabsContent>
           <TabsContent value="mobile">
             <MobileAppTab />
           </TabsContent>
