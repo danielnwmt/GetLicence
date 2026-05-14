@@ -1065,6 +1065,12 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
               {vpsProducts.length}
             </Badge>
           </TabsTrigger>
+          <TabsTrigger value="implantacao">
+            Implantação{" "}
+            <Badge variant="secondary" className="ml-2">
+              {implantacaoProducts.length}
+            </Badge>
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="licenses" className="space-y-3">
           <div className="flex justify-end">
@@ -1089,6 +1095,14 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
             </Button>
           </div>
           {renderTable(vpsProducts, "Nenhum upgrade de VPS.", "vps")}
+        </TabsContent>
+        <TabsContent value="implantacao" className="space-y-3">
+          <div className="flex justify-end">
+            <Button onClick={() => openNew("implantacao")}>
+              <Plus className="mr-2 h-4 w-4" /> Novo produto de implantação
+            </Button>
+          </div>
+          {renderTable(implantacaoProducts, "Nenhum produto de implantação.", "implantacao")}
         </TabsContent>
       </Tabs>
     </div>
