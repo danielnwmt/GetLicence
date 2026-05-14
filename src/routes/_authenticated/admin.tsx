@@ -2893,11 +2893,44 @@ function PayablesTab({
   };
   const [form, setForm] = useState(empty);
   const [filter, setFilter] = useState<"all" | "pending" | "paid" | "overdue">("all");
-  const [generating, setGenerating] = useState(false);
 
   const today = new Date();
   const isOverdue = (p: PayableRow) =>
     p.status === "pending" && !!p.due_date && new Date(p.due_date) < today;
+
+  // Custos agregados das licenças ativas (linhas virtuais, somadas por categoria)
+  const aggregated = (() => {
+    let vps = 0,
+      storage = 0,
+      software = 0,
+      countVps = 0,
+      countStorage = 0,
+      countSoftware = 0;
+    for (const lic of licenses.filter((l) => l.status === "active")) {
+      const prod = products.find((p) => p.id === lic.product_id);
+      if (!prod) continue;
+      const cv = Number(prod.cost_vps ?? 0);
+      const cs = Number(prod.cost_storage ?? 0);
+      const co = Number(prod.cost_other ?? 0);
+      if (cv > 0) {
+        vps += cv;
+        countVps++;
+      }
+      if (cs > 0) {
+        storage += cs;
+        countStorage++;
+      }
+      if (co > 0) {
+        software += co;
+        countSoftware++;
+      }
+    }
+    return [
+      { key: "agg-vps", category: "vps" as const, amount: vps, count: countVps },
+      { key: "agg-storage", category: "storage" as const, amount: storage, count: countStorage },
+      { key: "agg-software", category: "other" as const, amount: software, count: countSoftware },
+    ].filter((r) => r.amount > 0);
+  })();
 
   const filtered = payables.filter((p) => {
     if (filter === "all") return true;
@@ -2905,9 +2938,10 @@ function PayablesTab({
     return p.status === filter;
   });
 
-  const totalPending = payables
-    .filter((p) => p.status === "pending")
-    .reduce((s, p) => s + Number(p.amount), 0);
+  const aggregatedTotal = aggregated.reduce((s, r) => s + r.amount, 0);
+  const totalPending =
+    payables.filter((p) => p.status === "pending").reduce((s, p) => s + Number(p.amount), 0) +
+    aggregatedTotal;
   const totalOverdue = payables.filter(isOverdue).reduce((s, p) => s + Number(p.amount), 0);
   const totalPaidMonth = payables
     .filter(
@@ -2918,9 +2952,10 @@ function PayablesTab({
         new Date(p.paid_at).getFullYear() === today.getFullYear(),
     )
     .reduce((s, p) => s + Number(p.amount), 0);
-  const monthlyRecurring = payables
-    .filter((p) => p.recurrence === "monthly" && p.status !== "cancelled")
-    .reduce((s, p) => s + Number(p.amount), 0);
+  const monthlyRecurring =
+    payables
+      .filter((p) => p.recurrence === "monthly" && p.status !== "cancelled")
+      .reduce((s, p) => s + Number(p.amount), 0) + aggregatedTotal;
 
   const openNew = () => {
     setEditing(null);
@@ -2978,75 +3013,6 @@ function PayablesTab({
     onChange();
   };
 
-  // Auto-gera contas mensais a partir das licenças ativas (cost_vps + cost_storage por licença)
-  const generateFromLicenses = async () => {
-    if (
-      !confirm(
-        "Gerar contas mensais recorrentes a partir das licenças ativas? Apenas custos > 0 serão criados.",
-      )
-    )
-      return;
-    setGenerating(true);
-    try {
-      const rows: Array<Record<string, unknown>> = [];
-      const due = new Date(today.getFullYear(), today.getMonth(), 10).toISOString().slice(0, 10);
-      for (const lic of licenses.filter((l) => l.status === "active")) {
-        const prod = products.find((p) => p.id === lic.product_id);
-        if (!prod) continue;
-        const prof = profiles.find((p) => p.user_id === lic.user_id);
-        const ref = `${prof?.full_name || prof?.email || "Cliente"} — ${prod.name} (${lic.license_key})`;
-        if (Number(prod.cost_vps ?? 0) > 0) {
-          rows.push({
-            description: `VPS — ${ref}`,
-            supplier: "Provedor VPS",
-            category: "vps",
-            amount: Number(prod.cost_vps),
-            due_date: due,
-            recurrence: "monthly",
-            license_id: lic.id,
-            product_id: prod.id,
-          });
-        }
-        if (Number(prod.cost_storage ?? 0) > 0) {
-          rows.push({
-            description: `Armazenamento — ${ref}`,
-            supplier: "Provedor Storage",
-            category: "storage",
-            amount: Number(prod.cost_storage),
-            due_date: due,
-            recurrence: "monthly",
-            license_id: lic.id,
-            product_id: prod.id,
-          });
-        }
-        if (Number(prod.cost_other ?? 0) > 0) {
-          rows.push({
-            description: `Software — ${ref}`,
-            supplier: null,
-            category: "other",
-            amount: Number(prod.cost_other),
-            due_date: due,
-            recurrence: "monthly",
-            license_id: lic.id,
-            product_id: prod.id,
-          });
-        }
-      }
-      if (!rows.length) {
-        toast.info("Nenhum custo a gerar");
-        setGenerating(false);
-        return;
-      }
-      const { error } = await (supabase as any).from("payables").insert(rows);
-      if (error) throw new Error(error.message);
-      toast.success(`${rows.length} contas geradas`);
-      onChange();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao gerar");
-    } finally {
-      setGenerating(false);
-    }
-  };
 
   const catLabel = (c: string) =>
     c === "vps" ? "VPS" : c === "storage" ? "Armazenamento" : "Software";
@@ -3075,10 +3041,6 @@ function PayablesTab({
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={generateFromLicenses} disabled={generating}>
-            <Plus className="mr-2 h-4 w-4" />{" "}
-            {generating ? "Gerando..." : "Gerar das licenças ativas"}
-          </Button>
           <Button onClick={openNew}>
             <Plus className="mr-2 h-4 w-4" /> Nova conta
           </Button>
@@ -3170,6 +3132,34 @@ function PayablesTab({
             </tr>
           </thead>
           <tbody>
+            {(filter === "all" || filter === "pending") &&
+              aggregated.map((r) => (
+                <tr key={r.key} className="border-t border-border bg-muted/30">
+                  <td className="p-3">
+                    <div className="font-medium">
+                      {r.category === "vps"
+                        ? "VPS — total das licenças ativas"
+                        : r.category === "storage"
+                          ? "Armazenamento — total das licenças ativas"
+                          : "Software — total das licenças ativas"}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Soma de {r.count} licença{r.count > 1 ? "s" : ""} ativa
+                      {r.count > 1 ? "s" : ""} · mensal recorrente
+                    </div>
+                  </td>
+                  <td className="p-3">
+                    <Badge variant="outline">{catLabel(r.category)}</Badge>
+                  </td>
+                  <td className="p-3 text-muted-foreground">—</td>
+                  <td className="p-3 font-medium">{formatBRL(r.amount)}</td>
+                  <td className="p-3 text-xs">—</td>
+                  <td className="p-3">
+                    <Badge variant="secondary">Recorrente</Badge>
+                  </td>
+                  <td className="p-3 text-right text-xs text-muted-foreground">auto</td>
+                </tr>
+              ))}
             {filtered.map((p) => (
               <tr key={p.id} className="border-t border-border">
                 <td className="p-3">
