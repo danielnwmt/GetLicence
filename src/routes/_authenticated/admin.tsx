@@ -1341,6 +1341,15 @@ function PaymentsTab({
   const cancelBoleto = useServerFn(cancelAsaasBoleto);
   const [issuingId, setIssuingId] = useState<string | null>(null);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
+  const [coplanUrl, setCoplanUrl] = useState<string | null>(null);
+  useEffect(() => {
+    supabase
+      .from("payment_settings")
+      .select("coplan_url")
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => setCoplanUrl((data?.coplan_url as string | null) ?? null));
+  }, []);
   const [newOpen, setNewOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newForm, setNewForm] = useState({ user_id: "", license_id: "", amount: "", due_date: "" });
@@ -1816,6 +1825,22 @@ function PaymentsTab({
                           {cancelingId === p.id ? "Cancelando..." : "Cancelar"}
                         </Button>
                       )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          if (!coplanUrl) {
+                            toast.error(
+                              "Configure a URL do Coplan em Configurações → Integrações.",
+                            );
+                            return;
+                          }
+                          window.open(coplanUrl, "_blank", "noopener,noreferrer");
+                        }}
+                        title="Emitir nota fiscal no Coplan"
+                      >
+                        <FileText className="mr-1 h-3.5 w-3.5" /> Nota fiscal
+                      </Button>
                     </td>
                   </tr>
                 );
@@ -2301,10 +2326,14 @@ interface SettingsRow {
   sicoob_access_token: string | null;
   sicoob_cert_pem: string | null;
   sicoob_cert_key: string | null;
+  coplan_url: string | null;
+  coplan_username: string | null;
+  coplan_password: string | null;
+  coplan_token: string | null;
 }
 
 const SETTINGS_COLS =
-  "id, active_provider, asaas_env, webhook_token, notes, asaas_api_key, sicredi_client_id, sicredi_client_secret, sicredi_cert_pem, sicredi_cert_key, sicoob_client_id, sicoob_access_token, sicoob_cert_pem, sicoob_cert_key";
+  "id, active_provider, asaas_env, webhook_token, notes, asaas_api_key, sicredi_client_id, sicredi_client_secret, sicredi_cert_pem, sicredi_cert_key, sicoob_client_id, sicoob_access_token, sicoob_cert_pem, sicoob_cert_key, coplan_url, coplan_username, coplan_password, coplan_token";
 
 function IntegrationsTab() {
   const [settings, setSettings] = useState<SettingsRow | null>(null);
@@ -2362,6 +2391,10 @@ function IntegrationsTab() {
         sicoob_access_token: settings.sicoob_access_token,
         sicoob_cert_pem: settings.sicoob_cert_pem,
         sicoob_cert_key: settings.sicoob_cert_key,
+        coplan_url: settings.coplan_url,
+        coplan_username: settings.coplan_username,
+        coplan_password: settings.coplan_password,
+        coplan_token: settings.coplan_token,
       })
       .eq("id", settings.id);
     setSaving(false);
@@ -2571,6 +2604,57 @@ function IntegrationsTab() {
         <div className="flex justify-end">
           <Button onClick={save} disabled={saving}>
             {saving ? "Salvando..." : "Salvar credenciais"}
+          </Button>
+        </div>
+      </Card>
+
+      <Card className="p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <FileText className="h-5 w-5 text-primary" />
+          <div>
+            <h3 className="text-lg font-semibold">Emissão de notas fiscais — Coplan</h3>
+            <p className="text-sm text-muted-foreground">
+              Configure o acesso ao sistema Coplan usado para emitir notas fiscais dos clientes.
+            </p>
+          </div>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="space-y-2 md:col-span-2">
+            <Label>URL do sistema Coplan</Label>
+            <Input
+              value={settings.coplan_url ?? ""}
+              onChange={(e) => update("coplan_url", e.target.value)}
+              placeholder="https://coplan.exemplo.com.br"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Usuário</Label>
+            <Input
+              value={settings.coplan_username ?? ""}
+              onChange={(e) => update("coplan_username", e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Senha</Label>
+            <Input
+              type="password"
+              value={settings.coplan_password ?? ""}
+              onChange={(e) => update("coplan_password", e.target.value)}
+            />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label>Token de API (opcional)</Label>
+            <Input
+              type="password"
+              value={settings.coplan_token ?? ""}
+              onChange={(e) => update("coplan_token", e.target.value)}
+              placeholder="Token de integração, se aplicável"
+            />
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <Button onClick={save} disabled={saving}>
+            {saving ? "Salvando..." : "Salvar integração Coplan"}
           </Button>
         </div>
       </Card>
