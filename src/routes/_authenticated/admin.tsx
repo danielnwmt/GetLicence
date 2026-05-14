@@ -419,20 +419,8 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
     <div className="space-y-4">
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{editing ? "Editar produto" : "Novo produto"}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editing ? "Editar" : "Novo"} {form.kind === "storage" ? "upgrade de armazenamento" : form.kind === "vps" ? "upgrade de VPS" : "produto de licença"}</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2">
-            <div className="space-y-2">
-              <Label>Tipo de produto</Label>
-              <select
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
-                value={form.kind}
-                onChange={(e) => setForm({ ...form, kind: e.target.value })}
-              >
-                <option value="license">Licença / Plano</option>
-                <option value="storage">Upgrade de armazenamento</option>
-                <option value="vps">Upgrade de VPS</option>
-              </select>
-            </div>
             <div className="space-y-2"><Label>Nome</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
             <div className="space-y-2"><Label>Descrição</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
 
