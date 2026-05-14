@@ -3036,7 +3036,7 @@ function PayablesTab({
   };
 
   const catLabel = (c: string) =>
-    c === "vps" ? "VPS" : c === "storage" ? "Armazenamento" : "Outros";
+    c === "vps" ? "VPS" : c === "storage" ? "Armazenamento" : "Software";
   const statusBadge = (p: PayableRow) => {
     if (isOverdue(p))
       return (
