@@ -141,6 +141,11 @@ export type Database = {
           active_provider: Database["public"]["Enums"]["payment_provider"]
           asaas_api_key: string | null
           asaas_env: string
+          backup_enabled: boolean
+          backup_last_file_id: string | null
+          backup_last_run_at: string | null
+          backup_last_status: string | null
+          backup_retention_days: number
           block_auto: boolean
           block_grace_days: number
           coplan_password: string | null
@@ -148,6 +153,8 @@ export type Database = {
           coplan_url: string | null
           coplan_username: string | null
           created_at: string
+          gdrive_folder_id: string | null
+          gdrive_service_account_json: string | null
           id: string
           notes: string | null
           sicoob_access_token: string | null
@@ -165,6 +172,11 @@ export type Database = {
           active_provider?: Database["public"]["Enums"]["payment_provider"]
           asaas_api_key?: string | null
           asaas_env?: string
+          backup_enabled?: boolean
+          backup_last_file_id?: string | null
+          backup_last_run_at?: string | null
+          backup_last_status?: string | null
+          backup_retention_days?: number
           block_auto?: boolean
           block_grace_days?: number
           coplan_password?: string | null
@@ -172,6 +184,8 @@ export type Database = {
           coplan_url?: string | null
           coplan_username?: string | null
           created_at?: string
+          gdrive_folder_id?: string | null
+          gdrive_service_account_json?: string | null
           id?: string
           notes?: string | null
           sicoob_access_token?: string | null
@@ -189,6 +203,11 @@ export type Database = {
           active_provider?: Database["public"]["Enums"]["payment_provider"]
           asaas_api_key?: string | null
           asaas_env?: string
+          backup_enabled?: boolean
+          backup_last_file_id?: string | null
+          backup_last_run_at?: string | null
+          backup_last_status?: string | null
+          backup_retention_days?: number
           block_auto?: boolean
           block_grace_days?: number
           coplan_password?: string | null
@@ -196,6 +215,8 @@ export type Database = {
           coplan_url?: string | null
           coplan_username?: string | null
           created_at?: string
+          gdrive_folder_id?: string | null
+          gdrive_service_account_json?: string | null
           id?: string
           notes?: string | null
           sicoob_access_token?: string | null
