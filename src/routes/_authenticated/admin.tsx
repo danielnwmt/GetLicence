@@ -49,6 +49,8 @@ import {
   CheckCircle2,
   Receipt,
   Download,
+  Ban,
+  ShieldOff,
 } from "lucide-react";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { fetchCep } from "@/lib/cep";
