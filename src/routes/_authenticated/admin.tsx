@@ -1337,9 +1337,30 @@ function LicensesTab({
                     </Select>
                   </td>
                   <td className="p-3 text-right">
-                    <Button size="sm" variant="ghost" onClick={() => remove(l.id)}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    <div className="flex justify-end gap-1">
+                      {l.status === "blocked" ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          title="Desbloquear licença"
+                          onClick={() => setStatus(l.id, "active")}
+                        >
+                          <ShieldOff className="h-3.5 w-3.5 text-emerald-500" />
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          title="Bloquear licença"
+                          onClick={() => setStatus(l.id, "blocked")}
+                        >
+                          <Ban className="h-3.5 w-3.5 text-destructive" />
+                        </Button>
+                      )}
+                      <Button size="sm" variant="ghost" onClick={() => remove(l.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               );
