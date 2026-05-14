@@ -51,7 +51,9 @@ import {
   Download,
   Ban,
   ShieldOff,
+  CloudUpload,
 } from "lucide-react";
+import { runBackupNow } from "@/lib/backup.functions";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { fetchCep } from "@/lib/cep";
 import { formatCpfCnpj, isValidCpfCnpj } from "@/lib/mask";
@@ -322,6 +324,7 @@ function AdminPage() {
             <TabsTrigger value="users">Usuários</TabsTrigger>
             <TabsTrigger value="integrations">Integrações</TabsTrigger>
             <TabsTrigger value="block">Bloqueio</TabsTrigger>
+            <TabsTrigger value="backup">Backup</TabsTrigger>
             <TabsTrigger value="mobile">App Mobile</TabsTrigger>
           </TabsList>
           <TabsContent value="users">
@@ -335,6 +338,9 @@ function AdminPage() {
           </TabsContent>
           <TabsContent value="block">
             <BlockRulesTab />
+          </TabsContent>
+          <TabsContent value="backup">
+            <BackupTab />
           </TabsContent>
           <TabsContent value="mobile">
             <MobileAppTab />
@@ -3634,5 +3640,151 @@ function PayablesTab({
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function BackupTab() {
+  const [s, setS] = useState<{
+    gdrive_service_account_json: string;
+    gdrive_folder_id: string;
+    backup_enabled: boolean;
+    backup_retention_days: number;
+    backup_last_run_at: string | null;
+    backup_last_status: string | null;
+  } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [running, setRunning] = useState(false);
+  const runFn = useServerFn(runBackupNow);
+
+  const load = async () => {
+    const { data } = await supabase
+      .from("payment_settings")
+      .select("gdrive_service_account_json, gdrive_folder_id, backup_enabled, backup_retention_days, backup_last_run_at, backup_last_status")
+      .limit(1)
+      .maybeSingle();
+    setS({
+      gdrive_service_account_json: data?.gdrive_service_account_json ?? "",
+      gdrive_folder_id: data?.gdrive_folder_id ?? "",
+      backup_enabled: data?.backup_enabled ?? false,
+      backup_retention_days: data?.backup_retention_days ?? 5,
+      backup_last_run_at: data?.backup_last_run_at ?? null,
+      backup_last_status: data?.backup_last_status ?? null,
+    });
+  };
+  useEffect(() => { load(); }, []);
+
+  if (!s) return <div className="text-muted-foreground">Carregando...</div>;
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const { data: ex } = await supabase.from("payment_settings").select("id").limit(1).maybeSingle();
+      if (!ex?.id) { toast.error("Configurações não inicializadas"); return; }
+      const { error } = await supabase.from("payment_settings").update({
+        gdrive_service_account_json: s.gdrive_service_account_json || null,
+        gdrive_folder_id: s.gdrive_folder_id || null,
+        backup_enabled: s.backup_enabled,
+        backup_retention_days: s.backup_retention_days,
+      }).eq("id", ex.id);
+      if (error) throw error;
+      toast.success("Configurações de backup salvas");
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao salvar");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const runNow = async () => {
+    setRunning(true);
+    try {
+      const r = await runFn();
+      if (r.ok) toast.success(`Backup enviado (${r.deleted ?? 0} antigos removidos)`);
+      else toast.error(r.error || "Falha no backup");
+      await load();
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao executar");
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  return (
+    <Card className="p-6 space-y-4">
+      <div className="flex items-center gap-3">
+        <CloudUpload className="h-5 w-5 text-primary" />
+        <div>
+          <h3 className="text-lg font-semibold">Backup no Google Drive</h3>
+          <p className="text-sm text-muted-foreground">
+            Envia um backup completo do banco (JSON) para a sua pasta do Google Drive.
+            Backups mais antigos que o período de retenção são excluídos automaticamente.
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>JSON da Service Account (Google Cloud)</Label>
+        <Textarea
+          rows={8}
+          placeholder='{"type":"service_account","client_email":"...","private_key":"-----BEGIN PRIVATE KEY-----\n..."}'
+          value={s.gdrive_service_account_json}
+          onChange={(e) => setS({ ...s, gdrive_service_account_json: e.target.value })}
+          className="font-mono text-xs"
+        />
+        <p className="text-xs text-muted-foreground">
+          Crie no Google Cloud Console → IAM → Service Accounts → Keys → Add Key (JSON).
+          Compartilhe a pasta do Drive com o email <code>client_email</code> dessa conta (permissão Editor).
+        </p>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        <div className="space-y-2">
+          <Label>ID da pasta do Drive</Label>
+          <Input
+            value={s.gdrive_folder_id}
+            onChange={(e) => setS({ ...s, gdrive_folder_id: e.target.value })}
+            placeholder="1AbCdEfGhIjKlMnOpQrStUvWxYz"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Retenção (dias)</Label>
+          <Input
+            type="number"
+            min={1}
+            value={s.backup_retention_days}
+            onChange={(e) => setS({ ...s, backup_retention_days: Math.max(1, Number(e.target.value) || 5) })}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Backup automático diário</Label>
+          <Select
+            value={s.backup_enabled ? "on" : "off"}
+            onValueChange={(v) => setS({ ...s, backup_enabled: v === "on" })}
+          >
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="on">Ativado</SelectItem>
+              <SelectItem value="off">Desativado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {s.backup_last_run_at && (
+        <div className="rounded-md border p-3 text-sm">
+          <div><span className="text-muted-foreground">Último backup:</span> {new Date(s.backup_last_run_at).toLocaleString("pt-BR")}</div>
+          <div><span className="text-muted-foreground">Status:</span> {s.backup_last_status}</div>
+        </div>
+      )}
+
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={runNow} disabled={running}>
+          {running ? "Executando..." : "Fazer backup agora"}
+        </Button>
+        <Button onClick={save} disabled={saving}>
+          {saving ? "Salvando..." : "Salvar configurações"}
+        </Button>
+      </div>
+    </Card>
   );
 }

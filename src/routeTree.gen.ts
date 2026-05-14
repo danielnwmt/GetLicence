@@ -18,6 +18,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as ApiPublicWebhooksProviderRouteImport } from './routes/api/public/webhooks/$provider'
 import { Route as ApiPublicLicenseCheckRouteImport } from './routes/api/public/license/check'
+import { Route as ApiPublicHooksBackupRouteImport } from './routes/api/public/hooks/backup'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -65,6 +66,11 @@ const ApiPublicLicenseCheckRoute = ApiPublicLicenseCheckRouteImport.update({
   path: '/api/public/license/check',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksBackupRoute = ApiPublicHooksBackupRouteImport.update({
+  id: '/api/public/hooks/backup',
+  path: '/api/public/hooks/backup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/change-password': typeof AuthenticatedChangePasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
   '/api/public/license/check': typeof ApiPublicLicenseCheckRoute
   '/api/public/webhooks/$provider': typeof ApiPublicWebhooksProviderRoute
 }
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/change-password': typeof AuthenticatedChangePasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
   '/api/public/license/check': typeof ApiPublicLicenseCheckRoute
   '/api/public/webhooks/$provider': typeof ApiPublicWebhooksProviderRoute
 }
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/change-password': typeof AuthenticatedChangePasswordRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/api/public/hooks/backup': typeof ApiPublicHooksBackupRoute
   '/api/public/license/check': typeof ApiPublicLicenseCheckRoute
   '/api/public/webhooks/$provider': typeof ApiPublicWebhooksProviderRoute
 }
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/change-password'
     | '/dashboard'
+    | '/api/public/hooks/backup'
     | '/api/public/license/check'
     | '/api/public/webhooks/$provider'
   fileRoutesByTo: FileRoutesByTo
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/change-password'
     | '/dashboard'
+    | '/api/public/hooks/backup'
     | '/api/public/license/check'
     | '/api/public/webhooks/$provider'
   id:
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/change-password'
     | '/_authenticated/dashboard'
+    | '/api/public/hooks/backup'
     | '/api/public/license/check'
     | '/api/public/webhooks/$provider'
   fileRoutesById: FileRoutesById
@@ -136,6 +148,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicHooksBackupRoute: typeof ApiPublicHooksBackupRoute
   ApiPublicLicenseCheckRoute: typeof ApiPublicLicenseCheckRoute
   ApiPublicWebhooksProviderRoute: typeof ApiPublicWebhooksProviderRoute
 }
@@ -205,6 +218,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicLicenseCheckRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/backup': {
+      id: '/api/public/hooks/backup'
+      path: '/api/public/hooks/backup'
+      fullPath: '/api/public/hooks/backup'
+      preLoaderRoute: typeof ApiPublicHooksBackupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -230,19 +250,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicHooksBackupRoute: ApiPublicHooksBackupRoute,
   ApiPublicLicenseCheckRoute: ApiPublicLicenseCheckRoute,
   ApiPublicWebhooksProviderRoute: ApiPublicWebhooksProviderRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
