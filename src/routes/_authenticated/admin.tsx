@@ -1904,7 +1904,7 @@ function PaymentsTab({
                           }
                           setNotaPayment(p);
                           setNotaDesc(
-                            `Cobrança ${p.reference ?? p.id.slice(0, 8)} - R$ ${Number(p.amount).toFixed(2)}`,
+                            `Cobrança ${p.id.slice(0, 8)} - R$ ${Number(p.amount).toFixed(2)}`,
                           );
                           setNotaOpen(true);
                         }}
