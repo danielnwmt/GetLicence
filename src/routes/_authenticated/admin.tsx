@@ -1694,6 +1694,7 @@ function PaymentsTab({
                       value={newForm.due_date}
                       onChange={(e) => setNewForm({ ...newForm, due_date: e.target.value })}
                     />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Quantidade de boletos</Label>
