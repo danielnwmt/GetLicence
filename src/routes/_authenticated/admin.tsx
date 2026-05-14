@@ -684,8 +684,13 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
   const licenseProducts = products.filter((p) => (p.kind ?? "license") === "license");
   const storageProducts = products.filter((p) => p.kind === "storage");
   const vpsProducts = products.filter((p) => p.kind === "vps");
+  const implantacaoProducts = products.filter((p) => p.kind === "implantacao");
 
-  const renderTable = (rows: Product[], emptyMsg: string, kind: "license" | "storage" | "vps") => (
+  const renderTable = (
+    rows: Product[],
+    emptyMsg: string,
+    kind: "license" | "storage" | "vps" | "implantacao",
+  ) => (
     <Card className="overflow-hidden">
       <table className="w-full text-sm">
         <thead className="bg-muted/50 text-left">
