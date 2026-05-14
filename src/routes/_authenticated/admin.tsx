@@ -168,6 +168,7 @@ interface PaymentRow {
   barcode: string | null;
   provider_charge_id: string | null;
   due_date?: string | null;
+  notes?: string | null;
   license: { license_key: string } | null;
 }
 interface PayableRow {
