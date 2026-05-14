@@ -21,7 +21,15 @@ interface License {
   status: string;
   starts_at: string;
   expires_at: string;
-  product: { name: string; description: string | null } | null;
+  product: {
+    name: string;
+    description: string | null;
+    vps_specs: string | null;
+    vps_storage_amount: number | null;
+    vps_storage_unit: string | null;
+    storage_amount: number | null;
+    storage_unit: string | null;
+  } | null;
 }
 
 interface Payment {
