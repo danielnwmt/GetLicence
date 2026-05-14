@@ -338,6 +338,8 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
       price_monthly: String(p.price_monthly),
       price_semestral: String(p.price_semestral ?? 0),
       price_yearly: String(p.price_yearly),
+      price_storage_gb: String(p.price_storage_gb ?? 0),
+      price_vps_monthly: String(p.price_vps_monthly ?? 0),
     });
     setOpen(true);
   };
