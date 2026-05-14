@@ -562,25 +562,31 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
       <Card className="overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left"><tr>
-            <th className="p-3 font-medium">Produto</th><th className="p-3 font-medium">Mensal</th>
+            <th className="p-3 font-medium">Produto</th>
+            <th className="p-3 font-medium">Tipo</th>
+            <th className="p-3 font-medium">Mensal</th>
             <th className="p-3 font-medium">Semestral</th>
             <th className="p-3 font-medium">Anual</th><th className="p-3 font-medium">Status</th><th className="p-3"></th>
           </tr></thead>
           <tbody>
-            {products.map((p) => (
+            {products.map((p) => {
+              const k = p.kind ?? "license";
+              const kindLabel = k === "storage" ? "Armaz." : k === "vps" ? "VPS" : "Licença";
+              return (
               <tr key={p.id} className="border-t border-border">
                 <td className="p-3"><div className="font-medium">{p.name}</div><div className="text-xs text-muted-foreground">{p.description}</div></td>
+                <td className="p-3"><Badge variant="outline">{kindLabel}</Badge></td>
                 <td className="p-3">{formatBRL(Number(p.price_monthly))}</td>
-                <td className="p-3">{formatBRL(Number(p.price_semestral))}</td>
-                <td className="p-3">{formatBRL(Number(p.price_yearly))}</td>
+                <td className="p-3">{k === "license" ? formatBRL(Number(p.price_semestral)) : "—"}</td>
+                <td className="p-3">{k === "license" ? formatBRL(Number(p.price_yearly)) : "—"}</td>
                 <td className="p-3"><Badge variant="outline">{p.active ? "Ativo" : "Inativo"}</Badge></td>
                 <td className="p-3 text-right">
                   <Button size="sm" variant="ghost" onClick={() => openEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>
                   <Button size="sm" variant="ghost" onClick={() => remove(p.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                 </td>
               </tr>
-            ))}
-            {products.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Nenhum produto. Crie o primeiro.</td></tr>}
+            );})}
+            {products.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Nenhum produto. Crie o primeiro.</td></tr>}
           </tbody>
         </table>
       </Card>
