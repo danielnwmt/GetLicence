@@ -77,10 +77,11 @@ function AdminPage() {
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [adminIds, setAdminIds] = useState<string[]>([]);
+  const [payables, setPayables] = useState<PayableRow[]>([]);
 
   const reload = useCallback(async () => {
     try {
-      const [p, l, pay, pr, ur] = await Promise.all([
+      const [p, l, pay, pr, ur, pb] = await Promise.all([
         supabase.from("products").select("*").order("created_at", { ascending: false }),
         supabase.from("licenses").select("*, product:products(name)").order("created_at", { ascending: false }),
         supabase.from("payments").select("*, license:licenses(license_key)").order("created_at", { ascending: false }),
@@ -89,12 +90,14 @@ function AdminPage() {
           return [] as Profile[];
         }),
         supabase.from("user_roles").select("user_id, role").eq("role", "admin"),
+        supabase.from("payables" as never).select("*").order("due_date", { ascending: true, nullsFirst: false }),
       ]);
       setProducts((p.data as Product[]) || []);
       setLicenses((l.data as unknown as LicenseRow[]) || []);
       setPayments((pay.data as unknown as PaymentRow[]) || []);
       setProfiles(Array.isArray(pr) ? (pr as Profile[]) : []);
       setAdminIds(((ur.data as { user_id: string }[]) || []).map((r) => r.user_id));
+      setPayables((pb.data as unknown as PayableRow[]) || []);
     } catch (e) {
       console.error("Admin reload failed:", e);
     }
