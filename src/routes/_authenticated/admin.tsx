@@ -311,7 +311,7 @@ const statusBadge: Record<string, string> = {
 function ProductsTab({ products, onChange }: { products: Product[]; onChange: () => void }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
-  const emptyForm = { kind: "license", name: "", description: "", vps_specs: "", vps_storage_amount: "0", vps_storage_unit: "GB", storage_amount: "0", storage_unit: "GB", cost_vps: "0", cost_storage: "0", cost_other: "0", profit_margin: "30", price_monthly: "0", price_semestral: "0", price_yearly: "0" };
+  const emptyForm = { kind: "license", name: "", description: "", vps_id: "", storage_id: "", vps_specs: "", vps_storage_amount: "0", vps_storage_unit: "GB", storage_amount: "0", storage_unit: "GB", cost_vps: "0", cost_storage: "0", cost_other: "0", profit_margin: "30", price_monthly: "0", price_semestral: "0", price_yearly: "0" };
   const [form, setForm] = useState(emptyForm);
 
   const totalCost = (Number(form.cost_vps) || 0) + (Number(form.cost_storage) || 0) + (Number(form.cost_other) || 0);
