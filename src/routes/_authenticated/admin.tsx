@@ -477,7 +477,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
               <div className="text-sm font-medium">Recursos & Custos mensais</div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label>VPS (cadastrada)</Label>
+                  <Label>VPS</Label>
                   <select
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
                     value={vpsProducts.find((v) => v.vps_specs === form.vps_specs && Number(v.price_monthly) === Number(form.cost_vps))?.id ?? ""}
