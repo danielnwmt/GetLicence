@@ -1902,7 +1902,11 @@ function PaymentsTab({
                             );
                             return;
                           }
-                          window.open(coplanUrl, "_blank", "noopener,noreferrer");
+                          setNotaPayment(p);
+                          setNotaDesc(
+                            `Cobrança ${p.reference ?? p.id.slice(0, 8)} - R$ ${Number(p.amount).toFixed(2)}`,
+                          );
+                          setNotaOpen(true);
                         }}
                         title="Emitir nota fiscal no Coplan"
                       >
