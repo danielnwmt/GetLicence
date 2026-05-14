@@ -1341,6 +1341,15 @@ function PaymentsTab({
   const cancelBoleto = useServerFn(cancelAsaasBoleto);
   const [issuingId, setIssuingId] = useState<string | null>(null);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
+  const [coplanUrl, setCoplanUrl] = useState<string | null>(null);
+  useEffect(() => {
+    supabase
+      .from("payment_settings")
+      .select("coplan_url")
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => setCoplanUrl((data?.coplan_url as string | null) ?? null));
+  }, []);
   const [newOpen, setNewOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newForm, setNewForm] = useState({ user_id: "", license_id: "", amount: "", due_date: "" });
