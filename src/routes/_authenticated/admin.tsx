@@ -477,42 +477,49 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
               <div className="text-sm font-medium">Recursos & Custos mensais</div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label>Recursos da VPS</Label>
+                  <Label>VPS (cadastrada)</Label>
                   <select
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
-                    value={form.vps_specs}
-                    onChange={(e) => setForm({ ...form, vps_specs: e.target.value })}
+                    value={vpsProducts.find((v) => v.vps_specs === form.vps_specs && Number(v.price_monthly) === Number(form.cost_vps))?.id ?? ""}
+                    onChange={(e) => {
+                      const v = vpsProducts.find((x) => x.id === e.target.value);
+                      if (!v) { setForm({ ...form, vps_specs: "", vps_storage_amount: "0", vps_storage_unit: "GB", cost_vps: "0" }); return; }
+                      setForm({
+                        ...form,
+                        vps_specs: v.vps_specs ?? "",
+                        vps_storage_amount: String(v.vps_storage_amount ?? 0),
+                        vps_storage_unit: v.vps_storage_unit ?? "GB",
+                        cost_vps: String(v.price_monthly ?? 0),
+                      });
+                    }}
                   >
-                    <option value="">Selecione...</option>
-                    <option value="1 vCPU, 1GB RAM">1 vCPU, 1GB RAM</option>
-                    <option value="1 vCPU, 2GB RAM">1 vCPU, 2GB RAM</option>
-                    <option value="2 vCPU, 2GB RAM">2 vCPU, 2GB RAM</option>
-                    <option value="2 vCPU, 4GB RAM">2 vCPU, 4GB RAM</option>
-                    <option value="4 vCPU, 4GB RAM">4 vCPU, 4GB RAM</option>
-                    <option value="4 vCPU, 8GB RAM">4 vCPU, 8GB RAM</option>
-                    <option value="6 vCPU, 12GB RAM">6 vCPU, 12GB RAM</option>
-                    <option value="8 vCPU, 16GB RAM">8 vCPU, 16GB RAM</option>
-                    <option value="8 vCPU, 32GB RAM">8 vCPU, 32GB RAM</option>
-                    <option value="16 vCPU, 32GB RAM">16 vCPU, 32GB RAM</option>
-                    <option value="16 vCPU, 64GB RAM">16 vCPU, 64GB RAM</option>
+                    <option value="">Nenhuma</option>
+                    {vpsProducts.map((v) => (
+                      <option key={v.id} value={v.id}>{v.name} — {v.vps_specs} ({formatBRL(Number(v.price_monthly))}/mês)</option>
+                    ))}
                   </select>
-                  <div className="flex gap-2">
-                    <Input type="number" step="0.01" placeholder="Armaz. da VPS" value={form.vps_storage_amount} onChange={(e) => setForm({ ...form, vps_storage_amount: e.target.value })} />
-                    <select className="h-9 rounded-md border border-input bg-transparent px-2 text-sm" value={form.vps_storage_unit} onChange={(e) => setForm({ ...form, vps_storage_unit: e.target.value })}>
-                      <option value="GB">GB</option>
-                      <option value="TB">TB</option>
-                    </select>
-                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Armazenamento extra</Label>
-                  <div className="flex gap-2">
-                    <Input type="number" step="0.01" placeholder="Qtd" value={form.storage_amount} onChange={(e) => setForm({ ...form, storage_amount: e.target.value })} />
-                    <select className="h-9 rounded-md border border-input bg-transparent px-2 text-sm" value={form.storage_unit} onChange={(e) => setForm({ ...form, storage_unit: e.target.value })}>
-                      <option value="GB">GB</option>
-                      <option value="TB">TB</option>
-                    </select>
-                  </div>
+                  <Label>Armazenamento extra (cadastrado)</Label>
+                  <select
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                    value={storageProducts.find((s) => Number(s.storage_amount) === Number(form.storage_amount) && s.storage_unit === form.storage_unit && Number(s.price_monthly) === Number(form.cost_storage))?.id ?? ""}
+                    onChange={(e) => {
+                      const s = storageProducts.find((x) => x.id === e.target.value);
+                      if (!s) { setForm({ ...form, storage_amount: "0", storage_unit: "GB", cost_storage: "0" }); return; }
+                      setForm({
+                        ...form,
+                        storage_amount: String(s.storage_amount ?? 0),
+                        storage_unit: s.storage_unit ?? "GB",
+                        cost_storage: String(s.price_monthly ?? 0),
+                      });
+                    }}
+                  >
+                    <option value="">Nenhum</option>
+                    {storageProducts.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name} — {s.storage_amount}{s.storage_unit} ({formatBRL(Number(s.price_monthly))}/mês)</option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-3">
