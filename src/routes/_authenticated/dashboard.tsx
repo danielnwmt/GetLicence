@@ -56,7 +56,7 @@ function Dashboard() {
     (async () => {
       const { data: lic } = await supabase
         .from("licenses")
-        .select("id, license_key, plan, status, starts_at, expires_at, product:products(name, description)")
+        .select("id, license_key, plan, status, starts_at, expires_at, product:products(name, description, vps_specs, vps_storage_amount, vps_storage_unit, storage_amount, storage_unit)")
         .order("created_at", { ascending: false });
       setLicenses((lic as unknown as License[]) || []);
 
