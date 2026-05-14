@@ -3132,6 +3132,34 @@ function PayablesTab({
             </tr>
           </thead>
           <tbody>
+            {(filter === "all" || filter === "pending") &&
+              aggregated.map((r) => (
+                <tr key={r.key} className="border-t border-border bg-muted/30">
+                  <td className="p-3">
+                    <div className="font-medium">
+                      {r.category === "vps"
+                        ? "VPS — total das licenças ativas"
+                        : r.category === "storage"
+                          ? "Armazenamento — total das licenças ativas"
+                          : "Software — total das licenças ativas"}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Soma de {r.count} licença{r.count > 1 ? "s" : ""} ativa
+                      {r.count > 1 ? "s" : ""} · mensal recorrente
+                    </div>
+                  </td>
+                  <td className="p-3">
+                    <Badge variant="outline">{catLabel(r.category)}</Badge>
+                  </td>
+                  <td className="p-3 text-muted-foreground">—</td>
+                  <td className="p-3 font-medium">{formatBRL(r.amount)}</td>
+                  <td className="p-3 text-xs">—</td>
+                  <td className="p-3">
+                    <Badge variant="secondary">Recorrente</Badge>
+                  </td>
+                  <td className="p-3 text-right text-xs text-muted-foreground">auto</td>
+                </tr>
+              ))}
             {filtered.map((p) => (
               <tr key={p.id} className="border-t border-border">
                 <td className="p-3">
