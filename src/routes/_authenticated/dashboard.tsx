@@ -238,6 +238,45 @@ function Dashboard() {
           </Card>
         )}
       </section>
+
+      <Dialog open={!!upgradeLicense} onOpenChange={(o) => !o && setUpgradeLicense(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upgrade de armazenamento</DialogTitle>
+            <DialogDescription>
+              {upgradeLicense?.product?.name} — {upgradeLicense?.license_key}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="rounded-md border bg-muted/30 p-3 text-sm">
+              <div className="text-muted-foreground">Armazenamento atual</div>
+              <div className="font-medium">
+                {Number(upgradeLicense?.product?.storage_amount ?? 0)} {upgradeLicense?.product?.storage_unit ?? "GB"}
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Quanto deseja adicionar?</Label>
+              <Select value={upgradeAmount} onValueChange={setUpgradeAmount}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {upgradeOptions.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                A cobrança proporcional será calculada e enviada por boleto.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUpgradeLicense(null)}>Cancelar</Button>
+            <Button onClick={submitUpgrade} disabled={upgradeSubmitting}>
+              {upgradeSubmitting ? "Enviando..." : "Solicitar upgrade"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
