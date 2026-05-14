@@ -1821,3 +1821,269 @@ function MobileAppTab() {
     </Card>
   );
 }
+
+// ---------- Payables (Contas a Pagar) ----------
+function PayablesTab({ payables, licenses, products, profiles, onChange }: {
+  payables: PayableRow[]; licenses: LicenseRow[]; products: Product[]; profiles: Profile[]; onChange: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<PayableRow | null>(null);
+  const empty = { description: "", supplier: "", category: "other" as "vps" | "storage" | "other", amount: "0", due_date: "", recurrence: "none", notes: "" };
+  const [form, setForm] = useState(empty);
+  const [filter, setFilter] = useState<"all" | "pending" | "paid" | "overdue">("all");
+  const [generating, setGenerating] = useState(false);
+
+  const today = new Date();
+  const isOverdue = (p: PayableRow) => p.status === "pending" && !!p.due_date && new Date(p.due_date) < today;
+
+  const filtered = payables.filter((p) => {
+    if (filter === "all") return true;
+    if (filter === "overdue") return isOverdue(p);
+    return p.status === filter;
+  });
+
+  const totalPending = payables.filter((p) => p.status === "pending").reduce((s, p) => s + Number(p.amount), 0);
+  const totalOverdue = payables.filter(isOverdue).reduce((s, p) => s + Number(p.amount), 0);
+  const totalPaidMonth = payables.filter((p) => p.status === "paid" && p.paid_at && new Date(p.paid_at).getMonth() === today.getMonth() && new Date(p.paid_at).getFullYear() === today.getFullYear()).reduce((s, p) => s + Number(p.amount), 0);
+  const monthlyRecurring = payables.filter((p) => p.recurrence === "monthly" && p.status !== "cancelled").reduce((s, p) => s + Number(p.amount), 0);
+
+  const openNew = () => { setEditing(null); setForm(empty); setOpen(true); };
+  const openEdit = (p: PayableRow) => {
+    setEditing(p);
+    setForm({
+      description: p.description,
+      supplier: p.supplier ?? "",
+      category: p.category,
+      amount: String(p.amount),
+      due_date: p.due_date ?? "",
+      recurrence: p.recurrence ?? "none",
+      notes: p.notes ?? "",
+    });
+    setOpen(true);
+  };
+
+  const save = async () => {
+    if (!form.description.trim()) return toast.error("Descrição obrigatória");
+    const payload = {
+      description: form.description.trim(),
+      supplier: form.supplier.trim() || null,
+      category: form.category,
+      amount: Number(form.amount) || 0,
+      due_date: form.due_date || null,
+      recurrence: form.recurrence,
+      notes: form.notes.trim() || null,
+    };
+    const { error } = editing
+      ? await supabase.from("payables" as never).update(payload).eq("id", editing.id)
+      : await supabase.from("payables" as never).insert(payload);
+    if (error) return toast.error(error.message);
+    toast.success(editing ? "Atualizado" : "Conta criada");
+    setOpen(false);
+    onChange();
+  };
+
+  const setStatus = async (id: string, status: "pending" | "paid" | "overdue" | "cancelled") => {
+    const patch: { status: typeof status; paid_at: string | null } = { status, paid_at: status === "paid" ? new Date().toISOString() : null };
+    const { error } = await supabase.from("payables" as never).update(patch).eq("id", id);
+    if (error) return toast.error(error.message);
+    onChange();
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm("Excluir esta conta?")) return;
+    const { error } = await supabase.from("payables" as never).delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    onChange();
+  };
+
+  // Auto-gera contas mensais a partir das licenças ativas (cost_vps + cost_storage por licença)
+  const generateFromLicenses = async () => {
+    if (!confirm("Gerar contas mensais recorrentes a partir das licenças ativas? Apenas custos > 0 serão criados.")) return;
+    setGenerating(true);
+    try {
+      const rows: Array<Record<string, unknown>> = [];
+      const due = new Date(today.getFullYear(), today.getMonth(), 10).toISOString().slice(0, 10);
+      for (const lic of licenses.filter((l) => l.status === "active")) {
+        const prod = products.find((p) => p.id === lic.product_id);
+        if (!prod) continue;
+        const prof = profiles.find((p) => p.user_id === lic.user_id);
+        const ref = `${prof?.full_name || prof?.email || "Cliente"} — ${prod.name} (${lic.license_key})`;
+        if (Number(prod.cost_vps ?? 0) > 0) {
+          rows.push({ description: `VPS — ${ref}`, supplier: "Provedor VPS", category: "vps", amount: Number(prod.cost_vps), due_date: due, recurrence: "monthly", license_id: lic.id, product_id: prod.id });
+        }
+        if (Number(prod.cost_storage ?? 0) > 0) {
+          rows.push({ description: `Armazenamento — ${ref}`, supplier: "Provedor Storage", category: "storage", amount: Number(prod.cost_storage), due_date: due, recurrence: "monthly", license_id: lic.id, product_id: prod.id });
+        }
+        if (Number(prod.cost_other ?? 0) > 0) {
+          rows.push({ description: `Outros custos — ${ref}`, supplier: null, category: "other", amount: Number(prod.cost_other), due_date: due, recurrence: "monthly", license_id: lic.id, product_id: prod.id });
+        }
+      }
+      if (!rows.length) { toast.info("Nenhum custo a gerar"); setGenerating(false); return; }
+      const { error } = await supabase.from("payables" as never).insert(rows);
+      if (error) throw new Error(error.message);
+      toast.success(`${rows.length} contas geradas`);
+      onChange();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao gerar");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const catLabel = (c: string) => c === "vps" ? "VPS" : c === "storage" ? "Armazenamento" : "Outros";
+  const statusBadge = (p: PayableRow) => {
+    if (isOverdue(p)) return <Badge className="bg-destructive/15 text-destructive border-destructive/30">Vencida</Badge>;
+    if (p.status === "paid") return <Badge className="bg-emerald-500/15 text-emerald-700 border-emerald-500/30">Paga</Badge>;
+    if (p.status === "cancelled") return <Badge variant="outline">Cancelada</Badge>;
+    return <Badge variant="secondary">Pendente</Badge>;
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
+            <Receipt className="h-6 w-6 text-primary" /> Contas a Pagar
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">Custos da operação: VPS, armazenamento e demais despesas.</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={generateFromLicenses} disabled={generating}>
+            <Plus className="mr-2 h-4 w-4" /> {generating ? "Gerando..." : "Gerar das licenças ativas"}
+          </Button>
+          <Button onClick={openNew}><Plus className="mr-2 h-4 w-4" /> Nova conta</Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: "A pagar", value: formatBRL(totalPending), icon: Clock, tone: "text-amber-600", bg: "bg-amber-500/10" },
+          { label: "Vencidas", value: formatBRL(totalOverdue), icon: AlertTriangle, tone: "text-destructive", bg: "bg-destructive/10" },
+          { label: "Pago no mês", value: formatBRL(totalPaidMonth), icon: CheckCircle2, tone: "text-emerald-600", bg: "bg-emerald-500/10" },
+          { label: "Recorrente mensal", value: formatBRL(monthlyRecurring), icon: TrendingUp, tone: "text-primary", bg: "bg-primary/10" },
+        ].map((k) => (
+          <Card key={k.label} className="p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">{k.label}</p>
+                <p className="mt-2 text-2xl font-semibold tracking-tight">{k.value}</p>
+              </div>
+              <div className={`rounded-lg p-2.5 ${k.bg}`}><k.icon className={`h-5 w-5 ${k.tone}`} /></div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="p-4">
+        <div className="flex flex-wrap gap-1.5">
+          {(["all", "pending", "overdue", "paid"] as const).map((k) => (
+            <button
+              key={k}
+              onClick={() => setFilter(k)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                filter === k ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-muted/70"
+              }`}
+            >
+              {k === "all" ? "Todas" : k === "pending" ? "Pendentes" : k === "overdue" ? "Vencidas" : "Pagas"}
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      <Card className="overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/50 text-left">
+            <tr>
+              <th className="p-3 font-medium">Descrição</th>
+              <th className="p-3 font-medium">Categoria</th>
+              <th className="p-3 font-medium">Fornecedor</th>
+              <th className="p-3 font-medium">Valor</th>
+              <th className="p-3 font-medium">Vencimento</th>
+              <th className="p-3 font-medium">Status</th>
+              <th className="p-3"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((p) => (
+              <tr key={p.id} className="border-t border-border">
+                <td className="p-3">
+                  <div className="font-medium">{p.description}</div>
+                  {p.recurrence === "monthly" && <div className="text-xs text-muted-foreground">Mensal recorrente</div>}
+                </td>
+                <td className="p-3"><Badge variant="outline">{catLabel(p.category)}</Badge></td>
+                <td className="p-3 text-muted-foreground">{p.supplier || "—"}</td>
+                <td className="p-3 font-medium">{formatBRL(Number(p.amount))}</td>
+                <td className="p-3 text-xs">{p.due_date ? formatDate(p.due_date) : "—"}</td>
+                <td className="p-3">{statusBadge(p)}</td>
+                <td className="p-3 text-right">
+                  {p.status !== "paid" && (
+                    <Button size="sm" variant="ghost" onClick={() => setStatus(p.id, "paid")} title="Marcar como pago">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                    </Button>
+                  )}
+                  {p.status === "paid" && (
+                    <Button size="sm" variant="ghost" onClick={() => setStatus(p.id, "pending")} title="Reabrir">
+                      <Clock className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                  <Button size="sm" variant="ghost" onClick={() => openEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => remove(p.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                </td>
+              </tr>
+            ))}
+            {filtered.length === 0 && (
+              <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Nenhuma conta encontrada.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </Card>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editing ? "Editar conta" : "Nova conta a pagar"}</DialogTitle></DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-2"><Label>Descrição</Label>
+              <Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2"><Label>Fornecedor</Label>
+                <Input value={form.supplier} onChange={(e) => setForm({ ...form, supplier: e.target.value })} />
+              </div>
+              <div className="space-y-2"><Label>Categoria</Label>
+                <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v as "vps" | "storage" | "other" })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="vps">VPS</SelectItem>
+                    <SelectItem value="storage">Armazenamento</SelectItem>
+                    <SelectItem value="other">Outros</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2"><Label>Valor (R$)</Label>
+                <Input type="number" step="0.01" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+              </div>
+              <div className="space-y-2"><Label>Vencimento</Label>
+                <Input type="date" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} />
+              </div>
+            </div>
+            <div className="space-y-2"><Label>Recorrência</Label>
+              <Select value={form.recurrence} onValueChange={(v) => setForm({ ...form, recurrence: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Única</SelectItem>
+                  <SelectItem value="monthly">Mensal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2"><Label>Notas</Label>
+              <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter><Button onClick={save}>Salvar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
