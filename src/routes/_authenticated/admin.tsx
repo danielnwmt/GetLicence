@@ -2301,10 +2301,14 @@ interface SettingsRow {
   sicoob_access_token: string | null;
   sicoob_cert_pem: string | null;
   sicoob_cert_key: string | null;
+  coplan_url: string | null;
+  coplan_username: string | null;
+  coplan_password: string | null;
+  coplan_token: string | null;
 }
 
 const SETTINGS_COLS =
-  "id, active_provider, asaas_env, webhook_token, notes, asaas_api_key, sicredi_client_id, sicredi_client_secret, sicredi_cert_pem, sicredi_cert_key, sicoob_client_id, sicoob_access_token, sicoob_cert_pem, sicoob_cert_key";
+  "id, active_provider, asaas_env, webhook_token, notes, asaas_api_key, sicredi_client_id, sicredi_client_secret, sicredi_cert_pem, sicredi_cert_key, sicoob_client_id, sicoob_access_token, sicoob_cert_pem, sicoob_cert_key, coplan_url, coplan_username, coplan_password, coplan_token";
 
 function IntegrationsTab() {
   const [settings, setSettings] = useState<SettingsRow | null>(null);
