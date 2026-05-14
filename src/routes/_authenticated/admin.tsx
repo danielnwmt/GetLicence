@@ -2479,10 +2479,12 @@ interface SettingsRow {
   coplan_username: string | null;
   coplan_password: string | null;
   coplan_token: string | null;
+  block_grace_days: number;
+  block_auto: boolean;
 }
 
 const SETTINGS_COLS =
-  "id, active_provider, asaas_env, webhook_token, notes, asaas_api_key, sicredi_client_id, sicredi_client_secret, sicredi_cert_pem, sicredi_cert_key, sicoob_client_id, sicoob_access_token, sicoob_cert_pem, sicoob_cert_key, coplan_url, coplan_username, coplan_password, coplan_token";
+  "id, active_provider, asaas_env, webhook_token, notes, asaas_api_key, sicredi_client_id, sicredi_client_secret, sicredi_cert_pem, sicredi_cert_key, sicoob_client_id, sicoob_access_token, sicoob_cert_pem, sicoob_cert_key, coplan_url, coplan_username, coplan_password, coplan_token, block_grace_days, block_auto";
 
 function IntegrationsTab() {
   const [settings, setSettings] = useState<SettingsRow | null>(null);
