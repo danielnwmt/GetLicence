@@ -1694,7 +1694,19 @@ function PaymentsTab({
                       value={newForm.due_date}
                       onChange={(e) => setNewForm({ ...newForm, due_date: e.target.value })}
                     />
-                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Quantidade de boletos</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={newForm.quantity}
+                    onChange={(e) => setNewForm({ ...newForm, quantity: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Para mais de 1, vencimentos são gerados mês a mês a partir da data informada.
+                  </p>
                 </div>
               </div>
               <DialogFooter>
