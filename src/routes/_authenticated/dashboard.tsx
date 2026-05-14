@@ -117,6 +117,37 @@ function Dashboard() {
                   <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Expira em {formatDate(l.expires_at)}</span>
                   <span className="capitalize">{l.plan === "monthly" ? "Mensal" : l.plan === "semestral" ? "Semestral" : "Anual"}</span>
                 </div>
+                {(l.product?.vps_specs || Number(l.product?.vps_storage_amount) > 0 || Number(l.product?.storage_amount) > 0) && (
+                  <div className="mt-4 grid gap-2 rounded-md border border-border/60 bg-muted/30 p-3 text-sm sm:grid-cols-2">
+                    {l.product?.vps_specs && (
+                      <div className="flex items-start gap-2">
+                        <Server className="mt-0.5 h-4 w-4 text-primary" />
+                        <div>
+                          <div className="text-xs uppercase tracking-wide text-muted-foreground">VPS</div>
+                          <div className="font-medium">{l.product.vps_specs}</div>
+                        </div>
+                      </div>
+                    )}
+                    {Number(l.product?.vps_storage_amount) > 0 && (
+                      <div className="flex items-start gap-2">
+                        <HardDrive className="mt-0.5 h-4 w-4 text-primary" />
+                        <div>
+                          <div className="text-xs uppercase tracking-wide text-muted-foreground">Disco VPS</div>
+                          <div className="font-medium">{Number(l.product?.vps_storage_amount)} {l.product?.vps_storage_unit}</div>
+                        </div>
+                      </div>
+                    )}
+                    {Number(l.product?.storage_amount) > 0 && (
+                      <div className="flex items-start gap-2">
+                        <HardDrive className="mt-0.5 h-4 w-4 text-primary" />
+                        <div>
+                          <div className="text-xs uppercase tracking-wide text-muted-foreground">Armazenamento</div>
+                          <div className="font-medium">{Number(l.product?.storage_amount)} {l.product?.storage_unit}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <Button size="sm" variant="outline" className="mt-4" onClick={() => copyKey(l.license_key)}>
                   {copied === l.license_key ? <Check className="mr-2 h-3.5 w-3.5" /> : <Copy className="mr-2 h-3.5 w-3.5" />}
                   Copiar chave
