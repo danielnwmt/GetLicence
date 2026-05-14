@@ -85,6 +85,57 @@ export type Database = {
           },
         ]
       }
+      payables: {
+        Row: {
+          amount: number
+          category: Database["public"]["Enums"]["payable_category"]
+          created_at: string
+          description: string
+          due_date: string | null
+          id: string
+          license_id: string | null
+          notes: string | null
+          paid_at: string | null
+          product_id: string | null
+          recurrence: string
+          status: Database["public"]["Enums"]["payable_status"]
+          supplier: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          category?: Database["public"]["Enums"]["payable_category"]
+          created_at?: string
+          description: string
+          due_date?: string | null
+          id?: string
+          license_id?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          product_id?: string | null
+          recurrence?: string
+          status?: Database["public"]["Enums"]["payable_status"]
+          supplier?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: Database["public"]["Enums"]["payable_category"]
+          created_at?: string
+          description?: string
+          due_date?: string | null
+          id?: string
+          license_id?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          product_id?: string | null
+          recurrence?: string
+          status?: Database["public"]["Enums"]["payable_status"]
+          supplier?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payment_settings: {
         Row: {
           active_provider: Database["public"]["Enums"]["payment_provider"]
@@ -381,6 +432,8 @@ export type Database = {
       app_role: "admin" | "client"
       license_plan: "monthly" | "yearly" | "semestral"
       license_status: "active" | "expired" | "cancelled" | "pending" | "blocked"
+      payable_category: "vps" | "storage" | "other"
+      payable_status: "pending" | "paid" | "overdue" | "cancelled"
       payment_provider: "asaas" | "sicredi" | "sicoob" | "manual"
       payment_status: "pending" | "paid" | "failed" | "refunded"
     }
@@ -513,6 +566,8 @@ export const Constants = {
       app_role: ["admin", "client"],
       license_plan: ["monthly", "yearly", "semestral"],
       license_status: ["active", "expired", "cancelled", "pending", "blocked"],
+      payable_category: ["vps", "storage", "other"],
+      payable_status: ["pending", "paid", "overdue", "cancelled"],
       payment_provider: ["asaas", "sicredi", "sicoob", "manual"],
       payment_status: ["pending", "paid", "failed", "refunded"],
     },
