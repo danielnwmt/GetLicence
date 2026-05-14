@@ -2812,6 +2812,51 @@ function IntegrationsTab() {
         </div>
       </Card>
 
+      <Card className="p-6 space-y-4">
+        <div className="flex items-center gap-3">
+          <Ban className="h-5 w-5 text-destructive" />
+          <div>
+            <h3 className="text-lg font-semibold">Regra de bloqueio de licenças</h3>
+            <p className="text-sm text-muted-foreground">
+              Define quando uma licença é bloqueada automaticamente por inadimplência.
+              Licenças bloqueadas deixam de ser validadas pelo sistema cliente.
+            </p>
+          </div>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Bloqueio automático</Label>
+            <Select
+              value={settings.block_auto ? "on" : "off"}
+              onValueChange={(v) => update("block_auto", v === "on")}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="on">Ativado</SelectItem>
+                <SelectItem value="off">Desativado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Dias de tolerância após vencimento</Label>
+            <Input
+              type="number"
+              min={0}
+              value={settings.block_grace_days ?? 0}
+              onChange={(e) => update("block_grace_days", Math.max(0, Number(e.target.value) || 0))}
+            />
+            <p className="text-xs text-muted-foreground">
+              0 = bloqueia no dia seguinte ao vencimento.
+            </p>
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <Button onClick={save} disabled={saving}>
+            {saving ? "Salvando..." : "Salvar regra de bloqueio"}
+          </Button>
+        </div>
+      </Card>
+
       <Card className="p-6 space-y-3">
         <div>
           <h3 className="text-lg font-semibold">URL do Webhook</h3>
