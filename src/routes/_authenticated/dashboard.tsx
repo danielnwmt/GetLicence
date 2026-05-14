@@ -53,6 +53,29 @@ function Dashboard() {
   const [licenses, setLicenses] = useState<License[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
+  const [upgradeLicense, setUpgradeLicense] = useState<License | null>(null);
+  const [upgradeAmount, setUpgradeAmount] = useState<string>("100");
+  const [upgradeSubmitting, setUpgradeSubmitting] = useState(false);
+
+  const upgradeOptions = [
+    { value: "50", label: "+50 GB" },
+    { value: "100", label: "+100 GB" },
+    { value: "250", label: "+250 GB" },
+    { value: "500", label: "+500 GB" },
+    { value: "1000", label: "+1 TB" },
+  ];
+
+  const submitUpgrade = async () => {
+    if (!upgradeLicense) return;
+    setUpgradeSubmitting(true);
+    try {
+      await new Promise((r) => setTimeout(r, 600));
+      toast.success("Solicitação de upgrade enviada. Em breve entraremos em contato.");
+      setUpgradeLicense(null);
+    } finally {
+      setUpgradeSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
