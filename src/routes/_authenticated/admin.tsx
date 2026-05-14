@@ -491,7 +491,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                   <Label>VPS</Label>
                   <select
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
-                    value={vpsProducts.find((v) => v.vps_specs === form.vps_specs && Number(v.price_monthly) === Number(form.cost_vps))?.id ?? ""}
+                    value={vpsProducts.find((v) => v.vps_specs === form.vps_specs && Number(v.cost_vps ?? 0) === Number(form.cost_vps))?.id ?? ""}
                     onChange={(e) => {
                       const v = vpsProducts.find((x) => x.id === e.target.value);
                       if (!v) { setForm({ ...form, vps_specs: "", vps_storage_amount: "0", vps_storage_unit: "GB", cost_vps: "0" }); return; }
@@ -500,7 +500,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                         vps_specs: v.vps_specs ?? "",
                         vps_storage_amount: String(v.vps_storage_amount ?? 0),
                         vps_storage_unit: v.vps_storage_unit ?? "GB",
-                        cost_vps: String(v.price_monthly ?? 0),
+                        cost_vps: String(v.cost_vps ?? 0),
                       });
                     }}
                   >
@@ -514,7 +514,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                   <Label>Armazenamento</Label>
                   <select
                     className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
-                    value={storageProducts.find((s) => Number(s.storage_amount) === Number(form.storage_amount) && s.storage_unit === form.storage_unit && Number(s.price_monthly) === Number(form.cost_storage))?.id ?? ""}
+                    value={storageProducts.find((s) => Number(s.storage_amount) === Number(form.storage_amount) && s.storage_unit === form.storage_unit && Number(s.cost_storage ?? 0) === Number(form.cost_storage))?.id ?? ""}
                     onChange={(e) => {
                       const s = storageProducts.find((x) => x.id === e.target.value);
                       if (!s) { setForm({ ...form, storage_amount: "0", storage_unit: "GB", cost_storage: "0" }); return; }
@@ -522,7 +522,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                         ...form,
                         storage_amount: String(s.storage_amount ?? 0),
                         storage_unit: s.storage_unit ?? "GB",
-                        cost_storage: String(s.price_monthly ?? 0),
+                        cost_storage: String(s.cost_storage ?? 0),
                       });
                     }}
                   >
