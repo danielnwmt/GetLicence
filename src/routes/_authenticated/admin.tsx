@@ -462,6 +462,31 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                 </div>
                 <div className="text-xs text-muted-foreground">Custo total: {formatBRL(totalCost)}</div>
               </div>
+              <div className="rounded-md border p-3 space-y-3">
+                <div className="text-sm font-medium">Preços de upgrade</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Preço por GB extra (R$/mês)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={form.price_storage_gb}
+                      onChange={(e) => setForm({ ...form, price_storage_gb: e.target.value })}
+                    />
+                    <p className="text-xs text-muted-foreground">Usado quando o cliente solicita mais armazenamento.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Preço da VPS (R$/mês)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={form.price_vps_monthly}
+                      onChange={(e) => setForm({ ...form, price_vps_monthly: e.target.value })}
+                    />
+                    <p className="text-xs text-muted-foreground">Mensalidade da VPS associada a este plano.</p>
+                  </div>
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
                   <Label>Margem de lucro (%)</Label>
