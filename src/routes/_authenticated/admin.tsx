@@ -3069,6 +3069,94 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
   );
 }
 
+function BlockRulesTab() {
+  const [settings, setSettings] = useState<{ block_auto: boolean; block_grace_days: number } | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("payment_settings")
+        .select("block_auto, block_grace_days")
+        .limit(1)
+        .maybeSingle();
+      setSettings({
+        block_auto: data?.block_auto ?? true,
+        block_grace_days: data?.block_grace_days ?? 0,
+      });
+    })();
+  }, []);
+
+  if (!settings) return <div className="text-muted-foreground">Carregando...</div>;
+
+  const update = <K extends keyof typeof settings>(key: K, value: (typeof settings)[K]) =>
+    setSettings((s) => (s ? { ...s, [key]: value } : s));
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const { data: existing } = await supabase.from("payment_settings").select("id").limit(1).maybeSingle();
+      if (existing?.id) {
+        const { error } = await supabase
+          .from("payment_settings")
+          .update({ block_auto: settings.block_auto, block_grace_days: settings.block_grace_days })
+          .eq("id", existing.id);
+        if (error) throw error;
+      }
+      toast.success("Regra de bloqueio salva");
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao salvar");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Card className="p-6 space-y-4">
+      <div className="flex items-center gap-3">
+        <Ban className="h-5 w-5 text-destructive" />
+        <div>
+          <h3 className="text-lg font-semibold">Regra de bloqueio de licenças</h3>
+          <p className="text-sm text-muted-foreground">
+            Define quando uma licença é bloqueada automaticamente por inadimplência.
+            Quando o boleto for pago, a licença é reativada automaticamente.
+          </p>
+        </div>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label>Bloqueio automático</Label>
+          <Select
+            value={settings.block_auto ? "on" : "off"}
+            onValueChange={(v) => update("block_auto", v === "on")}
+          >
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="on">Ativado</SelectItem>
+              <SelectItem value="off">Desativado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Dias de tolerância após vencimento</Label>
+          <Input
+            type="number"
+            min={0}
+            value={settings.block_grace_days}
+            onChange={(e) => update("block_grace_days", Math.max(0, Number(e.target.value) || 0))}
+          />
+          <p className="text-xs text-muted-foreground">0 = bloqueia no dia seguinte ao vencimento.</p>
+        </div>
+      </div>
+      <div className="flex justify-end">
+        <Button onClick={save} disabled={saving}>
+          {saving ? "Salvando..." : "Salvar regra de bloqueio"}
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
 function MobileAppTab() {
   const [url, setUrl] = useState("");
   useEffect(() => {
