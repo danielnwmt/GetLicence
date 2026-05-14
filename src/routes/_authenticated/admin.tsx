@@ -380,48 +380,121 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
     onChange();
   };
 
+  const licenseProducts = products.filter((p) => (p.kind ?? "license") === "license");
+  const storageProducts = products.filter((p) => p.kind === "storage");
+  const vpsProducts = products.filter((p) => p.kind === "vps");
+
+  const renderTable = (rows: Product[], emptyMsg: string, kind: "license" | "storage" | "vps") => (
+    <Card className="overflow-hidden">
+      <table className="w-full text-sm">
+        <thead className="bg-muted/50 text-left"><tr>
+          <th className="p-3 font-medium">Produto</th>
+          <th className="p-3 font-medium">Mensal</th>
+          {kind === "license" && <th className="p-3 font-medium">Semestral</th>}
+          {kind === "license" && <th className="p-3 font-medium">Anual</th>}
+          <th className="p-3 font-medium">Status</th>
+          <th className="p-3"></th>
+        </tr></thead>
+        <tbody>
+          {rows.map((p) => (
+            <tr key={p.id} className="border-t border-border">
+              <td className="p-3"><div className="font-medium">{p.name}</div><div className="text-xs text-muted-foreground">{p.description}</div></td>
+              <td className="p-3">{formatBRL(Number(p.price_monthly))}</td>
+              {kind === "license" && <td className="p-3">{formatBRL(Number(p.price_semestral))}</td>}
+              {kind === "license" && <td className="p-3">{formatBRL(Number(p.price_yearly))}</td>}
+              <td className="p-3"><Badge variant="outline">{p.active ? "Ativo" : "Inativo"}</Badge></td>
+              <td className="p-3 text-right">
+                <Button size="sm" variant="ghost" onClick={() => openEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>
+                <Button size="sm" variant="ghost" onClick={() => remove(p.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+              </td>
+            </tr>
+          ))}
+          {rows.length === 0 && <tr><td colSpan={kind === "license" ? 6 : 4} className="p-6 text-center text-muted-foreground">{emptyMsg}</td></tr>}
+        </tbody>
+      </table>
+    </Card>
+  );
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openNew}><Plus className="mr-2 h-4 w-4" /> Novo produto</Button>
-          </DialogTrigger>
-          <DialogContent className="max-h-[90vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>{editing ? "Editar produto" : "Novo produto"}</DialogTitle></DialogHeader>
-            <div className="space-y-3 py-2">
-              <div className="space-y-2">
-                <Label>Tipo de produto</Label>
-                <select
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
-                  value={form.kind}
-                  onChange={(e) => setForm({ ...form, kind: e.target.value })}
-                >
-                  <option value="license">Licença / Plano</option>
-                  <option value="storage">Upgrade de armazenamento</option>
-                  <option value="vps">Upgrade de VPS</option>
-                </select>
-              </div>
-              <div className="space-y-2"><Label>Nome</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
-              <div className="space-y-2"><Label>Descrição</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{editing ? "Editar produto" : "Novo produto"}</DialogTitle></DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-2">
+              <Label>Tipo de produto</Label>
+              <select
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                value={form.kind}
+                onChange={(e) => setForm({ ...form, kind: e.target.value })}
+              >
+                <option value="license">Licença / Plano</option>
+                <option value="storage">Upgrade de armazenamento</option>
+                <option value="vps">Upgrade de VPS</option>
+              </select>
+            </div>
+            <div className="space-y-2"><Label>Nome</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+            <div className="space-y-2"><Label>Descrição</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
 
-              {isUpgrade && form.kind === "storage" && (
-                <div className="rounded-md border p-3 space-y-3">
-                  <div className="text-sm font-medium">Armazenamento oferecido</div>
-                  <div className="flex gap-2">
-                    <Input type="number" step="0.01" placeholder="Qtd" value={form.storage_amount} onChange={(e) => setForm({ ...form, storage_amount: e.target.value })} />
-                    <select className="h-9 rounded-md border border-input bg-transparent px-2 text-sm" value={form.storage_unit} onChange={(e) => setForm({ ...form, storage_unit: e.target.value })}>
-                      <option value="GB">GB</option>
-                      <option value="TB">TB</option>
-                    </select>
-                  </div>
+            {isUpgrade && form.kind === "storage" && (
+              <div className="rounded-md border p-3 space-y-3">
+                <div className="text-sm font-medium">Armazenamento oferecido</div>
+                <div className="flex gap-2">
+                  <Input type="number" step="0.01" placeholder="Qtd" value={form.storage_amount} onChange={(e) => setForm({ ...form, storage_amount: e.target.value })} />
+                  <select className="h-9 rounded-md border border-input bg-transparent px-2 text-sm" value={form.storage_unit} onChange={(e) => setForm({ ...form, storage_unit: e.target.value })}>
+                    <option value="GB">GB</option>
+                    <option value="TB">TB</option>
+                  </select>
                 </div>
-              )}
+              </div>
+            )}
 
-              {isUpgrade && form.kind === "vps" && (
-                <div className="rounded-md border p-3 space-y-3">
-                  <div className="text-sm font-medium">Recursos da VPS</div>
-                  <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm" value={form.vps_specs} onChange={(e) => setForm({ ...form, vps_specs: e.target.value })}>
+            {isUpgrade && form.kind === "vps" && (
+              <div className="rounded-md border p-3 space-y-3">
+                <div className="text-sm font-medium">Recursos da VPS</div>
+                <select className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm" value={form.vps_specs} onChange={(e) => setForm({ ...form, vps_specs: e.target.value })}>
+                  <option value="">Selecione...</option>
+                  <option value="1 vCPU, 1GB RAM">1 vCPU, 1GB RAM</option>
+                  <option value="1 vCPU, 2GB RAM">1 vCPU, 2GB RAM</option>
+                  <option value="2 vCPU, 2GB RAM">2 vCPU, 2GB RAM</option>
+                  <option value="2 vCPU, 4GB RAM">2 vCPU, 4GB RAM</option>
+                  <option value="4 vCPU, 4GB RAM">4 vCPU, 4GB RAM</option>
+                  <option value="4 vCPU, 8GB RAM">4 vCPU, 8GB RAM</option>
+                  <option value="6 vCPU, 12GB RAM">6 vCPU, 12GB RAM</option>
+                  <option value="8 vCPU, 16GB RAM">8 vCPU, 16GB RAM</option>
+                  <option value="8 vCPU, 32GB RAM">8 vCPU, 32GB RAM</option>
+                  <option value="16 vCPU, 32GB RAM">16 vCPU, 32GB RAM</option>
+                  <option value="16 vCPU, 64GB RAM">16 vCPU, 64GB RAM</option>
+                </select>
+                <div className="flex gap-2">
+                  <Input type="number" step="0.01" placeholder="Armaz. da VPS" value={form.vps_storage_amount} onChange={(e) => setForm({ ...form, vps_storage_amount: e.target.value })} />
+                  <select className="h-9 rounded-md border border-input bg-transparent px-2 text-sm" value={form.vps_storage_unit} onChange={(e) => setForm({ ...form, vps_storage_unit: e.target.value })}>
+                    <option value="GB">GB</option>
+                    <option value="TB">TB</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {isUpgrade && (
+              <div className="space-y-2">
+                <Label>Preço (R$/mês)</Label>
+                <Input type="number" step="0.01" value={form.price_monthly} onChange={(e) => setForm({ ...form, price_monthly: e.target.value })} />
+              </div>
+            )}
+
+            {!isUpgrade && (
+            <>
+            <div className="rounded-md border p-3 space-y-3">
+              <div className="text-sm font-medium">Recursos & Custos mensais</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Recursos da VPS</Label>
+                  <select
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+                    value={form.vps_specs}
+                    onChange={(e) => setForm({ ...form, vps_specs: e.target.value })}
+                  >
                     <option value="">Selecione...</option>
                     <option value="1 vCPU, 1GB RAM">1 vCPU, 1GB RAM</option>
                     <option value="1 vCPU, 2GB RAM">1 vCPU, 2GB RAM</option>
@@ -443,153 +516,80 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                     </select>
                   </div>
                 </div>
-              )}
-
-              {isUpgrade && (
                 <div className="space-y-2">
-                  <Label>Preço (R$/mês)</Label>
-                  <Input type="number" step="0.01" value={form.price_monthly} onChange={(e) => setForm({ ...form, price_monthly: e.target.value })} />
-                </div>
-              )}
-
-              {!isUpgrade && (
-              <>
-              <div className="rounded-md border p-3 space-y-3">
-                <div className="text-sm font-medium">Recursos & Custos mensais</div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label>Recursos da VPS</Label>
-                    <select
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
-                      value={form.vps_specs}
-                      onChange={(e) => setForm({ ...form, vps_specs: e.target.value })}
-                    >
-                      <option value="">Selecione...</option>
-                      <option value="1 vCPU, 1GB RAM">1 vCPU, 1GB RAM</option>
-                      <option value="1 vCPU, 2GB RAM">1 vCPU, 2GB RAM</option>
-                      <option value="2 vCPU, 2GB RAM">2 vCPU, 2GB RAM</option>
-                      <option value="2 vCPU, 4GB RAM">2 vCPU, 4GB RAM</option>
-                      <option value="4 vCPU, 4GB RAM">4 vCPU, 4GB RAM</option>
-                      <option value="4 vCPU, 8GB RAM">4 vCPU, 8GB RAM</option>
-                      <option value="6 vCPU, 12GB RAM">6 vCPU, 12GB RAM</option>
-                      <option value="8 vCPU, 16GB RAM">8 vCPU, 16GB RAM</option>
-                      <option value="8 vCPU, 32GB RAM">8 vCPU, 32GB RAM</option>
-                      <option value="16 vCPU, 32GB RAM">16 vCPU, 32GB RAM</option>
-                      <option value="16 vCPU, 64GB RAM">16 vCPU, 64GB RAM</option>
+                  <Label>Armazenamento extra</Label>
+                  <div className="flex gap-2">
+                    <Input type="number" step="0.01" placeholder="Qtd" value={form.storage_amount} onChange={(e) => setForm({ ...form, storage_amount: e.target.value })} />
+                    <select className="h-9 rounded-md border border-input bg-transparent px-2 text-sm" value={form.storage_unit} onChange={(e) => setForm({ ...form, storage_unit: e.target.value })}>
+                      <option value="GB">GB</option>
+                      <option value="TB">TB</option>
                     </select>
-                    <div className="flex gap-2">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="Armaz. da VPS"
-                        value={form.vps_storage_amount}
-                        onChange={(e) => setForm({ ...form, vps_storage_amount: e.target.value })}
-                      />
-                      <select
-                        className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
-                        value={form.vps_storage_unit}
-                        onChange={(e) => setForm({ ...form, vps_storage_unit: e.target.value })}
-                      >
-                        <option value="GB">GB</option>
-                        <option value="TB">TB</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Armazenamento extra</Label>
-                    <div className="flex gap-2">
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="Qtd"
-                        value={form.storage_amount}
-                        onChange={(e) => setForm({ ...form, storage_amount: e.target.value })}
-                      />
-                      <select
-                        className="h-9 rounded-md border border-input bg-transparent px-2 text-sm"
-                        value={form.storage_unit}
-                        onChange={(e) => setForm({ ...form, storage_unit: e.target.value })}
-                      >
-                        <option value="GB">GB</option>
-                        <option value="TB">TB</option>
-                      </select>
-                    </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="space-y-2"><Label>Custo VPS (R$)</Label><Input type="number" step="0.01" value={form.cost_vps} onChange={(e) => setForm({ ...form, cost_vps: e.target.value })} /></div>
-                  <div className="space-y-2"><Label>Custo Armaz. (R$)</Label><Input type="number" step="0.01" value={form.cost_storage} onChange={(e) => setForm({ ...form, cost_storage: e.target.value })} /></div>
-                  <div className="space-y-2"><Label>Outros (R$)</Label><Input type="number" step="0.01" value={form.cost_other} onChange={(e) => setForm({ ...form, cost_other: e.target.value })} /></div>
-                </div>
-                <div className="text-xs text-muted-foreground">Custo total: {formatBRL(totalCost)}</div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <Label>Margem de lucro (%)</Label>
-                  <Input
-                    type="number"
-                    step="0.1"
-                    value={form.profit_margin}
-                    onChange={(e) => setForm({ ...form, profit_margin: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Preço de venda (R$)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={form.price_monthly}
-                    onChange={(e) => {
-                      const price = Number(e.target.value) || 0;
-                      const newMargin = totalCost > 0 ? +(((price / totalCost) - 1) * 100).toFixed(2) : 0;
-                      setForm({ ...form, price_monthly: e.target.value, profit_margin: String(newMargin) });
-                    }}
-                  />
-                </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-2"><Label>Custo VPS (R$)</Label><Input type="number" step="0.01" value={form.cost_vps} onChange={(e) => setForm({ ...form, cost_vps: e.target.value })} /></div>
+                <div className="space-y-2"><Label>Custo Armaz. (R$)</Label><Input type="number" step="0.01" value={form.cost_storage} onChange={(e) => setForm({ ...form, cost_storage: e.target.value })} /></div>
+                <div className="space-y-2"><Label>Outros (R$)</Label><Input type="number" step="0.01" value={form.cost_other} onChange={(e) => setForm({ ...form, cost_other: e.target.value })} /></div>
               </div>
-              <div className="rounded-md bg-muted/50 p-3 space-y-1 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Preço mensal calculado</span><span className="font-semibold">{formatBRL(computedMonthly)}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Preço semestral (5% desc.)</span><span className="font-semibold">{formatBRL(computedSemestral)}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Preço anual (10% desc.)</span><span className="font-semibold">{formatBRL(computedYearly)}</span></div>
-              </div>
-              </>
-              )}
+              <div className="text-xs text-muted-foreground">Custo total: {formatBRL(totalCost)}</div>
             </div>
-            <DialogFooter><Button onClick={save}>Salvar</Button></DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-      <Card className="overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-left"><tr>
-            <th className="p-3 font-medium">Produto</th>
-            <th className="p-3 font-medium">Tipo</th>
-            <th className="p-3 font-medium">Mensal</th>
-            <th className="p-3 font-medium">Semestral</th>
-            <th className="p-3 font-medium">Anual</th><th className="p-3 font-medium">Status</th><th className="p-3"></th>
-          </tr></thead>
-          <tbody>
-            {products.map((p) => {
-              const k = p.kind ?? "license";
-              const kindLabel = k === "storage" ? "Armaz." : k === "vps" ? "VPS" : "Licença";
-              return (
-              <tr key={p.id} className="border-t border-border">
-                <td className="p-3"><div className="font-medium">{p.name}</div><div className="text-xs text-muted-foreground">{p.description}</div></td>
-                <td className="p-3"><Badge variant="outline">{kindLabel}</Badge></td>
-                <td className="p-3">{formatBRL(Number(p.price_monthly))}</td>
-                <td className="p-3">{k === "license" ? formatBRL(Number(p.price_semestral)) : "—"}</td>
-                <td className="p-3">{k === "license" ? formatBRL(Number(p.price_yearly)) : "—"}</td>
-                <td className="p-3"><Badge variant="outline">{p.active ? "Ativo" : "Inativo"}</Badge></td>
-                <td className="p-3 text-right">
-                  <Button size="sm" variant="ghost" onClick={() => openEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>
-                  <Button size="sm" variant="ghost" onClick={() => remove(p.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
-                </td>
-              </tr>
-            );})}
-            {products.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Nenhum produto. Crie o primeiro.</td></tr>}
-          </tbody>
-        </table>
-      </Card>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Margem de lucro (%)</Label>
+                <Input type="number" step="0.1" value={form.profit_margin} onChange={(e) => setForm({ ...form, profit_margin: e.target.value })} />
+              </div>
+              <div className="space-y-2">
+                <Label>Preço de venda (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={form.price_monthly}
+                  onChange={(e) => {
+                    const price = Number(e.target.value) || 0;
+                    const newMargin = totalCost > 0 ? +(((price / totalCost) - 1) * 100).toFixed(2) : 0;
+                    setForm({ ...form, price_monthly: e.target.value, profit_margin: String(newMargin) });
+                  }}
+                />
+              </div>
+            </div>
+            <div className="rounded-md bg-muted/50 p-3 space-y-1 text-sm">
+              <div className="flex justify-between"><span className="text-muted-foreground">Preço mensal calculado</span><span className="font-semibold">{formatBRL(computedMonthly)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Preço semestral (5% desc.)</span><span className="font-semibold">{formatBRL(computedSemestral)}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Preço anual (10% desc.)</span><span className="font-semibold">{formatBRL(computedYearly)}</span></div>
+            </div>
+            </>
+            )}
+          </div>
+          <DialogFooter><Button onClick={save}>Salvar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Tabs defaultValue="licenses" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="licenses">Licenças <Badge variant="secondary" className="ml-2">{licenseProducts.length}</Badge></TabsTrigger>
+          <TabsTrigger value="storage">Armazenamento <Badge variant="secondary" className="ml-2">{storageProducts.length}</Badge></TabsTrigger>
+          <TabsTrigger value="vps">VPS <Badge variant="secondary" className="ml-2">{vpsProducts.length}</Badge></TabsTrigger>
+        </TabsList>
+        <TabsContent value="licenses" className="space-y-3">
+          <div className="flex justify-end">
+            <Button onClick={() => openNew("license")}><Plus className="mr-2 h-4 w-4" /> Nova licença</Button>
+          </div>
+          {renderTable(licenseProducts, "Nenhuma licença cadastrada.", "license")}
+        </TabsContent>
+        <TabsContent value="storage" className="space-y-3">
+          <div className="flex justify-end">
+            <Button onClick={() => openNew("storage")}><Plus className="mr-2 h-4 w-4" /> Novo upgrade de armazenamento</Button>
+          </div>
+          {renderTable(storageProducts, "Nenhum upgrade de armazenamento.", "storage")}
+        </TabsContent>
+        <TabsContent value="vps" className="space-y-3">
+          <div className="flex justify-end">
+            <Button onClick={() => openNew("vps")}><Plus className="mr-2 h-4 w-4" /> Novo upgrade de VPS</Button>
+          </div>
+          {renderTable(vpsProducts, "Nenhum upgrade de VPS.", "vps")}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
