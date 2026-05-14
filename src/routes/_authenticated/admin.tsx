@@ -1928,6 +1928,61 @@ function PaymentsTab({
           </table>
         </div>
       </Card>
+
+      <Dialog open={notaOpen} onOpenChange={setNotaOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Emitir nota fiscal</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {notaPayment && (
+              <div className="rounded-md bg-muted/50 p-3 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Cobrança:</span>{" "}
+                  {notaPayment.id.slice(0, 8)}
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Valor:</span> R${" "}
+                  {Number(notaPayment.amount).toFixed(2)}
+                </div>
+              </div>
+            )}
+            <div>
+              <Label>Descrição da nota</Label>
+              <Textarea
+                rows={4}
+                value={notaDesc}
+                onChange={(e) => setNotaDesc(e.target.value)}
+                placeholder="Descreva o serviço/produto que aparecerá na nota fiscal"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                A descrição será copiada para a área de transferência ao abrir o Coplan.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNotaOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={async () => {
+                try {
+                  if (notaDesc.trim() && navigator.clipboard) {
+                    await navigator.clipboard.writeText(notaDesc.trim());
+                    toast.success("Descrição copiada. Cole no Coplan.");
+                  }
+                } catch {
+                  // ignore clipboard errors
+                }
+                if (coplanUrl) window.open(coplanUrl, "_blank", "noopener,noreferrer");
+                setNotaOpen(false);
+              }}
+            >
+              <FileText className="mr-1 h-4 w-4" /> Abrir Coplan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
