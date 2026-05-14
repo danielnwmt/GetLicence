@@ -151,10 +151,16 @@ function Dashboard() {
                     )}
                   </div>
                 )}
-                <Button size="sm" variant="outline" className="mt-4" onClick={() => copyKey(l.license_key)}>
-                  {copied === l.license_key ? <Check className="mr-2 h-3.5 w-3.5" /> : <Copy className="mr-2 h-3.5 w-3.5" />}
-                  Copiar chave
-                </Button>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" onClick={() => copyKey(l.license_key)}>
+                    {copied === l.license_key ? <Check className="mr-2 h-3.5 w-3.5" /> : <Copy className="mr-2 h-3.5 w-3.5" />}
+                    Copiar chave
+                  </Button>
+                  <Button size="sm" onClick={() => { setUpgradeLicense(l); setUpgradeAmount("100"); }}>
+                    <ArrowUpCircle className="mr-2 h-3.5 w-3.5" />
+                    Upgrade de armazenamento
+                  </Button>
+                </div>
               </Card>
             ))}
           </div>
