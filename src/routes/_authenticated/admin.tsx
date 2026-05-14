@@ -2893,11 +2893,44 @@ function PayablesTab({
   };
   const [form, setForm] = useState(empty);
   const [filter, setFilter] = useState<"all" | "pending" | "paid" | "overdue">("all");
-  const [generating, setGenerating] = useState(false);
 
   const today = new Date();
   const isOverdue = (p: PayableRow) =>
     p.status === "pending" && !!p.due_date && new Date(p.due_date) < today;
+
+  // Custos agregados das licenças ativas (linhas virtuais, somadas por categoria)
+  const aggregated = (() => {
+    let vps = 0,
+      storage = 0,
+      software = 0,
+      countVps = 0,
+      countStorage = 0,
+      countSoftware = 0;
+    for (const lic of licenses.filter((l) => l.status === "active")) {
+      const prod = products.find((p) => p.id === lic.product_id);
+      if (!prod) continue;
+      const cv = Number(prod.cost_vps ?? 0);
+      const cs = Number(prod.cost_storage ?? 0);
+      const co = Number(prod.cost_other ?? 0);
+      if (cv > 0) {
+        vps += cv;
+        countVps++;
+      }
+      if (cs > 0) {
+        storage += cs;
+        countStorage++;
+      }
+      if (co > 0) {
+        software += co;
+        countSoftware++;
+      }
+    }
+    return [
+      { key: "agg-vps", category: "vps" as const, amount: vps, count: countVps },
+      { key: "agg-storage", category: "storage" as const, amount: storage, count: countStorage },
+      { key: "agg-software", category: "other" as const, amount: software, count: countSoftware },
+    ].filter((r) => r.amount > 0);
+  })();
 
   const filtered = payables.filter((p) => {
     if (filter === "all") return true;
@@ -2905,9 +2938,10 @@ function PayablesTab({
     return p.status === filter;
   });
 
-  const totalPending = payables
-    .filter((p) => p.status === "pending")
-    .reduce((s, p) => s + Number(p.amount), 0);
+  const aggregatedTotal = aggregated.reduce((s, r) => s + r.amount, 0);
+  const totalPending =
+    payables.filter((p) => p.status === "pending").reduce((s, p) => s + Number(p.amount), 0) +
+    aggregatedTotal;
   const totalOverdue = payables.filter(isOverdue).reduce((s, p) => s + Number(p.amount), 0);
   const totalPaidMonth = payables
     .filter(
@@ -2918,9 +2952,10 @@ function PayablesTab({
         new Date(p.paid_at).getFullYear() === today.getFullYear(),
     )
     .reduce((s, p) => s + Number(p.amount), 0);
-  const monthlyRecurring = payables
-    .filter((p) => p.recurrence === "monthly" && p.status !== "cancelled")
-    .reduce((s, p) => s + Number(p.amount), 0);
+  const monthlyRecurring =
+    payables
+      .filter((p) => p.recurrence === "monthly" && p.status !== "cancelled")
+      .reduce((s, p) => s + Number(p.amount), 0) + aggregatedTotal;
 
   const openNew = () => {
     setEditing(null);
