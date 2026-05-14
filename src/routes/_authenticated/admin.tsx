@@ -135,6 +135,9 @@ function AdminPage() {
         <TabsContent value="payments" className="mt-6">
           <PaymentsTab payments={payments} licenses={licenses} products={products} profiles={profiles.filter((p) => !adminIds.includes(p.user_id))} onChange={reload} />
         </TabsContent>
+        <TabsContent value="payables" className="mt-6">
+          <PayablesTab payables={payables} licenses={licenses} products={products} profiles={profiles} onChange={reload} />
+        </TabsContent>
         <TabsContent value="products" className="mt-6">
           <ProductsTab products={products} onChange={reload} />
         </TabsContent>
