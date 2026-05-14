@@ -141,6 +141,8 @@ export type Database = {
           active_provider: Database["public"]["Enums"]["payment_provider"]
           asaas_api_key: string | null
           asaas_env: string
+          block_auto: boolean
+          block_grace_days: number
           coplan_password: string | null
           coplan_token: string | null
           coplan_url: string | null
@@ -163,6 +165,8 @@ export type Database = {
           active_provider?: Database["public"]["Enums"]["payment_provider"]
           asaas_api_key?: string | null
           asaas_env?: string
+          block_auto?: boolean
+          block_grace_days?: number
           coplan_password?: string | null
           coplan_token?: string | null
           coplan_url?: string | null
@@ -185,6 +189,8 @@ export type Database = {
           active_provider?: Database["public"]["Enums"]["payment_provider"]
           asaas_api_key?: string | null
           asaas_env?: string
+          block_auto?: boolean
+          block_grace_days?: number
           coplan_password?: string | null
           coplan_token?: string | null
           coplan_url?: string | null
