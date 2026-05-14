@@ -3041,10 +3041,6 @@ function PayablesTab({
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={generateFromLicenses} disabled={generating}>
-            <Plus className="mr-2 h-4 w-4" />{" "}
-            {generating ? "Gerando..." : "Gerar das licenças ativas"}
-          </Button>
           <Button onClick={openNew}>
             <Plus className="mr-2 h-4 w-4" /> Nova conta
           </Button>
