@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { KeyRound, Calendar, CreditCard, Package, Copy, Check, FileText } from "lucide-react";
+import { KeyRound, Calendar, CreditCard, Package, Copy, Check, FileText, Server, HardDrive } from "lucide-react";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { toast } from "sonner";
 
