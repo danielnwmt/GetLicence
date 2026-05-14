@@ -321,7 +321,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
   const computedYearly = +(computedMonthly * 12 * 0.9).toFixed(2);
   const isUpgrade = form.kind !== "license";
 
-  const openNew = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
+  const openNew = (kind: string = "license") => { setEditing(null); setForm({ ...emptyForm, kind }); setOpen(true); };
   const openEdit = (p: Product) => {
     setEditing(p);
     setForm({
