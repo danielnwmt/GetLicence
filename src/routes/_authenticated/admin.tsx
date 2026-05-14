@@ -948,7 +948,7 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Outros (R$)</Label>
+                      <Label>Software (R$)</Label>
                       <Input
                         type="number"
                         step="0.01"
@@ -3008,7 +3008,7 @@ function PayablesTab({
         }
         if (Number(prod.cost_other ?? 0) > 0) {
           rows.push({
-            description: `Outros custos — ${ref}`,
+            description: `Software — ${ref}`,
             supplier: null,
             category: "other",
             amount: Number(prod.cost_other),
@@ -3036,7 +3036,7 @@ function PayablesTab({
   };
 
   const catLabel = (c: string) =>
-    c === "vps" ? "VPS" : c === "storage" ? "Armazenamento" : "Outros";
+    c === "vps" ? "VPS" : c === "storage" ? "Armazenamento" : "Software";
   const statusBadge = (p: PayableRow) => {
     if (isOverdue(p))
       return (
@@ -3248,7 +3248,7 @@ function PayablesTab({
                   <SelectContent>
                     <SelectItem value="vps">VPS</SelectItem>
                     <SelectItem value="storage">Armazenamento</SelectItem>
-                    <SelectItem value="other">Outros</SelectItem>
+                    <SelectItem value="other">Software</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
