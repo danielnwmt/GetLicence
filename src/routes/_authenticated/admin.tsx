@@ -754,7 +754,9 @@ function ProductsTab({ products, onChange }: { products: Product[]; onChange: ()
                 ? "upgrade de armazenamento"
                 : form.kind === "vps"
                   ? "upgrade de VPS"
-                  : "produto de licença"}
+                  : form.kind === "implantacao"
+                    ? "produto de implantação"
+                    : "produto de licença"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
