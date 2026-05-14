@@ -33,6 +33,7 @@ const adminItems: NavItem[] = [
   { label: "Licenças", to: "/admin", search: { tab: "licenses" }, icon: KeyRound, match: (p, s) => p === "/admin" && s.tab === "licenses" },
   { label: "Minhas licenças", to: "/dashboard", icon: KeyRound, match: (p) => p === "/dashboard" },
   { label: "Financeiro", to: "/admin", search: { tab: "payments" }, icon: CreditCard, match: (p, s) => p === "/admin" && s.tab === "payments" },
+  { label: "Contas a Pagar", to: "/admin", search: { tab: "payables" }, icon: Receipt, match: (p, s) => p === "/admin" && s.tab === "payables" },
   { label: "Produtos", to: "/admin", search: { tab: "products" }, icon: Package, match: (p, s) => p === "/admin" && s.tab === "products" },
   { label: "Configurações", to: "/admin", search: { tab: "settings" }, icon: Settings, match: (p, s) => p === "/admin" && s.tab === "settings" },
 ];
