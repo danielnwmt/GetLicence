@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Package, KeyRound, CreditCard, Users, DollarSign, Pencil, Trash2, Landmark, Copy, FileText, ExternalLink, XCircle } from "lucide-react";
+import { Plus, Package, KeyRound, CreditCard, Users, DollarSign, Pencil, Trash2, Landmark, Copy, FileText, ExternalLink, XCircle, Search, TrendingUp, Clock, AlertTriangle, CheckCircle2, Receipt, Download } from "lucide-react";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { fetchCep } from "@/lib/cep";
 import { formatCpfCnpj, isValidCpfCnpj } from "@/lib/mask";
@@ -47,7 +47,7 @@ interface PaymentRow {
   id: string; amount: number; status: string; method: string | null;
   paid_at: string | null; created_at: string; license_id: string; user_id: string;
   boleto_url: string | null; invoice_url: string | null; barcode: string | null;
-  provider_charge_id: string | null;
+  provider_charge_id: string | null; due_date?: string | null;
   license: { license_key: string } | null;
 }
 
@@ -686,9 +686,15 @@ function PaymentsTab({ payments, licenses, products, profiles, onChange }: { pay
   const [creating, setCreating] = useState(false);
   const [newForm, setNewForm] = useState({ user_id: "", license_id: "", amount: "", due_date: "" });
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "paid" | "pending" | "failed" | "overdue">("all");
   const profileById = new Map(profiles.map((p) => [p.user_id, p]));
   const q = search.trim().toLowerCase();
-  const filteredPayments = !q ? payments : payments.filter((p) => {
+  const now = new Date();
+  const isOverdue = (p: PaymentRow) => p.status === "pending" && !!p.due_date && new Date(p.due_date) < now;
+  const filteredPayments = payments.filter((p) => {
+    if (statusFilter === "overdue" && !isOverdue(p)) return false;
+    if (statusFilter !== "all" && statusFilter !== "overdue" && p.status !== statusFilter) return false;
+    if (!q) return true;
     const prof = profileById.get(p.user_id);
     return (
       (prof?.full_name || "").toLowerCase().includes(q) ||
@@ -697,6 +703,14 @@ function PaymentsTab({ payments, licenses, products, profiles, onChange }: { pay
       (p.license?.license_key || "").toLowerCase().includes(q)
     );
   });
+
+  // KPIs
+  const totalRevenue = payments.filter((p) => p.status === "paid").reduce((s, p) => s + Number(p.amount), 0);
+  const pendingTotal = payments.filter((p) => p.status === "pending").reduce((s, p) => s + Number(p.amount), 0);
+  const overdueList = payments.filter(isOverdue);
+  const overdueTotal = overdueList.reduce((s, p) => s + Number(p.amount), 0);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthRevenue = payments.filter((p) => p.status === "paid" && p.paid_at && new Date(p.paid_at) >= monthStart).reduce((s, p) => s + Number(p.amount), 0);
 
   const clientLicenses = licenses.filter((l) => l.user_id === newForm.user_id);
 
@@ -755,116 +769,251 @@ function PaymentsTab({ payments, licenses, products, profiles, onChange }: { pay
     }
   };
 
+  const initials = (name?: string | null, email?: string | null) => {
+    const src = (name || email || "?").trim();
+    const parts = src.split(/\s+/).filter(Boolean);
+    return ((parts[0]?.[0] || "?") + (parts[1]?.[0] || "")).toUpperCase();
+  };
+
+  const exportCsv = () => {
+    const rows = [["Data", "Cliente", "Email", "CPF/CNPJ", "Licença", "Valor", "Vencimento", "Pago em", "Status"]];
+    filteredPayments.forEach((p) => {
+      const prof = profileById.get(p.user_id);
+      rows.push([
+        formatDate(p.created_at),
+        prof?.full_name || "",
+        prof?.email || "",
+        prof?.cpf_cnpj || "",
+        p.license?.license_key || "",
+        String(p.amount),
+        p.due_date ? formatDate(p.due_date) : "",
+        p.paid_at ? formatDate(p.paid_at) : "",
+        statusLabel[p.status] ?? p.status,
+      ]);
+    });
+    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `financeiro-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const kpis = [
+    { label: "Receita total", value: formatBRL(totalRevenue), icon: DollarSign, tone: "text-emerald-600", bg: "bg-emerald-500/10" },
+    { label: "Receita do mês", value: formatBRL(monthRevenue), icon: TrendingUp, tone: "text-primary", bg: "bg-primary/10" },
+    { label: "A receber", value: formatBRL(pendingTotal), icon: Clock, tone: "text-amber-600", bg: "bg-amber-500/10" },
+    { label: `Vencidos (${overdueList.length})`, value: formatBRL(overdueTotal), icon: AlertTriangle, tone: "text-destructive", bg: "bg-destructive/10" },
+  ];
+
+  const filterTabs: { key: typeof statusFilter; label: string; count: number }[] = [
+    { key: "all", label: "Todos", count: payments.length },
+    { key: "pending", label: "Pendentes", count: payments.filter((p) => p.status === "pending").length },
+    { key: "overdue", label: "Vencidos", count: overdueList.length },
+    { key: "paid", label: "Pagos", count: payments.filter((p) => p.status === "paid").length },
+    { key: "failed", label: "Falhou", count: payments.filter((p) => p.status === "failed").length },
+  ];
+
   return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <Dialog open={newOpen} onOpenChange={setNewOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="mr-2 h-4 w-4" /> Novo boleto</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Emitir novo boleto</DialogTitle></DialogHeader>
-            <div className="space-y-3 py-2">
-              <div className="space-y-2"><Label>Cliente</Label>
-                <Select value={newForm.user_id} onValueChange={(v) => setNewForm({ ...newForm, user_id: v, license_id: "" })}>
-                  <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                  <SelectContent>{profiles.map((p) => (
-                    <SelectItem key={p.user_id} value={p.user_id}>{p.full_name || p.email}</SelectItem>
-                  ))}</SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2"><Label>Licença</Label>
-                <Select value={newForm.license_id} onValueChange={(v) => {
-                  const lic = licenses.find((l) => l.id === v);
-                  const prod = lic ? products.find((p) => p.id === lic.product_id) : null;
-                  let amt = "";
-                  if (prod) {
-                    if (lic?.plan === "yearly") amt = String(Number(prod.price_yearly) || +(Number(prod.price_monthly) * 12 * 0.9).toFixed(2));
-                    else if (lic?.plan === "semestral") amt = String(Number(prod.price_semestral) || +(Number(prod.price_monthly) * 6 * 0.95).toFixed(2));
-                    else amt = String(prod.price_monthly);
-                  }
-                  setNewForm({ ...newForm, license_id: v, amount: amt });
-                }} disabled={!newForm.user_id}>
-                  <SelectTrigger><SelectValue placeholder={newForm.user_id ? "Selecione..." : "Escolha o cliente primeiro"} /></SelectTrigger>
-                  <SelectContent>{clientLicenses.map((l) => (
-                    <SelectItem key={l.id} value={l.id}>{l.product?.name ?? "Licença"} — {l.license_key}</SelectItem>
-                  ))}</SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2"><Label>Valor (R$)</Label>
-                  <Input type="number" step="0.01" value={newForm.amount} onChange={(e) => setNewForm({ ...newForm, amount: e.target.value })} />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
+            <Receipt className="h-6 w-6 text-primary" /> Financeiro
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">Gerencie cobranças, boletos e acompanhe o fluxo de receita.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={exportCsv}><Download className="mr-2 h-4 w-4" /> Exportar CSV</Button>
+          <Dialog open={newOpen} onOpenChange={setNewOpen}>
+            <DialogTrigger asChild>
+              <Button><Plus className="mr-2 h-4 w-4" /> Novo boleto</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Emitir novo boleto</DialogTitle></DialogHeader>
+              <div className="space-y-3 py-2">
+                <div className="space-y-2"><Label>Cliente</Label>
+                  <Select value={newForm.user_id} onValueChange={(v) => setNewForm({ ...newForm, user_id: v, license_id: "" })}>
+                    <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                    <SelectContent>{profiles.map((p) => (
+                      <SelectItem key={p.user_id} value={p.user_id}>{p.full_name || p.email}</SelectItem>
+                    ))}</SelectContent>
+                  </Select>
                 </div>
-                <div className="space-y-2"><Label>Vencimento</Label>
-                  <Input type="date" value={newForm.due_date} onChange={(e) => setNewForm({ ...newForm, due_date: e.target.value })} />
+                <div className="space-y-2"><Label>Licença</Label>
+                  <Select value={newForm.license_id} onValueChange={(v) => {
+                    const lic = licenses.find((l) => l.id === v);
+                    const prod = lic ? products.find((p) => p.id === lic.product_id) : null;
+                    let amt = "";
+                    if (prod) {
+                      if (lic?.plan === "yearly") amt = String(Number(prod.price_yearly) || +(Number(prod.price_monthly) * 12 * 0.9).toFixed(2));
+                      else if (lic?.plan === "semestral") amt = String(Number(prod.price_semestral) || +(Number(prod.price_monthly) * 6 * 0.95).toFixed(2));
+                      else amt = String(prod.price_monthly);
+                    }
+                    setNewForm({ ...newForm, license_id: v, amount: amt });
+                  }} disabled={!newForm.user_id}>
+                    <SelectTrigger><SelectValue placeholder={newForm.user_id ? "Selecione..." : "Escolha o cliente primeiro"} /></SelectTrigger>
+                    <SelectContent>{clientLicenses.map((l) => (
+                      <SelectItem key={l.id} value={l.id}>{l.product?.name ?? "Licença"} — {l.license_key}</SelectItem>
+                    ))}</SelectContent>
+                  </Select>
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2"><Label>Valor (R$)</Label>
+                    <Input type="number" step="0.01" value={newForm.amount} onChange={(e) => setNewForm({ ...newForm, amount: e.target.value })} />
+                  </div>
+                  <div className="space-y-2"><Label>Vencimento</Label>
+                    <Input type="date" value={newForm.due_date} onChange={(e) => setNewForm({ ...newForm, due_date: e.target.value })} />
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button onClick={createBoleto} disabled={creating}>{creating ? "Emitindo..." : "Emitir boleto"}</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {kpis.map((k) => (
+          <Card key={k.label} className="p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">{k.label}</p>
+                <p className="mt-2 text-2xl font-semibold tracking-tight">{k.value}</p>
+              </div>
+              <div className={`rounded-lg p-2.5 ${k.bg}`}>
+                <k.icon className={`h-5 w-5 ${k.tone}`} />
               </div>
             </div>
-            <DialogFooter>
-              <Button onClick={createBoleto} disabled={creating}>{creating ? "Emitindo..." : "Emitir boleto"}</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          </Card>
+        ))}
       </div>
-      <div className="flex items-center gap-2">
-        <Input
-          placeholder="Buscar cliente por nome, e-mail, CPF/CNPJ ou licença..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-md"
-        />
-      </div>
+
+      {/* Filters */}
+      <Card className="p-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-wrap gap-1.5">
+            {filterTabs.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setStatusFilter(t.key)}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                  statusFilter === t.key
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted text-muted-foreground hover:bg-muted/70"
+                }`}
+              >
+                {t.label}
+                <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${statusFilter === t.key ? "bg-primary-foreground/20" : "bg-background"}`}>
+                  {t.count}
+                </span>
+              </button>
+            ))}
+          </div>
+          <div className="relative w-full md:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, e-mail, CPF/CNPJ ou licença..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+        </div>
+      </Card>
+
+      {/* Table */}
       <Card className="overflow-hidden">
-        <table className="w-full text-sm">
-        <thead className="bg-muted/50 text-left"><tr>
-          <th className="p-3 font-medium">Data</th>
-          <th className="p-3 font-medium">Cliente</th>
-          <th className="p-3 font-medium">Licença</th>
-          <th className="p-3 font-medium">Valor</th><th className="p-3 font-medium">Pago em</th>
-          <th className="p-3 font-medium">Status</th><th className="p-3 font-medium">Boleto</th><th className="p-3"></th>
-        </tr></thead>
-        <tbody>
-          {filteredPayments.map((p) => {
-            const prof = profileById.get(p.user_id);
-            const statusVariant = p.status === "paid" ? "default" : p.status === "failed" ? "destructive" : "secondary";
-            return (
-            <tr key={p.id} className="border-t border-border">
-              <td className="p-3">{formatDate(p.created_at)}</td>
-              <td className="p-3">{prof?.full_name || prof?.email || "—"}</td>
-              <td className="p-3 font-mono text-xs">{p.license?.license_key ?? "—"}</td>
-              <td className="p-3 font-medium">{formatBRL(Number(p.amount))}</td>
-              <td className="p-3">{p.paid_at ? formatDate(p.paid_at) : "—"}</td>
-              <td className="p-3">
-                <Badge variant={statusVariant}>{statusLabel[p.status] ?? p.status}</Badge>
-              </td>
-              <td className="p-3">
-                {p.boleto_url ? (
-                  <a href={p.boleto_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline text-xs">
-                    <FileText className="h-3.5 w-3.5" /> Abrir
-                  </a>
-                ) : (
-                  <span className="text-xs text-muted-foreground">—</span>
-                )}
-              </td>
-              <td className="p-3 text-right space-x-1">
-                {!p.boleto_url && p.status !== "paid" && (
-                  <Button size="sm" variant="outline" onClick={() => emitir(p.id)} disabled={issuingId === p.id}>
-                    <FileText className="mr-1 h-3.5 w-3.5" /> {issuingId === p.id ? "Emitindo..." : "Emitir boleto"}
-                  </Button>
-                )}
-                {p.boleto_url && p.status !== "paid" && (
-                  <Button size="sm" variant="outline" onClick={() => cancelar(p.id)} disabled={cancelingId === p.id}>
-                    <XCircle className="mr-1 h-3.5 w-3.5" /> {cancelingId === p.id ? "Cancelando..." : "Cancelar boleto"}
-                  </Button>
-                )}
-              </td>
-            </tr>
-            );
-          })}
-          {filteredPayments.length === 0 && <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Nenhum pagamento.</td></tr>}
-        </tbody>
-      </table>
-    </Card>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
+              <tr>
+                <th className="px-4 py-3 font-medium">Data</th>
+                <th className="px-4 py-3 font-medium">Cliente</th>
+                <th className="px-4 py-3 font-medium">Licença</th>
+                <th className="px-4 py-3 font-medium text-right">Valor</th>
+                <th className="px-4 py-3 font-medium">Vencimento</th>
+                <th className="px-4 py-3 font-medium">Pago em</th>
+                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Boleto</th>
+                <th className="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredPayments.map((p) => {
+                const prof = profileById.get(p.user_id);
+                const overdue = isOverdue(p);
+                return (
+                  <tr key={p.id} className="border-t border-border hover:bg-muted/30 transition-colors">
+                    <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">{formatDate(p.created_at)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                          {initials(prof?.full_name, prof?.email)}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-medium truncate">{prof?.full_name || "—"}</div>
+                          <div className="text-xs text-muted-foreground truncate">{prof?.email || "—"}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{p.license?.license_key ?? "—"}</td>
+                    <td className="px-4 py-3 text-right font-semibold tabular-nums">{formatBRL(Number(p.amount))}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {p.due_date ? (
+                        <span className={overdue ? "text-destructive font-medium" : ""}>{formatDate(p.due_date)}</span>
+                      ) : <span className="text-muted-foreground">—</span>}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">{p.paid_at ? formatDate(p.paid_at) : "—"}</td>
+                    <td className="px-4 py-3">
+                      {overdue ? (
+                        <Badge variant="destructive" className="gap-1"><AlertTriangle className="h-3 w-3" /> Vencido</Badge>
+                      ) : p.status === "paid" ? (
+                        <Badge className="gap-1 bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/20 border-transparent"><CheckCircle2 className="h-3 w-3" /> Pago</Badge>
+                      ) : p.status === "failed" ? (
+                        <Badge variant="destructive">Falhou</Badge>
+                      ) : (
+                        <Badge variant="secondary" className="gap-1"><Clock className="h-3 w-3" /> {statusLabel[p.status] ?? p.status}</Badge>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {p.boleto_url ? (
+                        <a href={p.boleto_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline text-xs font-medium">
+                          <FileText className="h-3.5 w-3.5" /> Abrir
+                        </a>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-right space-x-1 whitespace-nowrap">
+                      {!p.boleto_url && p.status !== "paid" && (
+                        <Button size="sm" variant="outline" onClick={() => emitir(p.id)} disabled={issuingId === p.id}>
+                          <FileText className="mr-1 h-3.5 w-3.5" /> {issuingId === p.id ? "Emitindo..." : "Emitir"}
+                        </Button>
+                      )}
+                      {p.boleto_url && p.status !== "paid" && (
+                        <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => cancelar(p.id)} disabled={cancelingId === p.id}>
+                          <XCircle className="mr-1 h-3.5 w-3.5" /> {cancelingId === p.id ? "Cancelando..." : "Cancelar"}
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+              {filteredPayments.length === 0 && (
+                <tr><td colSpan={9} className="p-12 text-center">
+                  <Receipt className="mx-auto h-10 w-10 text-muted-foreground/40 mb-2" />
+                  <p className="text-sm text-muted-foreground">Nenhum pagamento encontrado.</p>
+                </td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
     </div>
   );
 }
