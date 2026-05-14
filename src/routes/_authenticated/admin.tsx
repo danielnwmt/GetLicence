@@ -47,7 +47,7 @@ interface PaymentRow {
   id: string; amount: number; status: string; method: string | null;
   paid_at: string | null; created_at: string; license_id: string; user_id: string;
   boleto_url: string | null; invoice_url: string | null; barcode: string | null;
-  provider_charge_id: string | null;
+  provider_charge_id: string | null; due_date?: string | null;
   license: { license_key: string } | null;
 }
 
