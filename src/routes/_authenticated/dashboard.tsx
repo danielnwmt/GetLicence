@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { KeyRound, Calendar, CreditCard, Package, Copy, Check, FileText } from "lucide-react";
+import { KeyRound, Calendar, CreditCard, Package, Copy, Check, FileText, Server, HardDrive } from "lucide-react";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -21,7 +21,15 @@ interface License {
   status: string;
   starts_at: string;
   expires_at: string;
-  product: { name: string; description: string | null } | null;
+  product: {
+    name: string;
+    description: string | null;
+    vps_specs: string | null;
+    vps_storage_amount: number | null;
+    vps_storage_unit: string | null;
+    storage_amount: number | null;
+    storage_unit: string | null;
+  } | null;
 }
 
 interface Payment {
@@ -48,7 +56,7 @@ function Dashboard() {
     (async () => {
       const { data: lic } = await supabase
         .from("licenses")
-        .select("id, license_key, plan, status, starts_at, expires_at, product:products(name, description)")
+        .select("id, license_key, plan, status, starts_at, expires_at, product:products(name, description, vps_specs, vps_storage_amount, vps_storage_unit, storage_amount, storage_unit)")
         .order("created_at", { ascending: false });
       setLicenses((lic as unknown as License[]) || []);
 
@@ -109,6 +117,37 @@ function Dashboard() {
                   <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Expira em {formatDate(l.expires_at)}</span>
                   <span className="capitalize">{l.plan === "monthly" ? "Mensal" : l.plan === "semestral" ? "Semestral" : "Anual"}</span>
                 </div>
+                {(l.product?.vps_specs || Number(l.product?.vps_storage_amount) > 0 || Number(l.product?.storage_amount) > 0) && (
+                  <div className="mt-4 grid gap-2 rounded-md border border-border/60 bg-muted/30 p-3 text-sm sm:grid-cols-2">
+                    {l.product?.vps_specs && (
+                      <div className="flex items-start gap-2">
+                        <Server className="mt-0.5 h-4 w-4 text-primary" />
+                        <div>
+                          <div className="text-xs uppercase tracking-wide text-muted-foreground">VPS</div>
+                          <div className="font-medium">{l.product.vps_specs}</div>
+                        </div>
+                      </div>
+                    )}
+                    {Number(l.product?.vps_storage_amount) > 0 && (
+                      <div className="flex items-start gap-2">
+                        <HardDrive className="mt-0.5 h-4 w-4 text-primary" />
+                        <div>
+                          <div className="text-xs uppercase tracking-wide text-muted-foreground">Disco VPS</div>
+                          <div className="font-medium">{Number(l.product?.vps_storage_amount)} {l.product?.vps_storage_unit}</div>
+                        </div>
+                      </div>
+                    )}
+                    {Number(l.product?.storage_amount) > 0 && (
+                      <div className="flex items-start gap-2">
+                        <HardDrive className="mt-0.5 h-4 w-4 text-primary" />
+                        <div>
+                          <div className="text-xs uppercase tracking-wide text-muted-foreground">Armazenamento</div>
+                          <div className="font-medium">{Number(l.product?.storage_amount)} {l.product?.storage_unit}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <Button size="sm" variant="outline" className="mt-4" onClick={() => copyKey(l.license_key)}>
                   {copied === l.license_key ? <Check className="mr-2 h-3.5 w-3.5" /> : <Copy className="mr-2 h-3.5 w-3.5" />}
                   Copiar chave
