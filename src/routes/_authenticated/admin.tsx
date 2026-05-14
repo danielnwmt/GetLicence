@@ -325,6 +325,7 @@ function AdminPage() {
             <TabsTrigger value="integrations">Integrações</TabsTrigger>
             <TabsTrigger value="block">Bloqueio</TabsTrigger>
             <TabsTrigger value="backup">Backup</TabsTrigger>
+            <TabsTrigger value="api">API Licença</TabsTrigger>
             <TabsTrigger value="mobile">App Mobile</TabsTrigger>
           </TabsList>
           <TabsContent value="users">
