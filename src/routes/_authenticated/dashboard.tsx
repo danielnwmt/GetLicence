@@ -158,45 +158,49 @@ function Dashboard() {
         .eq("id", vpsUpgradeLicense.id);
       if (error) throw error;
 
-      if (vpsDiff > 0) {
-        const due = new Date();
-        due.setDate(due.getDate() + 7);
-        const { error: pErr } = await supabase.from("payments").insert({
-          user_id: user.id,
-          license_id: vpsUpgradeLicense.id,
-          amount: Number(vpsDiff.toFixed(2)),
-          status: "pending",
-          method: "boleto",
-          due_date: due.toISOString().slice(0, 10),
-          notes: `Upgrade de VPS: ${vpsUpgradeLicense.product?.vps_specs ?? "—"} → ${selectedVpsProduct.vps_specs ?? selectedVpsProduct.name}. Acréscimo mensal.`,
-        });
-        if (pErr) throw pErr;
-      }
-
       const msg = vpsDiff > 0
-        ? `VPS atualizada. Acréscimo na mensalidade: ${formatBRL(vpsDiff)}.`
+        ? `VPS atualizada. Acréscimo de ${formatBRL(vpsDiff)}/mês será incluído na próxima fatura.`
         : vpsDiff < 0
-          ? `VPS atualizada. Redução na mensalidade: ${formatBRL(Math.abs(vpsDiff))}.`
+          ? `VPS atualizada. Redução de ${formatBRL(Math.abs(vpsDiff))}/mês na próxima fatura.`
           : `VPS atualizada sem alteração de valor.`;
       toast.success(msg);
       setVpsUpgradeLicense(null);
     } catch (e: any) {
-      toast.error(e.message ?? "Erro ao solicitar upgrade");
+      toast.error(e.message ?? "Erro ao solicitar alteração");
     } finally {
       setVpsUpgradeSubmitting(false);
     }
   };
 
-  const removeExtraStorage = async (lic: License) => {
-    if (!Number(lic.extra_storage_gb)) return;
-    if (!confirm(`Remover ${Number(lic.extra_storage_gb)} GB de armazenamento extra desta licença?`)) return;
-    const { error } = await supabase
-      .from("licenses")
-      .update({ extra_storage_gb: 0 })
-      .eq("id", lic.id);
-    if (error) { toast.error(error.message); return; }
-    setLicenses((prev) => prev.map((x) => x.id === lic.id ? { ...x, extra_storage_gb: 0 } : x));
-    toast.success("Armazenamento extra removido. A próxima fatura voltará ao valor base.");
+  const [downgradeLicense, setDowngradeLicense] = useState<License | null>(null);
+  const [downgradeKeepGb, setDowngradeKeepGb] = useState<string>("0");
+  const [downgradeSubmitting, setDowngradeSubmitting] = useState(false);
+
+  const openDowngrade = (lic: License) => {
+    setDowngradeLicense(lic);
+    setDowngradeKeepGb(String(Number(lic.extra_storage_gb ?? 0)));
+  };
+
+  const submitDowngrade = async () => {
+    if (!downgradeLicense) return;
+    const current = Number(downgradeLicense.extra_storage_gb ?? 0);
+    const keep = Math.max(0, Math.min(current, Number(downgradeKeepGb) || 0));
+    if (keep === current) { setDowngradeLicense(null); return; }
+    setDowngradeSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from("licenses")
+        .update({ extra_storage_gb: keep })
+        .eq("id", downgradeLicense.id);
+      if (error) throw error;
+      setLicenses((prev) => prev.map((x) => x.id === downgradeLicense.id ? { ...x, extra_storage_gb: keep } : x));
+      toast.success(`Armazenamento extra ajustado para ${keep} GB. A próxima fatura refletirá o novo valor.`);
+      setDowngradeLicense(null);
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao reduzir armazenamento");
+    } finally {
+      setDowngradeSubmitting(false);
+    }
   };
 
   useEffect(() => {
