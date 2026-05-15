@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { createCustomer, listAdminProfiles, updateCustomer } from "@/lib/customers.functions";
 import { createSystemUser, updateSystemUser, deleteSystemUser } from "@/lib/system-users.functions";
 import { issueAsaasBoleto, cancelAsaasBoleto } from "@/lib/boletos.functions";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
@@ -53,7 +53,7 @@ import {
   ShieldOff,
   CloudUpload,
 } from "lucide-react";
-import { runBackupNow } from "@/lib/backup.functions";
+import { runBackupNow, restoreBackup } from "@/lib/backup.functions";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { fetchCep } from "@/lib/cep";
 import { formatCpfCnpj, isValidCpfCnpj } from "@/lib/mask";
@@ -3810,7 +3810,10 @@ function BackupTab() {
   } | null>(null);
   const [saving, setSaving] = useState(false);
   const [running, setRunning] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const runFn = useServerFn(runBackupNow);
+  const restoreFn = useServerFn(restoreBackup);
 
   const load = async () => {
     const { data } = await supabase
@@ -3862,6 +3865,25 @@ function BackupTab() {
       toast.error(e.message || "Erro ao executar");
     } finally {
       setRunning(false);
+    }
+  };
+
+  const onPickFile = () => fileRef.current?.click();
+  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (e.target) e.target.value = "";
+    if (!file) return;
+    if (!confirm(`Restaurar backup a partir de "${file.name}"? Os dados atuais serão sobrescritos.`)) return;
+    setRestoring(true);
+    try {
+      const dump = await file.text();
+      const r = await restoreFn({ data: { dump } });
+      const total = Object.values(r.summary as Record<string, number>).reduce((a, b) => a + b, 0);
+      toast.success(`Backup restaurado (${total} registros)`);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao restaurar");
+    } finally {
+      setRestoring(false);
     }
   };
 
@@ -3932,6 +3954,23 @@ function BackupTab() {
           <div><span className="text-muted-foreground">Status:</span> {s.backup_last_status}</div>
         </div>
       )}
+
+      <div className="rounded-md border border-dashed p-3 space-y-2">
+        <div className="text-sm font-medium">Restaurar backup (.json)</div>
+        <p className="text-xs text-muted-foreground">
+          Envie um arquivo de backup gerado anteriormente. Os registros existentes serão sobrescritos pelo conteúdo do arquivo.
+        </p>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={onFileChange}
+        />
+        <Button variant="outline" onClick={onPickFile} disabled={restoring}>
+          {restoring ? "Restaurando..." : "Selecionar arquivo de backup"}
+        </Button>
+      </div>
 
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={runNow} disabled={running}>
