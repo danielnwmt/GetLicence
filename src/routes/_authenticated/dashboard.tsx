@@ -269,7 +269,7 @@ function Dashboard() {
                   <Badge className={statusVariant[l.status]} variant="outline">{statusLabel[l.status]}</Badge>
                 </div>
                 <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Expira em {formatDate(l.expires_at)}</span>
+                  <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Emissão {formatDate(l.activated_at || l.created_at || l.expires_at)}</span>
                   <span className="capitalize">{l.plan === "monthly" ? "Mensal" : l.plan === "semestral" ? "Semestral" : "Anual"}</span>
                 </div>
                 {(l.product?.vps_specs || Number(l.product?.vps_storage_amount) > 0 || Number(l.product?.storage_amount) > 0) && (
