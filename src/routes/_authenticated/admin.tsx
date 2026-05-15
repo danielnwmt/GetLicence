@@ -3194,9 +3194,22 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
                   placeholder="mín. 6 caracteres"
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                O usuário será criado com perfil de administrador.
-              </p>
+              <div className="space-y-2">
+                <Label>Tipo *</Label>
+                <Select
+                  value={form.role}
+                  onValueChange={(v) => setForm({ ...form, role: v as "admin" | "operator" })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Administrador</SelectItem>
+                    <SelectItem value="operator">Operador</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Operadores acessam o painel mas não podem emitir boletos.
+                </p>
+              </div>
             </div>
             <DialogFooter>
               <Button onClick={save} disabled={saving}>
