@@ -188,13 +188,30 @@ function Dashboard() {
         if (pErr) throw pErr;
       }
 
-      toast.success(`VPS atualizada. Acréscimo na mensalidade: ${formatBRL(vpsDiff)}.`);
+      const msg = vpsDiff > 0
+        ? `VPS atualizada. Acréscimo na mensalidade: ${formatBRL(vpsDiff)}.`
+        : vpsDiff < 0
+          ? `VPS atualizada. Redução na mensalidade: ${formatBRL(Math.abs(vpsDiff))}.`
+          : `VPS atualizada sem alteração de valor.`;
+      toast.success(msg);
       setVpsUpgradeLicense(null);
     } catch (e: any) {
       toast.error(e.message ?? "Erro ao solicitar upgrade");
     } finally {
       setVpsUpgradeSubmitting(false);
     }
+  };
+
+  const removeExtraStorage = async (lic: License) => {
+    if (!Number(lic.extra_storage_gb)) return;
+    if (!confirm(`Remover ${Number(lic.extra_storage_gb)} GB de armazenamento extra desta licença?`)) return;
+    const { error } = await supabase
+      .from("licenses")
+      .update({ extra_storage_gb: 0 })
+      .eq("id", lic.id);
+    if (error) { toast.error(error.message); return; }
+    setLicenses((prev) => prev.map((x) => x.id === lic.id ? { ...x, extra_storage_gb: 0 } : x));
+    toast.success("Armazenamento extra removido. A próxima fatura voltará ao valor base.");
   };
 
   useEffect(() => {
