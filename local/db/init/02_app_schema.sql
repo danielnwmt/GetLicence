@@ -121,8 +121,54 @@ create table if not exists public.payment_settings (
   sicoob_client_id text, sicoob_access_token text, sicoob_cert_pem text, sicoob_cert_key text,
   created_at timestamptz not null default now(), updated_at timestamptz not null default now()
 );
+-- Colunas adicionais do payment_settings (compat com versão Cloud)
+alter table public.payment_settings add column if not exists block_grace_days integer not null default 0;
+alter table public.payment_settings add column if not exists block_auto boolean not null default true;
+alter table public.payment_settings add column if not exists coplan_url text;
+alter table public.payment_settings add column if not exists coplan_username text;
+alter table public.payment_settings add column if not exists coplan_password text;
+alter table public.payment_settings add column if not exists coplan_token text;
+alter table public.payment_settings add column if not exists gdrive_service_account_json text;
+alter table public.payment_settings add column if not exists gdrive_folder_id text;
+alter table public.payment_settings add column if not exists gdrive_owner_email text;
+alter table public.payment_settings add column if not exists backup_enabled boolean not null default false;
+alter table public.payment_settings add column if not exists backup_retention_days integer not null default 5;
+alter table public.payment_settings add column if not exists backup_last_run_at timestamptz;
+alter table public.payment_settings add column if not exists backup_last_status text;
+alter table public.payment_settings add column if not exists backup_last_file_id text;
+
 insert into public.payment_settings (active_provider)
   select 'manual' where not exists (select 1 from public.payment_settings);
+
+-- Colunas extras de products / licenses
+alter table public.products add column if not exists price_semestral numeric not null default 0;
+alter table public.products add column if not exists kind text not null default 'license';
+alter table public.licenses add column if not exists extra_storage_gb numeric not null default 0;
+alter table public.licenses add column if not exists device_ip_v4 text;
+alter table public.licenses add column if not exists device_ip_v6 text;
+
+-- Tabela payables (Contas a Pagar)
+do $$ begin create type public.payable_status as enum ('pending','paid','overdue','cancelled'); exception when duplicate_object then null; end $$;
+do $$ begin create type public.payable_category as enum ('vps','storage','software','tax','salary','other'); exception when duplicate_object then null; end $$;
+create table if not exists public.payables (
+  id uuid primary key default gen_random_uuid(),
+  description text not null,
+  supplier text,
+  category public.payable_category not null default 'other',
+  amount numeric not null default 0,
+  due_date date,
+  paid_at timestamptz,
+  status public.payable_status not null default 'pending',
+  recurrence text not null default 'none',
+  license_id uuid,
+  product_id uuid,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table public.payables enable row level security;
+drop policy if exists "Admins manage payables" on public.payables;
+create policy "Admins manage payables" on public.payables for all using (public.has_role(auth.uid(),'admin')) with check (public.has_role(auth.uid(),'admin'));
 
 -- helper has_role
 create or replace function public.has_role(_user_id uuid, _role public.app_role)
