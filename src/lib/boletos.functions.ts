@@ -41,6 +41,8 @@ export const issueAsaasBoleto = createServerFn({ method: "POST" })
 
     const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
     if (!isAdmin) throw new Response("Forbidden", { status: 403 });
+    const { data: isOperator } = await supabase.rpc("has_role", { _user_id: userId, _role: "operator" });
+    if (isOperator) throw new Error("Operadores não têm permissão para emitir boletos.");
 
     const { data: settings, error: sErr } = await supabase
       .from("payment_settings")

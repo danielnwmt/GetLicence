@@ -8,7 +8,7 @@ const schema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   full_name: z.string().min(1),
-  role: z.literal("admin").default("admin"),
+  role: z.enum(["admin", "operator"]).default("admin"),
 });
 
 export const createSystemUser = createServerFn({ method: "POST" })
@@ -42,9 +42,14 @@ export const createSystemUser = createServerFn({ method: "POST" })
         { user_id: newUserId, email: data.email, full_name: data.full_name },
         { onConflict: "user_id" }
       );
-      // Remove default client role and assign requested role
+      // Remove default client role and assign requested role(s).
+      // Operators also get 'admin' role so existing RLS policies grant panel access.
       await admin.from("user_roles").delete().eq("user_id", newUserId);
-      await admin.from("user_roles").insert({ user_id: newUserId, role: data.role });
+      const rolesToInsert: { user_id: string; role: "admin" | "operator" }[] = [
+        { user_id: newUserId, role: "admin" },
+      ];
+      if (data.role === "operator") rolesToInsert.push({ user_id: newUserId, role: "operator" });
+      await admin.from("user_roles").insert(rolesToInsert);
     }
     return { user_id: newUserId };
   });
@@ -62,16 +67,17 @@ export const listSystemUsers = createServerFn({ method: "GET" })
     const { data: roles } = await supabase
       .from("user_roles")
       .select("user_id, role")
-      .in("role", ["admin"]);
-    const ids = (roles ?? []).map((r) => r.user_id);
-    if (ids.length === 0) return [];
+      .in("role", ["admin", "operator"]);
+    const adminIds = Array.from(new Set((roles ?? []).filter((r) => r.role === "admin").map((r) => r.user_id)));
+    if (adminIds.length === 0) return [];
+    const operatorSet = new Set((roles ?? []).filter((r) => r.role === "operator").map((r) => r.user_id));
     const { data: profiles } = await supabase
       .from("profiles")
       .select("user_id, full_name, email")
-      .in("user_id", ids);
+      .in("user_id", adminIds);
     return (profiles ?? []).map((p) => ({
       ...p,
-      role: roles?.find((r) => r.user_id === p.user_id)?.role ?? "admin",
+      role: operatorSet.has(p.user_id) ? "operator" : "admin",
     }));
   });
 
@@ -80,6 +86,7 @@ const updateSchema = z.object({
   email: z.string().email().optional(),
   password: z.string().min(6).optional(),
   full_name: z.string().min(1).optional(),
+  role: z.enum(["admin", "operator"]).optional(),
 });
 
 export const updateSystemUser = createServerFn({ method: "POST" })
@@ -112,6 +119,16 @@ export const updateSystemUser = createServerFn({ method: "POST" })
       if (data.email) patch.email = data.email;
       if (data.full_name) patch.full_name = data.full_name;
       await admin.from("profiles").update(patch).eq("user_id", data.user_id);
+    }
+
+    if (data.role) {
+      // Reset to base admin role and add operator if requested
+      await admin.from("user_roles").delete().eq("user_id", data.user_id);
+      const rolesToInsert: { user_id: string; role: "admin" | "operator" }[] = [
+        { user_id: data.user_id, role: "admin" },
+      ];
+      if (data.role === "operator") rolesToInsert.push({ user_id: data.user_id, role: "operator" });
+      await admin.from("user_roles").insert(rolesToInsert);
     }
 
     return { ok: true };

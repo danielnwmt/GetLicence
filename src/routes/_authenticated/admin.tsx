@@ -140,6 +140,7 @@ interface Profile {
   address_number?: string | null;
   address_complement?: string | null;
   address_neighborhood?: string | null;
+  role?: "admin" | "operator";
 }
 interface LicenseRow {
   id: string;
@@ -3074,11 +3075,21 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
   };
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ full_name: "", email: "", password: "" });
+  const [form, setForm] = useState<{ full_name: string; email: string; password: string; role: "admin" | "operator" }>({
+    full_name: "",
+    email: "",
+    password: "",
+    role: "admin",
+  });
 
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<Profile | null>(null);
-  const [editForm, setEditForm] = useState({ full_name: "", email: "", password: "" });
+  const [editForm, setEditForm] = useState<{ full_name: string; email: string; password: string; role: "admin" | "operator" }>({
+    full_name: "",
+    email: "",
+    password: "",
+    role: "admin",
+  });
 
   const save = async () => {
     if (!form.full_name.trim() || !form.email.trim() || form.password.length < 6) {
@@ -3086,10 +3097,10 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
     }
     setSaving(true);
     try {
-      await createSystemUserFn({ data: { ...form, role: "admin" } });
+      await createSystemUserFn({ data: { ...form } });
       toast.success("Usuário do sistema cadastrado");
       setOpen(false);
-      setForm({ full_name: "", email: "", password: "" });
+      setForm({ full_name: "", email: "", password: "", role: "admin" });
       onChange();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao cadastrar");
@@ -3100,7 +3111,12 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
 
   const openEdit = (p: Profile) => {
     setEditing(p);
-    setEditForm({ full_name: p.full_name ?? "", email: p.email ?? "", password: "" });
+    setEditForm({
+      full_name: p.full_name ?? "",
+      email: p.email ?? "",
+      password: "",
+      role: p.role ?? "admin",
+    });
     setEditOpen(true);
   };
 
@@ -3119,6 +3135,7 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
           user_id: editing.user_id,
           full_name: editForm.full_name,
           email: editForm.email,
+          role: editForm.role,
           ...(editForm.password ? { password: editForm.password } : {}),
         },
       });
@@ -3177,9 +3194,22 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
                   placeholder="mín. 6 caracteres"
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                O usuário será criado com perfil de administrador.
-              </p>
+              <div className="space-y-2">
+                <Label>Tipo *</Label>
+                <Select
+                  value={form.role}
+                  onValueChange={(v) => setForm({ ...form, role: v as "admin" | "operator" })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Administrador</SelectItem>
+                    <SelectItem value="operator">Operador</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Operadores acessam o painel mas não podem emitir boletos.
+                </p>
+              </div>
             </div>
             <DialogFooter>
               <Button onClick={save} disabled={saving}>
@@ -3220,6 +3250,22 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
                 placeholder="deixe vazio para não alterar"
               />
             </div>
+            <div className="space-y-2">
+              <Label>Tipo *</Label>
+              <Select
+                value={editForm.role}
+                onValueChange={(v) => setEditForm({ ...editForm, role: v as "admin" | "operator" })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Administrador</SelectItem>
+                  <SelectItem value="operator">Operador</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Operadores acessam o painel mas não podem emitir boletos.
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button onClick={saveEdit} disabled={saving}>
@@ -3245,7 +3291,9 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
                 <td className="p-3 font-medium">{p.full_name || "—"}</td>
                 <td className="p-3">{p.email}</td>
                 <td className="p-3">
-                  <Badge variant="outline">admin</Badge>
+                  <Badge variant={p.role === "operator" ? "secondary" : "outline"}>
+                    {p.role === "operator" ? "operador" : "admin"}
+                  </Badge>
                 </td>
                 <td className="p-3">
                   <div className="flex gap-1">
