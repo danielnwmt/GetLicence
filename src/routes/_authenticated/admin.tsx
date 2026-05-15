@@ -3868,6 +3868,25 @@ function BackupTab() {
     }
   };
 
+  const onPickFile = () => fileRef.current?.click();
+  const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (e.target) e.target.value = "";
+    if (!file) return;
+    if (!confirm(`Restaurar backup a partir de "${file.name}"? Os dados atuais serão sobrescritos.`)) return;
+    setRestoring(true);
+    try {
+      const dump = await file.text();
+      const r = await restoreFn({ data: { dump } });
+      const total = Object.values(r.summary as Record<string, number>).reduce((a, b) => a + b, 0);
+      toast.success(`Backup restaurado (${total} registros)`);
+    } catch (err: any) {
+      toast.error(err.message || "Erro ao restaurar");
+    } finally {
+      setRestoring(false);
+    }
+  };
+
   return (
     <Card className="p-6 space-y-4">
       <div className="flex items-center gap-3">
