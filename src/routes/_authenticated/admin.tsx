@@ -3955,6 +3955,23 @@ function BackupTab() {
         </div>
       )}
 
+      <div className="rounded-md border border-dashed p-3 space-y-2">
+        <div className="text-sm font-medium">Restaurar backup (.json)</div>
+        <p className="text-xs text-muted-foreground">
+          Envie um arquivo de backup gerado anteriormente. Os registros existentes serão sobrescritos pelo conteúdo do arquivo.
+        </p>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={onFileChange}
+        />
+        <Button variant="outline" onClick={onPickFile} disabled={restoring}>
+          {restoring ? "Restaurando..." : "Selecionar arquivo de backup"}
+        </Button>
+      </div>
+
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={runNow} disabled={running}>
           {running ? "Executando..." : "Fazer backup agora"}
