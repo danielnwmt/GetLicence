@@ -81,6 +81,7 @@ function Dashboard() {
   const [vpsProducts, setVpsProducts] = useState<VpsProduct[]>([]);
   const [vpsUpgradeProductId, setVpsUpgradeProductId] = useState<string>("");
   const [vpsUpgradeSubmitting, setVpsUpgradeSubmitting] = useState(false);
+  const [currentVpsPrice, setCurrentVpsPrice] = useState<number>(0);
   const [customerName, setCustomerName] = useState<string>("");
   const [customerNames, setCustomerNames] = useState<Record<string, string>>({});
 
@@ -147,14 +148,19 @@ function Dashboard() {
       .select("id, name, vps_specs, price_monthly")
       .eq("active", true)
       .eq("kind", "vps")
-      .gt("price_monthly", Number(lic.product?.price_monthly ?? 0))
       .order("price_monthly", { ascending: true });
-    setVpsProducts(((data as any[]) || []).filter((p) => p.id !== lic.product_id) as VpsProduct[]);
+    const all = ((data as any[]) || []) as VpsProduct[];
+    const currentSpecs = (lic.product?.vps_specs ?? "").trim().toLowerCase();
+    const match = currentSpecs
+      ? all.find((p) => (p.vps_specs ?? "").trim().toLowerCase() === currentSpecs)
+      : null;
+    setCurrentVpsPrice(Number(match?.price_monthly ?? 0));
+    setVpsProducts(all.filter((p) => p.id !== match?.id));
   };
 
   const selectedVpsProduct = vpsProducts.find((p) => p.id === vpsUpgradeProductId) || null;
-  const vpsDiff = selectedVpsProduct && vpsUpgradeLicense
-    ? Number(selectedVpsProduct.price_monthly) - Number(vpsUpgradeLicense.product?.price_monthly ?? 0)
+  const vpsDiff = selectedVpsProduct
+    ? Number(selectedVpsProduct.price_monthly) - currentVpsPrice
     : 0;
 
   const submitVpsUpgrade = async () => {
@@ -182,13 +188,30 @@ function Dashboard() {
         if (pErr) throw pErr;
       }
 
-      toast.success(`VPS atualizada. Acréscimo na mensalidade: ${formatBRL(vpsDiff)}.`);
+      const msg = vpsDiff > 0
+        ? `VPS atualizada. Acréscimo na mensalidade: ${formatBRL(vpsDiff)}.`
+        : vpsDiff < 0
+          ? `VPS atualizada. Redução na mensalidade: ${formatBRL(Math.abs(vpsDiff))}.`
+          : `VPS atualizada sem alteração de valor.`;
+      toast.success(msg);
       setVpsUpgradeLicense(null);
     } catch (e: any) {
       toast.error(e.message ?? "Erro ao solicitar upgrade");
     } finally {
       setVpsUpgradeSubmitting(false);
     }
+  };
+
+  const removeExtraStorage = async (lic: License) => {
+    if (!Number(lic.extra_storage_gb)) return;
+    if (!confirm(`Remover ${Number(lic.extra_storage_gb)} GB de armazenamento extra desta licença?`)) return;
+    const { error } = await supabase
+      .from("licenses")
+      .update({ extra_storage_gb: 0 })
+      .eq("id", lic.id);
+    if (error) { toast.error(error.message); return; }
+    setLicenses((prev) => prev.map((x) => x.id === lic.id ? { ...x, extra_storage_gb: 0 } : x));
+    toast.success("Armazenamento extra removido. A próxima fatura voltará ao valor base.");
   };
 
   useEffect(() => {
@@ -324,10 +347,15 @@ function Dashboard() {
                     <ArrowUpCircle className="mr-2 h-3.5 w-3.5" />
                     Armazenamento extra
                   </Button>
+                  {Number(l.extra_storage_gb) > 0 && (
+                    <Button size="sm" variant="outline" onClick={() => removeExtraStorage(l)}>
+                      Remover extra ({Number(l.extra_storage_gb)} GB)
+                    </Button>
+                  )}
                   {l.product?.vps_specs && (
                     <Button size="sm" variant="secondary" onClick={() => openVpsUpgrade(l)}>
                       <Server className="mr-2 h-3.5 w-3.5" />
-                      Upgrade de VPS
+                      Alterar VPS
                     </Button>
                   )}
                 </div>
@@ -441,7 +469,7 @@ function Dashboard() {
       <Dialog open={!!vpsUpgradeLicense} onOpenChange={(o) => !o && setVpsUpgradeLicense(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Upgrade de VPS</DialogTitle>
+            <DialogTitle>Alterar VPS</DialogTitle>
             <DialogDescription>
               {vpsUpgradeLicense?.product?.name} — {vpsUpgradeLicense?.license_key}
             </DialogDescription>
@@ -451,26 +479,33 @@ function Dashboard() {
               <div className="text-muted-foreground">VPS atual</div>
               <div className="font-medium">{vpsUpgradeLicense?.product?.vps_specs || "—"}</div>
               <div className="mt-1 text-xs text-muted-foreground">
-                Mensalidade atual: {formatBRL(Number(vpsUpgradeLicense?.product?.price_monthly ?? 0))}
+                {currentVpsPrice > 0
+                  ? `Mensalidade da VPS atual: ${formatBRL(currentVpsPrice)}`
+                  : "Não foi possível identificar o preço da VPS atual."}
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>Nova configuração</Label>
+              <Label>Nova configuração (upgrade ou downgrade)</Label>
               <Select value={vpsUpgradeProductId} onValueChange={setVpsUpgradeProductId}>
-                <SelectTrigger><SelectValue placeholder={vpsProducts.length ? "Selecione" : "Nenhum upgrade disponível"} /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={vpsProducts.length ? "Selecione" : "Nenhuma VPS disponível"} /></SelectTrigger>
                 <SelectContent>
                   {vpsProducts.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {(p.vps_specs || p.name)} — {formatBRL(Number(p.price_monthly))}
+                      {(p.vps_specs || p.name)} — {formatBRL(Number(p.price_monthly))}/mês
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               {selectedVpsProduct && (
                 <div className="mt-2 rounded-md border bg-muted/30 p-3 text-sm">
-                  <div className="text-muted-foreground">Acréscimo na mensalidade</div>
+                  <div className="text-muted-foreground">
+                    {vpsDiff > 0 ? "Acréscimo na mensalidade" : vpsDiff < 0 ? "Redução na mensalidade" : "Sem alteração de valor"}
+                  </div>
                   <div className="font-semibold">
-                    {formatBRL(Number(selectedVpsProduct.price_monthly))} − {formatBRL(Number(vpsUpgradeLicense?.product?.price_monthly ?? 0))} = <span className="text-primary">{formatBRL(vpsDiff)}</span>
+                    {formatBRL(Number(selectedVpsProduct.price_monthly))} − {formatBRL(currentVpsPrice)} ={" "}
+                    <span className={vpsDiff > 0 ? "text-primary" : vpsDiff < 0 ? "text-success" : ""}>
+                      {vpsDiff >= 0 ? formatBRL(vpsDiff) : `− ${formatBRL(Math.abs(vpsDiff))}`}
+                    </span>
                   </div>
                 </div>
               )}
@@ -479,7 +514,7 @@ function Dashboard() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setVpsUpgradeLicense(null)}>Cancelar</Button>
             <Button onClick={submitVpsUpgrade} disabled={vpsUpgradeSubmitting || !selectedVpsProduct}>
-              {vpsUpgradeSubmitting ? "Enviando..." : "Confirmar upgrade"}
+              {vpsUpgradeSubmitting ? "Enviando..." : "Confirmar alteração"}
             </Button>
           </DialogFooter>
         </DialogContent>
