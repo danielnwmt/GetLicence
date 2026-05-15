@@ -19,11 +19,13 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 interface License {
   id: string;
+  user_id: string;
   license_key: string;
   plan: string;
   status: string;
   starts_at: string;
   expires_at: string;
+  extra_storage_gb: number | null;
   product: {
     name: string;
     description: string | null;
