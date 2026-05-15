@@ -27,7 +27,7 @@ async function handle(request: Request, params: { license_key?: string; hostname
 
   const { data: lic, error } = await sb
     .from("licenses")
-    .select("id, status, expires_at, activated_at, user_id, product_id, products:product_id(storage_amount, storage_unit, vps_storage_amount, vps_storage_unit)")
+    .select("id, status, expires_at, activated_at, user_id, product_id, products:product_id(name, storage_amount, storage_unit, vps_storage_amount, vps_storage_unit)")
     .eq("license_key", key)
     .maybeSingle();
 
