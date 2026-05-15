@@ -323,7 +323,7 @@ function Dashboard() {
                     Armazenamento extra
                   </Button>
                   {l.product?.vps_specs && (
-                    <Button size="sm" variant="secondary" onClick={() => { setVpsUpgradeLicense(l); setVpsUpgradePlan("4vcpu-8gb"); }}>
+                    <Button size="sm" variant="secondary" onClick={() => openVpsUpgrade(l)}>
                       <Server className="mr-2 h-3.5 w-3.5" />
                       Upgrade de VPS
                     </Button>
