@@ -86,6 +86,7 @@ const updateSchema = z.object({
   email: z.string().email().optional(),
   password: z.string().min(6).optional(),
   full_name: z.string().min(1).optional(),
+  role: z.enum(["admin", "operator"]).optional(),
 });
 
 export const updateSystemUser = createServerFn({ method: "POST" })
