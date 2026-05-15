@@ -1208,9 +1208,30 @@ function LicensesTab({
     onChange();
   };
 
+  const visibleLicenses = licenses.filter((l) =>
+    view === "inactive" ? l.status === "cancelled" : l.status !== "cancelled",
+  );
+  const inactiveCount = licenses.filter((l) => l.status === "cancelled").length;
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between gap-2">
+        <div className="inline-flex rounded-md border border-border bg-muted/30 p-1">
+          <button
+            type="button"
+            onClick={() => setView("active")}
+            className={`px-3 py-1 text-xs font-medium rounded ${view === "active" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+          >
+            Ativas ({licenses.length - inactiveCount})
+          </button>
+          <button
+            type="button"
+            onClick={() => setView("inactive")}
+            className={`px-3 py-1 text-xs font-medium rounded ${view === "inactive" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+          >
+            Inativas ({inactiveCount})
+          </button>
+        </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button>
