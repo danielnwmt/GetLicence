@@ -337,8 +337,8 @@ function Dashboard() {
                     Armazenamento extra
                   </Button>
                   {Number(l.extra_storage_gb) > 0 && (
-                    <Button size="sm" variant="outline" onClick={() => removeExtraStorage(l)}>
-                      Remover extra ({Number(l.extra_storage_gb)} GB)
+                    <Button size="sm" variant="outline" onClick={() => openDowngrade(l)}>
+                      Reduzir extra ({Number(l.extra_storage_gb)} GB)
                     </Button>
                   )}
                   {l.product?.vps_specs && (
