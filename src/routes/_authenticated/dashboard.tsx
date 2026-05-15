@@ -83,10 +83,14 @@ function Dashboard() {
   const [vpsUpgradeProductId, setVpsUpgradeProductId] = useState<string>("");
   const [vpsUpgradeSubmitting, setVpsUpgradeSubmitting] = useState(false);
   const [currentVpsPrice, setCurrentVpsPrice] = useState<number>(0);
+  const [currentStoragePrice, setCurrentStoragePrice] = useState<number>(0);
   const [customerName, setCustomerName] = useState<string>("");
   const [customerNames, setCustomerNames] = useState<Record<string, string>>({});
 
   const selectedStorageProduct = storageProducts.find((p) => p.id === storageProductId) || null;
+  const storageDiff = selectedStorageProduct
+    ? Number(selectedStorageProduct.price_monthly) - currentStoragePrice
+    : 0;
 
   const openStorageUpgrade = async (lic: License) => {
     setUpgradeLicense(lic);
@@ -98,17 +102,20 @@ function Dashboard() {
       .eq("kind", "storage")
       .gt("storage_amount", 0)
       .order("storage_amount", { ascending: true });
-    setStorageProducts(((data as any[]) || []) as StorageProduct[]);
+    const all = ((data as any[]) || []) as StorageProduct[];
+    const currentExtra = Number(lic.extra_storage_gb ?? 0);
+    const match = currentExtra > 0
+      ? all.find((p) => Number(p.storage_amount) === currentExtra)
+      : null;
+    setCurrentStoragePrice(Number(match?.price_monthly ?? 0));
+    setStorageProducts(all.filter((p) => p.id !== match?.id));
   };
 
   const submitUpgrade = async () => {
     if (!upgradeLicense || !selectedStorageProduct || !user) return;
     setUpgradeSubmitting(true);
     try {
-      const add = Number(selectedStorageProduct.storage_amount) || 0;
-      const cost = Number(selectedStorageProduct.price_monthly) || 0;
-      const current = Number(upgradeLicense.extra_storage_gb ?? 0);
-      const newExtra = current + add;
+      const newExtra = Number(selectedStorageProduct.storage_amount) || 0;
 
       const { error } = await supabase
         .from("licenses")
@@ -117,15 +124,19 @@ function Dashboard() {
       if (error) throw error;
 
       setLicenses((prev) => prev.map((x) => x.id === upgradeLicense.id ? { ...x, extra_storage_gb: newExtra } : x));
-      toast.success(`+${add} ${selectedStorageProduct.storage_unit ?? "GB"} adicionados. Acréscimo de ${formatBRL(cost)}/mês será incluído na próxima fatura.`);
+      const msg = storageDiff > 0
+        ? `Armazenamento alterado. Acréscimo de ${formatBRL(storageDiff)}/mês na próxima fatura.`
+        : storageDiff < 0
+          ? `Armazenamento alterado. Redução de ${formatBRL(Math.abs(storageDiff))}/mês na próxima fatura.`
+          : `Armazenamento alterado sem alteração de valor.`;
+      toast.success(msg);
       setUpgradeLicense(null);
     } catch (e: any) {
-      toast.error(e.message ?? "Erro ao aplicar upgrade");
+      toast.error(e.message ?? "Erro ao alterar armazenamento");
     } finally {
       setUpgradeSubmitting(false);
     }
   };
-
   const openVpsUpgrade = async (lic: License) => {
     setVpsUpgradeLicense(lic);
     setVpsUpgradeProductId("");
