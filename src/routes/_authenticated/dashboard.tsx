@@ -469,7 +469,7 @@ function Dashboard() {
       <Dialog open={!!vpsUpgradeLicense} onOpenChange={(o) => !o && setVpsUpgradeLicense(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Upgrade de VPS</DialogTitle>
+            <DialogTitle>Alterar VPS</DialogTitle>
             <DialogDescription>
               {vpsUpgradeLicense?.product?.name} — {vpsUpgradeLicense?.license_key}
             </DialogDescription>
@@ -479,26 +479,33 @@ function Dashboard() {
               <div className="text-muted-foreground">VPS atual</div>
               <div className="font-medium">{vpsUpgradeLicense?.product?.vps_specs || "—"}</div>
               <div className="mt-1 text-xs text-muted-foreground">
-                Mensalidade atual: {formatBRL(Number(vpsUpgradeLicense?.product?.price_monthly ?? 0))}
+                {currentVpsPrice > 0
+                  ? `Mensalidade da VPS atual: ${formatBRL(currentVpsPrice)}`
+                  : "Não foi possível identificar o preço da VPS atual."}
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>Nova configuração</Label>
+              <Label>Nova configuração (upgrade ou downgrade)</Label>
               <Select value={vpsUpgradeProductId} onValueChange={setVpsUpgradeProductId}>
-                <SelectTrigger><SelectValue placeholder={vpsProducts.length ? "Selecione" : "Nenhum upgrade disponível"} /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={vpsProducts.length ? "Selecione" : "Nenhuma VPS disponível"} /></SelectTrigger>
                 <SelectContent>
                   {vpsProducts.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {(p.vps_specs || p.name)} — {formatBRL(Number(p.price_monthly))}
+                      {(p.vps_specs || p.name)} — {formatBRL(Number(p.price_monthly))}/mês
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               {selectedVpsProduct && (
                 <div className="mt-2 rounded-md border bg-muted/30 p-3 text-sm">
-                  <div className="text-muted-foreground">Acréscimo na mensalidade</div>
+                  <div className="text-muted-foreground">
+                    {vpsDiff > 0 ? "Acréscimo na mensalidade" : vpsDiff < 0 ? "Redução na mensalidade" : "Sem alteração de valor"}
+                  </div>
                   <div className="font-semibold">
-                    {formatBRL(Number(selectedVpsProduct.price_monthly))} − {formatBRL(Number(vpsUpgradeLicense?.product?.price_monthly ?? 0))} = <span className="text-primary">{formatBRL(vpsDiff)}</span>
+                    {formatBRL(Number(selectedVpsProduct.price_monthly))} − {formatBRL(currentVpsPrice)} ={" "}
+                    <span className={vpsDiff > 0 ? "text-primary" : vpsDiff < 0 ? "text-success" : ""}>
+                      {vpsDiff >= 0 ? formatBRL(vpsDiff) : `− ${formatBRL(Math.abs(vpsDiff))}`}
+                    </span>
                   </div>
                 </div>
               )}
@@ -507,7 +514,7 @@ function Dashboard() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setVpsUpgradeLicense(null)}>Cancelar</Button>
             <Button onClick={submitVpsUpgrade} disabled={vpsUpgradeSubmitting || !selectedVpsProduct}>
-              {vpsUpgradeSubmitting ? "Enviando..." : "Confirmar upgrade"}
+              {vpsUpgradeSubmitting ? "Enviando..." : "Confirmar alteração"}
             </Button>
           </DialogFooter>
         </DialogContent>
