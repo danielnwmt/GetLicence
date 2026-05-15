@@ -83,10 +83,14 @@ function Dashboard() {
   const [vpsUpgradeProductId, setVpsUpgradeProductId] = useState<string>("");
   const [vpsUpgradeSubmitting, setVpsUpgradeSubmitting] = useState(false);
   const [currentVpsPrice, setCurrentVpsPrice] = useState<number>(0);
+  const [currentStoragePrice, setCurrentStoragePrice] = useState<number>(0);
   const [customerName, setCustomerName] = useState<string>("");
   const [customerNames, setCustomerNames] = useState<Record<string, string>>({});
 
   const selectedStorageProduct = storageProducts.find((p) => p.id === storageProductId) || null;
+  const storageDiff = selectedStorageProduct
+    ? Number(selectedStorageProduct.price_monthly) - currentStoragePrice
+    : 0;
 
   const openStorageUpgrade = async (lic: License) => {
     setUpgradeLicense(lic);
@@ -98,17 +102,20 @@ function Dashboard() {
       .eq("kind", "storage")
       .gt("storage_amount", 0)
       .order("storage_amount", { ascending: true });
-    setStorageProducts(((data as any[]) || []) as StorageProduct[]);
+    const all = ((data as any[]) || []) as StorageProduct[];
+    const currentExtra = Number(lic.extra_storage_gb ?? 0);
+    const match = currentExtra > 0
+      ? all.find((p) => Number(p.storage_amount) === currentExtra)
+      : null;
+    setCurrentStoragePrice(Number(match?.price_monthly ?? 0));
+    setStorageProducts(all.filter((p) => p.id !== match?.id));
   };
 
   const submitUpgrade = async () => {
     if (!upgradeLicense || !selectedStorageProduct || !user) return;
     setUpgradeSubmitting(true);
     try {
-      const add = Number(selectedStorageProduct.storage_amount) || 0;
-      const cost = Number(selectedStorageProduct.price_monthly) || 0;
-      const current = Number(upgradeLicense.extra_storage_gb ?? 0);
-      const newExtra = current + add;
+      const newExtra = Number(selectedStorageProduct.storage_amount) || 0;
 
       const { error } = await supabase
         .from("licenses")
@@ -117,15 +124,19 @@ function Dashboard() {
       if (error) throw error;
 
       setLicenses((prev) => prev.map((x) => x.id === upgradeLicense.id ? { ...x, extra_storage_gb: newExtra } : x));
-      toast.success(`+${add} ${selectedStorageProduct.storage_unit ?? "GB"} adicionados. Acréscimo de ${formatBRL(cost)}/mês será incluído na próxima fatura.`);
+      const msg = storageDiff > 0
+        ? `Armazenamento alterado. Acréscimo de ${formatBRL(storageDiff)}/mês na próxima fatura.`
+        : storageDiff < 0
+          ? `Armazenamento alterado. Redução de ${formatBRL(Math.abs(storageDiff))}/mês na próxima fatura.`
+          : `Armazenamento alterado sem alteração de valor.`;
+      toast.success(msg);
       setUpgradeLicense(null);
     } catch (e: any) {
-      toast.error(e.message ?? "Erro ao aplicar upgrade");
+      toast.error(e.message ?? "Erro ao alterar armazenamento");
     } finally {
       setUpgradeSubmitting(false);
     }
   };
-
   const openVpsUpgrade = async (lic: License) => {
     setVpsUpgradeLicense(lic);
     setVpsUpgradeProductId("");
@@ -170,37 +181,6 @@ function Dashboard() {
       toast.error(e.message ?? "Erro ao solicitar alteração");
     } finally {
       setVpsUpgradeSubmitting(false);
-    }
-  };
-
-  const [downgradeLicense, setDowngradeLicense] = useState<License | null>(null);
-  const [downgradeKeepGb, setDowngradeKeepGb] = useState<string>("0");
-  const [downgradeSubmitting, setDowngradeSubmitting] = useState(false);
-
-  const openDowngrade = (lic: License) => {
-    setDowngradeLicense(lic);
-    setDowngradeKeepGb(String(Number(lic.extra_storage_gb ?? 0)));
-  };
-
-  const submitDowngrade = async () => {
-    if (!downgradeLicense) return;
-    const current = Number(downgradeLicense.extra_storage_gb ?? 0);
-    const keep = Math.max(0, Math.min(current, Number(downgradeKeepGb) || 0));
-    if (keep === current) { setDowngradeLicense(null); return; }
-    setDowngradeSubmitting(true);
-    try {
-      const { error } = await supabase
-        .from("licenses")
-        .update({ extra_storage_gb: keep })
-        .eq("id", downgradeLicense.id);
-      if (error) throw error;
-      setLicenses((prev) => prev.map((x) => x.id === downgradeLicense.id ? { ...x, extra_storage_gb: keep } : x));
-      toast.success(`Armazenamento extra ajustado para ${keep} GB. A próxima fatura refletirá o novo valor.`);
-      setDowngradeLicense(null);
-    } catch (e: any) {
-      toast.error(e.message ?? "Erro ao reduzir armazenamento");
-    } finally {
-      setDowngradeSubmitting(false);
     }
   };
 
@@ -335,13 +315,8 @@ function Dashboard() {
                   </Button>
                   <Button size="sm" onClick={() => openStorageUpgrade(l)}>
                     <ArrowUpCircle className="mr-2 h-3.5 w-3.5" />
-                    Armazenamento extra
+                    Alterar armazenamento
                   </Button>
-                  {Number(l.extra_storage_gb) > 0 && (
-                    <Button size="sm" variant="outline" onClick={() => openDowngrade(l)}>
-                      Reduzir extra ({Number(l.extra_storage_gb)} GB)
-                    </Button>
-                  )}
                   {l.product?.vps_specs && (
                     <Button size="sm" variant="secondary" onClick={() => openVpsUpgrade(l)}>
                       <Server className="mr-2 h-3.5 w-3.5" />
@@ -407,42 +382,49 @@ function Dashboard() {
       <Dialog open={!!upgradeLicense} onOpenChange={(o) => !o && setUpgradeLicense(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Armazenamento extra</DialogTitle>
+            <DialogTitle>Alterar armazenamento</DialogTitle>
             <DialogDescription>
               {upgradeLicense?.product?.name} — {upgradeLicense?.license_key}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <div className="rounded-md border bg-muted/30 p-3 text-sm">
-              <div className="text-muted-foreground">Armazenamento atual</div>
+              <div className="text-muted-foreground">Armazenamento extra atual</div>
               <div className="font-medium">
-                {Number(upgradeLicense?.product?.storage_amount ?? 0) + Number(upgradeLicense?.extra_storage_gb ?? 0)} {upgradeLicense?.product?.storage_unit ?? "GB"}
-                {Number(upgradeLicense?.extra_storage_gb) > 0 && (
-                  <span className="ml-1 text-xs text-muted-foreground">
-                    ({Number(upgradeLicense?.product?.storage_amount ?? 0)} base + {Number(upgradeLicense?.extra_storage_gb)} extra)
-                  </span>
-                )}
+                {Number(upgradeLicense?.extra_storage_gb ?? 0)} {upgradeLicense?.product?.storage_unit ?? "GB"}
+                <span className="ml-1 text-xs text-muted-foreground">
+                  (base: {Number(upgradeLicense?.product?.storage_amount ?? 0)} {upgradeLicense?.product?.storage_unit ?? "GB"})
+                </span>
               </div>
               <div className="mt-1 text-xs text-muted-foreground">
-                Após o upgrade: {Number(upgradeLicense?.product?.storage_amount ?? 0) + Number(upgradeLicense?.extra_storage_gb ?? 0) + Number(selectedStorageProduct?.storage_amount ?? 0)} {upgradeLicense?.product?.storage_unit ?? "GB"}
+                {currentStoragePrice > 0
+                  ? `Mensalidade do extra atual: ${formatBRL(currentStoragePrice)}`
+                  : "Sem pacote extra contratado."}
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>Pacote de armazenamento</Label>
+              <Label>Novo pacote (upgrade ou downgrade)</Label>
               <Select value={storageProductId} onValueChange={setStorageProductId}>
-                <SelectTrigger><SelectValue placeholder={storageProducts.length ? "Selecione um pacote" : "Nenhum pacote disponível"} /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={storageProducts.length ? "Selecione" : "Nenhum pacote disponível"} /></SelectTrigger>
                 <SelectContent>
                   {storageProducts.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.name} (+{Number(p.storage_amount)} {p.storage_unit ?? "GB"}) — {formatBRL(Number(p.price_monthly))}/mês
+                      {p.name} ({Number(p.storage_amount)} {p.storage_unit ?? "GB"}) — {formatBRL(Number(p.price_monthly))}/mês
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               {selectedStorageProduct && (
                 <div className="mt-2 rounded-md border bg-muted/30 p-3 text-sm">
-                  <div className="text-muted-foreground">Acréscimo na mensalidade</div>
-                  <div className="font-semibold text-primary">{formatBRL(Number(selectedStorageProduct.price_monthly))}</div>
+                  <div className="text-muted-foreground">
+                    {storageDiff > 0 ? "Acréscimo na mensalidade" : storageDiff < 0 ? "Redução na mensalidade" : "Sem alteração de valor"}
+                  </div>
+                  <div className="font-semibold">
+                    {formatBRL(Number(selectedStorageProduct.price_monthly))} − {formatBRL(currentStoragePrice)} ={" "}
+                    <span className={storageDiff > 0 ? "text-primary" : storageDiff < 0 ? "text-success" : ""}>
+                      {storageDiff >= 0 ? formatBRL(storageDiff) : `− ${formatBRL(Math.abs(storageDiff))}`}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
@@ -450,7 +432,7 @@ function Dashboard() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setUpgradeLicense(null)}>Cancelar</Button>
             <Button onClick={submitUpgrade} disabled={upgradeSubmitting || !selectedStorageProduct}>
-              {upgradeSubmitting ? "Enviando..." : "Solicitar upgrade"}
+              {upgradeSubmitting ? "Enviando..." : "Confirmar alteração"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -505,42 +487,6 @@ function Dashboard() {
             <Button variant="outline" onClick={() => setVpsUpgradeLicense(null)}>Cancelar</Button>
             <Button onClick={submitVpsUpgrade} disabled={vpsUpgradeSubmitting || !selectedVpsProduct}>
               {vpsUpgradeSubmitting ? "Enviando..." : "Confirmar alteração"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={!!downgradeLicense} onOpenChange={(o) => !o && setDowngradeLicense(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reduzir armazenamento extra</DialogTitle>
-            <DialogDescription>
-              {downgradeLicense?.product?.name} — {downgradeLicense?.license_key}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 py-2">
-            <div className="rounded-md border bg-muted/30 p-3 text-sm">
-              <div className="text-muted-foreground">Extra atual</div>
-              <div className="font-medium">{Number(downgradeLicense?.extra_storage_gb ?? 0)} GB</div>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Quanto de extra deseja manter? (GB)</Label>
-              <Input
-                type="number"
-                min={0}
-                max={Number(downgradeLicense?.extra_storage_gb ?? 0)}
-                value={downgradeKeepGb}
-                onChange={(e) => setDowngradeKeepGb(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Informe 0 para remover todo o extra. A próxima fatura será recalculada.
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDowngradeLicense(null)}>Cancelar</Button>
-            <Button onClick={submitDowngrade} disabled={downgradeSubmitting}>
-              {downgradeSubmitting ? "Enviando..." : "Confirmar redução"}
             </Button>
           </DialogFooter>
         </DialogContent>
