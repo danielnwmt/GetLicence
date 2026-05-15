@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin as admin } from "@/integrations/supabase/client.server";
 
 type AdminProfile = {
   user_id: string;
@@ -47,13 +48,20 @@ export const createCustomer = createServerFn({ method: "POST" })
       throw new Response("Forbidden", { status: 403 });
     }
 
-    const { data: created, error } = await supabase.auth.admin.createUser({
+    let created;
+    try {
+      const result = await admin.auth.admin.createUser({
       email: data.email,
       password: data.password,
       email_confirm: true,
       user_metadata: { full_name: data.full_name },
-    });
-    if (error) throw new Response(error.message, { status: 400 });
+      });
+      if (result.error) throw new Response(result.error.message, { status: 400 });
+      created = result.data;
+    } catch (err) {
+      if (err instanceof Response) throw err;
+      throw new Response("Configure SUPABASE_SERVICE_ROLE_KEY nos secrets do backend para criar clientes.", { status: 500 });
+    }
 
     const newUserId = created.user?.id;
     if (newUserId) {
@@ -72,7 +80,7 @@ export const createCustomer = createServerFn({ method: "POST" })
         address_state: data.address_state ?? null,
       }, { onConflict: "user_id" });
       if (profileError) {
-        await supabase.auth.admin.deleteUser(newUserId);
+        await admin.auth.admin.deleteUser(newUserId);
         throw new Response(profileError.message, { status: 400 });
       }
 
@@ -81,7 +89,7 @@ export const createCustomer = createServerFn({ method: "POST" })
         { onConflict: "user_id,role" }
       );
       if (roleError) {
-        await supabase.auth.admin.deleteUser(newUserId);
+        await admin.auth.admin.deleteUser(newUserId);
         throw new Response(roleError.message, { status: 400 });
       }
     }
