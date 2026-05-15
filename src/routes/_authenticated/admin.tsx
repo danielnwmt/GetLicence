@@ -1139,6 +1139,7 @@ function LicensesTab({
   onChange: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [view, setView] = useState<"active" | "inactive">("active");
   const [form, setForm] = useState({
     user_id: "",
     product_id: "",
