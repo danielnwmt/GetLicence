@@ -46,6 +46,8 @@ async function handle(
   }
 
   const ip = clientIp(request);
+  const ipv4 = params.ipv4 || (isIPv4(ip) ? ip! : null);
+  const ipv6 = params.ipv6 || (isIPv6(ip) ? ip! : null);
   const now = new Date();
   const expired = new Date(lic.expires_at) < now;
 
@@ -53,6 +55,8 @@ async function handle(
   const update: Database["public"]["Tables"]["licenses"]["Update"] = {
     last_seen_at: now.toISOString(),
     device_ip: ip,
+    device_ip_v4: ipv4,
+    device_ip_v6: ipv6,
     device_hostname: params.hostname ?? null,
   };
 
