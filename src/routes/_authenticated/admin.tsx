@@ -3227,6 +3227,7 @@ function LicenseApiTab() {
           <li><code className="text-foreground">expired: true</code> → licença expirou</li>
           <li>Primeira chamada com licença <code>pending</code> ativa automaticamente</li>
           <li>Cada chamada atualiza <code>last_seen_at</code>, IP e hostname do dispositivo</li>
+          <li>Backend usa <code>SUPABASE_SERVICE_ROLE_KEY</code> nos secrets internos; nunca coloque o valor dessa chave no cliente ou na documentação pública.</li>
         </ul>
       </div>
     </Card>
