@@ -37,7 +37,7 @@ async function handle(
 
   const { data: lic, error } = await sb
     .from("licenses")
-    .select("id, status, expires_at, activated_at, user_id, product_id, products:product_id(storage_amount, storage_unit, vps_storage_amount, vps_storage_unit)")
+    .select("id, status, expires_at, activated_at, user_id, product_id, extra_storage_gb, products:product_id(storage_amount, storage_unit, vps_storage_amount, vps_storage_unit)")
     .eq("license_key", key)
     .maybeSingle();
 
@@ -84,7 +84,9 @@ async function handle(
     blocked: newStatus === "blocked",
     expired: newStatus === "expired",
     storage: prod ? {
-      amount: Number(prod.storage_amount ?? 0),
+      amount: Number(prod.storage_amount ?? 0) + Number((lic as any).extra_storage_gb ?? 0),
+      base_amount: Number(prod.storage_amount ?? 0),
+      extra_amount: Number((lic as any).extra_storage_gb ?? 0),
       unit: prod.storage_unit ?? "GB",
       vps_amount: Number(prod.vps_storage_amount ?? 0),
       vps_unit: prod.vps_storage_unit ?? "GB",
