@@ -165,14 +165,14 @@ set -a
 source /etc/getlicence-auth.env
 set +a
 /usr/local/bin/gotrue migrate >/dev/null
-if [[ -x "$REPAIR_AUTH_SCRIPT" ]]; then
-  "$REPAIR_AUTH_SCRIPT" --no-restart >/dev/null
+if [[ -f "$REPAIR_AUTH_SCRIPT" ]]; then
+  bash "$REPAIR_AUTH_SCRIPT" --no-restart >/dev/null
 fi
 
 log "Carregando schema da aplicação"
 sudo -u postgres psql -v ON_ERROR_STOP=1 -d "$DB_NAME" < "$SCRIPT_DIR/db/init/02_app_schema.sql" >/dev/null
-if [[ -x "$REPAIR_AUTH_SCRIPT" ]]; then
-  "$REPAIR_AUTH_SCRIPT" --no-restart >/dev/null
+if [[ -f "$REPAIR_AUTH_SCRIPT" ]]; then
+  bash "$REPAIR_AUTH_SCRIPT" --no-restart >/dev/null
 fi
 ok "Banco ${DB_NAME} pronto"
 
@@ -361,11 +361,11 @@ if [ -d .git ] && command -v git >/dev/null 2>&1; then
   git pull --ff-only
 fi
 chown -R getlicence:getlicence /opt/getlicence
-if [ -x /opt/getlicence/local/repair-auth.sh ]; then
+if [ -f /opt/getlicence/local/repair-auth.sh ]; then
   bash /opt/getlicence/local/repair-auth.sh --no-restart
 fi
 sudo -u postgres psql -v ON_ERROR_STOP=1 -d getlicence < /opt/getlicence/local/db/init/02_app_schema.sql >/dev/null
-if [ -x /opt/getlicence/local/repair-auth.sh ]; then
+if [ -f /opt/getlicence/local/repair-auth.sh ]; then
   bash /opt/getlicence/local/repair-auth.sh --no-restart
 fi
 ADMIN_UID=$(sudo -u postgres psql -d getlicence -tAc "select id from auth.users where email='admin@getlicence.com' limit 1;" | tr -d '[:space:]')
