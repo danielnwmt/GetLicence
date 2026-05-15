@@ -149,6 +149,8 @@ interface LicenseRow {
   user_id: string;
   product_id: string;
   device_ip?: string | null;
+  device_ip_v4?: string | null;
+  device_ip_v6?: string | null;
   last_seen_at?: string | null;
   activated_at?: string | null;
   product: { name: string } | null;
@@ -1355,23 +1357,44 @@ function LicensesTab({
                         : "Anual"}
                   </td>
 
-                  <td className="p-3 font-mono text-xs">{l.device_ip || "—"}</td>
+                  <td className="p-3 font-mono text-xs">
+                    {l.device_ip_v4 || (l.device_ip && !l.device_ip.includes(":") ? l.device_ip : null) ? (
+                      <div>
+                        <span className="text-muted-foreground">v4:</span>{" "}
+                        {l.device_ip_v4 || l.device_ip}
+                      </div>
+                    ) : null}
+                    {l.device_ip_v6 || (l.device_ip && l.device_ip.includes(":") ? l.device_ip : null) ? (
+                      <div>
+                        <span className="text-muted-foreground">v6:</span>{" "}
+                        {l.device_ip_v6 || l.device_ip}
+                      </div>
+                    ) : null}
+                    {!l.device_ip && !l.device_ip_v4 && !l.device_ip_v6 ? "—" : null}
+                  </td>
                   <td className="p-3 text-xs">
                     {l.last_seen_at ? new Date(l.last_seen_at).toLocaleString("pt-BR") : "—"}
                   </td>
                   <td className="p-3">
-                    <Select value={l.status} onValueChange={(v) => setStatus(l.id, v)}>
-                      <SelectTrigger className="h-8 w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Ativa</SelectItem>
-                        <SelectItem value="pending">Pendente</SelectItem>
-                        <SelectItem value="blocked">Bloqueada</SelectItem>
-                        <SelectItem value="expired">Expirada</SelectItem>
-                        <SelectItem value="cancelled">Inativa</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Badge
+                      variant={
+                        l.status === "active"
+                          ? "default"
+                          : l.status === "blocked" || l.status === "cancelled"
+                            ? "destructive"
+                            : "secondary"
+                      }
+                    >
+                      {l.status === "active"
+                        ? "Ativa"
+                        : l.status === "pending"
+                          ? "Pendente"
+                          : l.status === "blocked"
+                            ? "Bloqueada"
+                            : l.status === "expired"
+                              ? "Expirada"
+                              : "Inativa"}
+                    </Badge>
                   </td>
                   <td className="p-3 text-right">
                     <div className="flex justify-end gap-1">

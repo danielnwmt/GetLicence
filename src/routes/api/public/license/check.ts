@@ -20,7 +20,17 @@ function clientIp(request: Request): string | null {
   );
 }
 
-async function handle(request: Request, params: { license_key?: string; hostname?: string }) {
+function isIPv6(ip: string | null | undefined): boolean {
+  return !!ip && ip.includes(":");
+}
+function isIPv4(ip: string | null | undefined): boolean {
+  return !!ip && /^\d{1,3}(\.\d{1,3}){3}$/.test(ip);
+}
+
+async function handle(
+  request: Request,
+  params: { license_key?: string; hostname?: string; ipv4?: string; ipv6?: string },
+) {
   const sb = admin();
   const key = (params.license_key || "").trim().toUpperCase();
   if (!key) return Response.json({ ok: false, status: "invalid", reason: "missing license_key" }, { status: 400 });
@@ -36,6 +46,8 @@ async function handle(request: Request, params: { license_key?: string; hostname
   }
 
   const ip = clientIp(request);
+  const ipv4 = params.ipv4 || (isIPv4(ip) ? ip! : null);
+  const ipv6 = params.ipv6 || (isIPv6(ip) ? ip! : null);
   const now = new Date();
   const expired = new Date(lic.expires_at) < now;
 
@@ -43,6 +55,8 @@ async function handle(request: Request, params: { license_key?: string; hostname
   const update: Database["public"]["Tables"]["licenses"]["Update"] = {
     last_seen_at: now.toISOString(),
     device_ip: ip,
+    device_ip_v4: ipv4,
+    device_ip_v6: ipv6,
     device_hostname: params.hostname ?? null,
   };
 
@@ -84,13 +98,20 @@ export const Route = createFileRoute("/api/public/license/check")({
       POST: async ({ request }) => {
         let body: any = {};
         try { body = await request.json(); } catch {}
-        return handle(request, { license_key: body?.license_key, hostname: body?.hostname });
+        return handle(request, {
+          license_key: body?.license_key,
+          hostname: body?.hostname,
+          ipv4: body?.ipv4,
+          ipv6: body?.ipv6,
+        });
       },
       GET: async ({ request }) => {
         const u = new URL(request.url);
         return handle(request, {
           license_key: u.searchParams.get("license_key") ?? undefined,
           hostname: u.searchParams.get("hostname") ?? undefined,
+          ipv4: u.searchParams.get("ipv4") ?? undefined,
+          ipv6: u.searchParams.get("ipv6") ?? undefined,
         });
       },
     },

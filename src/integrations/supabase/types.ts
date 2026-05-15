@@ -21,6 +21,8 @@ export type Database = {
           created_at: string
           device_hostname: string | null
           device_ip: string | null
+          device_ip_v4: string | null
+          device_ip_v6: string | null
           expires_at: string
           extra_storage_gb: number
           id: string
@@ -42,6 +44,8 @@ export type Database = {
           created_at?: string
           device_hostname?: string | null
           device_ip?: string | null
+          device_ip_v4?: string | null
+          device_ip_v6?: string | null
           expires_at: string
           extra_storage_gb?: number
           id?: string
@@ -63,6 +67,8 @@ export type Database = {
           created_at?: string
           device_hostname?: string | null
           device_ip?: string | null
+          device_ip_v4?: string | null
+          device_ip_v6?: string | null
           expires_at?: string
           extra_storage_gb?: number
           id?: string
