@@ -180,7 +180,7 @@ $$;
 create or replace function public.set_updated_at() returns trigger language plpgsql as
 $$ begin new.updated_at = now(); return new; end $$;
 do $$ declare t text; begin
-  foreach t in array array['profiles','products','licenses','payments','payment_settings','user_roles']
+  foreach t in array array['profiles','products','licenses','payments','payment_settings','user_roles','payables']
   loop
     execute format('drop trigger if exists trg_%I_upd on public.%I;', t, t);
     execute format('create trigger trg_%I_upd before update on public.%I for each row execute function public.set_updated_at();', t, t);
