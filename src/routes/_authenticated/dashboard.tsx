@@ -407,30 +407,27 @@ function Dashboard() {
                 )}
               </div>
               <div className="mt-1 text-xs text-muted-foreground">
-                Após o upgrade: {Number(upgradeLicense?.product?.storage_amount ?? 0) + Number(upgradeLicense?.extra_storage_gb ?? 0) + Number(upgradeAmount || 0)} {upgradeLicense?.product?.storage_unit ?? "GB"}
+                Após o upgrade: {Number(upgradeLicense?.product?.storage_amount ?? 0) + Number(upgradeLicense?.extra_storage_gb ?? 0) + Number(selectedStorageProduct?.storage_amount ?? 0)} {upgradeLicense?.product?.storage_unit ?? "GB"}
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>Quanto deseja adicionar?</Label>
-              <Select value={upgradeAmount} onValueChange={setUpgradeAmount}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Label>Pacote de armazenamento</Label>
+              <Select value={storageProductId} onValueChange={setStorageProductId}>
+                <SelectTrigger><SelectValue placeholder={storageProducts.length ? "Selecione um pacote" : "Nenhum pacote disponível"} /></SelectTrigger>
                 <SelectContent>
-                  {upgradeOptions.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  {storageProducts.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name} (+{Number(p.storage_amount)} {p.storage_unit ?? "GB"}) — {formatBRL(Number(p.price_monthly))}/mês
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <div className="mt-2 rounded-md border bg-muted/30 p-3 text-sm">
-                <div className="text-muted-foreground">Acréscimo na mensalidade</div>
-                <div className="font-semibold">
-                  {Number(upgradeAmount || 0)} GB × {formatBRL(pricePerGb(upgradeLicense))}/GB = <span className="text-primary">{formatBRL(extraStorageCost(upgradeLicense, Number(upgradeAmount || 0)))}</span>
+              {selectedStorageProduct && (
+                <div className="mt-2 rounded-md border bg-muted/30 p-3 text-sm">
+                  <div className="text-muted-foreground">Acréscimo na mensalidade</div>
+                  <div className="font-semibold text-primary">{formatBRL(Number(selectedStorageProduct.price_monthly))}</div>
                 </div>
-                {pricePerGb(upgradeLicense) === 0 && (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Preço por GB não pôde ser calculado (produto sem mensalidade ou armazenamento base).
-                  </p>
-                )}
-              </div>
+              )}
             </div>
           </div>
           <DialogFooter>
