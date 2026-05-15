@@ -192,8 +192,8 @@ function Dashboard() {
                   <div>
                     <div className="text-xs uppercase tracking-wide text-muted-foreground">{l.product?.name ?? "Software"}</div>
                     <div className="mt-1 font-mono text-lg font-semibold">{l.license_key}</div>
-                    {customerName && (
-                      <div className="mt-1 text-sm text-muted-foreground">{customerName}</div>
+                    {(customerNames[l.user_id] || customerName) && (
+                      <div className="mt-1 text-sm text-muted-foreground">{customerNames[l.user_id] || customerName}</div>
                     )}
                   </div>
                   <Badge className={statusVariant[l.status]} variant="outline">{statusLabel[l.status]}</Badge>
