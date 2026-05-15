@@ -1577,6 +1577,7 @@ function PaymentsTab({
             amount,
             status: "pending" as const,
             due_date: due,
+            notes: newForm.description || null,
           })
           .select()
           .single();
@@ -1587,7 +1588,7 @@ function PaymentsTab({
       toast.success(qty > 1 ? `${qty} boletos emitidos` : "Boleto emitido");
       if (firstUrl) window.open(firstUrl, "_blank");
       setNewOpen(false);
-      setNewForm({ user_id: "", license_id: "", amount: "", due_date: "", quantity: "1" });
+      setNewForm({ user_id: "", license_id: "", amount: "", due_date: "", quantity: "1", description: "" });
       onChange();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao emitir boleto");
