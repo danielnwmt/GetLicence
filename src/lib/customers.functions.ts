@@ -120,7 +120,7 @@ export const listAdminProfiles = createServerFn({ method: "GET" })
 
     const filtered = (profiles ?? []).filter((p: any) => !adminIds.has(p.user_id));
 
-    return ((profiles ?? []) as AdminProfile[]).map((profile) => {
+    return (filtered as AdminProfile[]).map((profile) => {
       return {
         user_id: profile.user_id,
         customer_number: profile?.customer_number ?? null,
