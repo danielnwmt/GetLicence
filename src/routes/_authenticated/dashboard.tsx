@@ -347,10 +347,15 @@ function Dashboard() {
                     <ArrowUpCircle className="mr-2 h-3.5 w-3.5" />
                     Armazenamento extra
                   </Button>
+                  {Number(l.extra_storage_gb) > 0 && (
+                    <Button size="sm" variant="outline" onClick={() => removeExtraStorage(l)}>
+                      Remover extra ({Number(l.extra_storage_gb)} GB)
+                    </Button>
+                  )}
                   {l.product?.vps_specs && (
                     <Button size="sm" variant="secondary" onClick={() => openVpsUpgrade(l)}>
                       <Server className="mr-2 h-3.5 w-3.5" />
-                      Upgrade de VPS
+                      Alterar VPS
                     </Button>
                   )}
                 </div>
