@@ -47,6 +47,14 @@ interface VpsProduct {
   price_monthly: number;
 }
 
+interface StorageProduct {
+  id: string;
+  name: string;
+  storage_amount: number;
+  storage_unit: string | null;
+  price_monthly: number;
+}
+
 interface Payment {
   id: string;
   amount: number;
