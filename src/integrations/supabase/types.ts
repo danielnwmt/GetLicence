@@ -163,6 +163,7 @@ export type Database = {
           coplan_username: string | null
           created_at: string
           gdrive_folder_id: string | null
+          gdrive_owner_email: string | null
           gdrive_service_account_json: string | null
           id: string
           notes: string | null
@@ -194,6 +195,7 @@ export type Database = {
           coplan_username?: string | null
           created_at?: string
           gdrive_folder_id?: string | null
+          gdrive_owner_email?: string | null
           gdrive_service_account_json?: string | null
           id?: string
           notes?: string | null
@@ -225,6 +227,7 @@ export type Database = {
           coplan_username?: string | null
           created_at?: string
           gdrive_folder_id?: string | null
+          gdrive_owner_email?: string | null
           gdrive_service_account_json?: string | null
           id?: string
           notes?: string | null

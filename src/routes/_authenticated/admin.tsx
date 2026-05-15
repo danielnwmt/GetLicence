@@ -52,6 +52,8 @@ import {
   Ban,
   ShieldOff,
   CloudUpload,
+  HardDrive,
+  Upload,
 } from "lucide-react";
 import { runBackupNow, restoreBackup } from "@/lib/backup.functions";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
@@ -3799,40 +3801,57 @@ function PayablesTab({
   );
 }
 
+function parseFolderId(input: string): string {
+  if (!input) return "";
+  const m = input.match(/folders\/([a-zA-Z0-9_-]+)/);
+  if (m) return m[1];
+  const m2 = input.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (m2) return m2[1];
+  return input.trim();
+}
+
 function BackupTab() {
   const [s, setS] = useState<{
     gdrive_service_account_json: string;
     gdrive_folder_id: string;
+    gdrive_owner_email: string;
     backup_enabled: boolean;
     backup_retention_days: number;
     backup_last_run_at: string | null;
     backup_last_status: string | null;
   } | null>(null);
+  const [folderInput, setFolderInput] = useState("");
   const [saving, setSaving] = useState(false);
   const [running, setRunning] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const jsonFileRef = useRef<HTMLInputElement>(null);
   const runFn = useServerFn(runBackupNow);
   const restoreFn = useServerFn(restoreBackup);
 
   const load = async () => {
     const { data } = await supabase
       .from("payment_settings")
-      .select("gdrive_service_account_json, gdrive_folder_id, backup_enabled, backup_retention_days, backup_last_run_at, backup_last_status")
+      .select("gdrive_service_account_json, gdrive_folder_id, gdrive_owner_email, backup_enabled, backup_retention_days, backup_last_run_at, backup_last_status")
       .limit(1)
       .maybeSingle();
     setS({
       gdrive_service_account_json: data?.gdrive_service_account_json ?? "",
       gdrive_folder_id: data?.gdrive_folder_id ?? "",
+      gdrive_owner_email: (data as any)?.gdrive_owner_email ?? "",
       backup_enabled: data?.backup_enabled ?? false,
       backup_retention_days: data?.backup_retention_days ?? 5,
       backup_last_run_at: data?.backup_last_run_at ?? null,
       backup_last_status: data?.backup_last_status ?? null,
     });
+    setFolderInput(data?.gdrive_folder_id ?? "");
   };
   useEffect(() => { load(); }, []);
 
   if (!s) return <div className="text-muted-foreground">Carregando...</div>;
+
+  const folderId = parseFolderId(folderInput);
+  const isActive = !!(s.gdrive_service_account_json && folderId);
 
   const save = async () => {
     setSaving(true);
@@ -3841,12 +3860,14 @@ function BackupTab() {
       if (!ex?.id) { toast.error("Configurações não inicializadas"); return; }
       const { error } = await supabase.from("payment_settings").update({
         gdrive_service_account_json: s.gdrive_service_account_json || null,
-        gdrive_folder_id: s.gdrive_folder_id || null,
+        gdrive_folder_id: folderId || null,
+        gdrive_owner_email: s.gdrive_owner_email || null,
         backup_enabled: s.backup_enabled,
         backup_retention_days: s.backup_retention_days,
-      }).eq("id", ex.id);
+      } as any).eq("id", ex.id);
       if (error) throw error;
       toast.success("Configurações de backup salvas");
+      await load();
     } catch (e: any) {
       toast.error(e.message || "Erro ao salvar");
     } finally {
@@ -3887,21 +3908,75 @@ function BackupTab() {
     }
   };
 
+  const onPickJson = () => jsonFileRef.current?.click();
+  const onJsonChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (e.target) e.target.value = "";
+    if (!file) return;
+    try {
+      const text = await file.text();
+      JSON.parse(text);
+      setS({ ...s, gdrive_service_account_json: text });
+      toast.success("Arquivo JSON carregado");
+    } catch {
+      toast.error("Arquivo JSON inválido");
+    }
+  };
+
   return (
-    <Card className="p-6 space-y-4">
-      <div className="flex items-center gap-3">
-        <CloudUpload className="h-5 w-5 text-primary" />
-        <div>
-          <h3 className="text-lg font-semibold">Backup no Google Drive</h3>
+    <Card className="p-6 space-y-5">
+      <div className="rounded-lg border bg-muted/40 p-4 flex items-start gap-3">
+        <div className="rounded-md bg-background p-2 border">
+          <HardDrive className="h-5 w-5 text-primary" />
+        </div>
+        <div className="space-y-1">
+          <p className="text-sm">
+            Configure a integração com o Google Drive usando uma <strong>Conta de Serviço</strong>.
+          </p>
           <p className="text-sm text-muted-foreground">
-            Envia um backup completo do banco (JSON) para a sua pasta do Google Drive.
-            Backups mais antigos que o período de retenção são excluídos automaticamente.
+            A conta de serviço permite acesso programático ao Drive sem interação do usuário.
           </p>
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label>JSON da Service Account (Google Cloud)</Label>
+        <Label>ID da Pasta Raiz no Google Drive</Label>
+        <Input
+          value={folderInput}
+          onChange={(e) => setFolderInput(e.target.value)}
+          placeholder="https://drive.google.com/drive/folders/ID_AQUI"
+        />
+        <p className="text-xs text-muted-foreground">
+          O ID está na URL da pasta: drive.google.com/drive/folders/<strong>ID_AQUI</strong>
+          {folderId && folderId !== folderInput && (
+            <> — detectado: <code className="text-foreground">{folderId}</code></>
+          )}
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <Label>E-mail do Proprietário (para transferência de cota)</Label>
+        <Input
+          type="email"
+          value={s.gdrive_owner_email}
+          onChange={(e) => setS({ ...s, gdrive_owner_email: e.target.value })}
+          placeholder="contato@seudominio.com"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>JSON da Conta de Serviço</Label>
+        <input
+          ref={jsonFileRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={onJsonChange}
+        />
+        <Button variant="outline" size="sm" onClick={onPickJson} type="button">
+          <Upload className="h-4 w-4 mr-2" />
+          Carregar arquivo .json
+        </Button>
         <Textarea
           rows={8}
           placeholder='{"type":"service_account","client_email":"...","private_key":"-----BEGIN PRIVATE KEY-----\n..."}'
@@ -3910,20 +3985,11 @@ function BackupTab() {
           className="font-mono text-xs"
         />
         <p className="text-xs text-muted-foreground">
-          Crie no Google Cloud Console → IAM → Service Accounts → Keys → Add Key (JSON).
           Compartilhe a pasta do Drive com o email <code>client_email</code> dessa conta (permissão Editor).
         </p>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-3">
-        <div className="space-y-2">
-          <Label>ID da pasta do Drive</Label>
-          <Input
-            value={s.gdrive_folder_id}
-            onChange={(e) => setS({ ...s, gdrive_folder_id: e.target.value })}
-            placeholder="1AbCdEfGhIjKlMnOpQrStUvWxYz"
-          />
-        </div>
+      <div className="grid gap-3 md:grid-cols-2">
         <div className="space-y-2">
           <Label>Retenção (dias)</Label>
           <Input
@@ -3948,6 +4014,13 @@ function BackupTab() {
         </div>
       </div>
 
+      {isActive && (
+        <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+          <CheckCircle2 className="h-4 w-4" />
+          Configuração salva e ativa
+        </div>
+      )}
+
       {s.backup_last_run_at && (
         <div className="rounded-md border p-3 text-sm">
           <div><span className="text-muted-foreground">Último backup:</span> {new Date(s.backup_last_run_at).toLocaleString("pt-BR")}</div>
@@ -3968,6 +4041,7 @@ function BackupTab() {
           onChange={onFileChange}
         />
         <Button variant="outline" onClick={onPickFile} disabled={restoring}>
+          <CloudUpload className="h-4 w-4 mr-2" />
           {restoring ? "Restaurando..." : "Selecionar arquivo de backup"}
         </Button>
       </div>
