@@ -59,6 +59,7 @@ function Dashboard() {
   const [vpsUpgradeLicense, setVpsUpgradeLicense] = useState<License | null>(null);
   const [vpsUpgradePlan, setVpsUpgradePlan] = useState<string>("2vcpu-4gb");
   const [vpsUpgradeSubmitting, setVpsUpgradeSubmitting] = useState(false);
+  const [customerName, setCustomerName] = useState<string>("");
 
   const upgradeOptions = [
     { value: "50", label: "+50 GB" },
