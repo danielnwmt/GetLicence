@@ -104,6 +104,13 @@ function Dashboard() {
   useEffect(() => {
     if (!user) return;
     (async () => {
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setCustomerName((prof as any)?.full_name || user.email || "");
+
       const { data: lic } = await supabase
         .from("licenses")
         .select("id, license_key, plan, status, starts_at, expires_at, product:products(name, description, vps_specs, vps_storage_amount, vps_storage_unit, storage_amount, storage_unit)")
