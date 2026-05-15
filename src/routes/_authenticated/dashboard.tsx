@@ -148,14 +148,19 @@ function Dashboard() {
       .select("id, name, vps_specs, price_monthly")
       .eq("active", true)
       .eq("kind", "vps")
-      .gt("price_monthly", Number(lic.product?.price_monthly ?? 0))
       .order("price_monthly", { ascending: true });
-    setVpsProducts(((data as any[]) || []).filter((p) => p.id !== lic.product_id) as VpsProduct[]);
+    const all = ((data as any[]) || []) as VpsProduct[];
+    const currentSpecs = (lic.product?.vps_specs ?? "").trim().toLowerCase();
+    const match = currentSpecs
+      ? all.find((p) => (p.vps_specs ?? "").trim().toLowerCase() === currentSpecs)
+      : null;
+    setCurrentVpsPrice(Number(match?.price_monthly ?? 0));
+    setVpsProducts(all.filter((p) => p.id !== match?.id));
   };
 
   const selectedVpsProduct = vpsProducts.find((p) => p.id === vpsUpgradeProductId) || null;
-  const vpsDiff = selectedVpsProduct && vpsUpgradeLicense
-    ? Number(selectedVpsProduct.price_monthly) - Number(vpsUpgradeLicense.product?.price_monthly ?? 0)
+  const vpsDiff = selectedVpsProduct
+    ? Number(selectedVpsProduct.price_monthly) - currentVpsPrice
     : 0;
 
   const submitVpsUpgrade = async () => {
