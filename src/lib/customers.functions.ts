@@ -1,7 +1,23 @@
 import { createServerFn } from "@tanstack/react-start";
-import { supabaseAdmin as admin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin as admin } from "@/integrations/supabase/client.server";
+
+type AdminProfile = {
+  user_id: string;
+  full_name: string | null;
+  email: string | null;
+  address_city: string | null;
+  address_state: string | null;
+  customer_number: number | null;
+  cpf_cnpj: string | null;
+  phone: string | null;
+  address_zip: string | null;
+  address_street: string | null;
+  address_number: string | null;
+  address_complement: string | null;
+  address_neighborhood: string | null;
+};
 
 
 const schema = z.object({
@@ -32,19 +48,24 @@ export const createCustomer = createServerFn({ method: "POST" })
       throw new Response("Forbidden", { status: 403 });
     }
 
-    // admin client imported at top
-
-    const { data: created, error } = await admin.auth.admin.createUser({
+    let created;
+    try {
+      const result = await admin.auth.admin.createUser({
       email: data.email,
       password: data.password,
       email_confirm: true,
       user_metadata: { full_name: data.full_name },
-    });
-    if (error) throw new Response(error.message, { status: 400 });
+      });
+      if (result.error) throw new Response(result.error.message, { status: 400 });
+      created = result.data;
+    } catch (err) {
+      if (err instanceof Response) throw err;
+      throw new Response("Configure SUPABASE_SERVICE_ROLE_KEY nos secrets do backend para criar clientes.", { status: 500 });
+    }
 
     const newUserId = created.user?.id;
     if (newUserId) {
-      const { error: profileError } = await admin.from("profiles").upsert({
+      const { error: profileError } = await supabase.from("profiles").upsert({
         user_id: newUserId,
         email: data.email,
         full_name: data.full_name,
@@ -63,7 +84,7 @@ export const createCustomer = createServerFn({ method: "POST" })
         throw new Response(profileError.message, { status: 400 });
       }
 
-      const { error: roleError } = await admin.from("user_roles").upsert(
+      const { error: roleError } = await supabase.from("user_roles").upsert(
         { user_id: newUserId, role: "client" },
         { onConflict: "user_id,role" }
       );
@@ -85,25 +106,18 @@ export const listAdminProfiles = createServerFn({ method: "GET" })
     });
     if (!isAdmin) throw new Response("Forbidden", { status: 403 });
 
-    // admin client imported at top
-
-    const [{ data: profiles, error: profilesError }, { data: usersData, error: usersError }] = await Promise.all([
-      admin.from("profiles").select("user_id, full_name, email, address_city, address_state, customer_number, cpf_cnpj, phone, address_zip, address_street, address_number, address_complement, address_neighborhood"),
-      admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
-    ]);
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("user_id, full_name, email, address_city, address_state, customer_number, cpf_cnpj, phone, address_zip, address_street, address_number, address_complement, address_neighborhood");
 
     if (profilesError) throw new Response(profilesError.message, { status: 400 });
-    if (usersError) throw new Response(usersError.message, { status: 400 });
 
-    const profileByUserId = new Map((profiles ?? []).map((p) => [p.user_id, p]));
-
-    return usersData.users.map((user) => {
-      const profile = profileByUserId.get(user.id);
+    return ((profiles ?? []) as AdminProfile[]).map((profile) => {
       return {
-        user_id: user.id,
+        user_id: profile.user_id,
         customer_number: profile?.customer_number ?? null,
-        full_name: profile?.full_name ?? (typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null),
-        email: profile?.email ?? user.email ?? null,
+        full_name: profile?.full_name ?? null,
+        email: profile?.email ?? null,
         cpf_cnpj: profile?.cpf_cnpj ?? null,
         phone: profile?.phone ?? null,
         address_zip: profile?.address_zip ?? null,
@@ -150,11 +164,16 @@ export const updateCustomer = createServerFn({ method: "POST" })
     if (data.email) authUpdate.email = data.email;
     if (data.password && data.password.length >= 6) authUpdate.password = data.password;
     if (Object.keys(authUpdate).length > 0) {
-      const { error } = await admin.auth.admin.updateUserById(data.user_id, authUpdate);
+      let error;
+      try {
+        ({ error } = await admin.auth.admin.updateUserById(data.user_id, authUpdate));
+      } catch {
+        throw new Response("Configure SUPABASE_SERVICE_ROLE_KEY nos secrets do backend para alterar e-mail/senha.", { status: 500 });
+      }
       if (error) throw new Response(error.message, { status: 400 });
     }
 
-    const { error: pErr } = await admin.from("profiles").update({
+    const { error: pErr } = await supabase.from("profiles").update({
       full_name: data.full_name,
       email: data.email ?? undefined,
       cpf_cnpj: data.cpf_cnpj.replace(/\D/g, ""),
