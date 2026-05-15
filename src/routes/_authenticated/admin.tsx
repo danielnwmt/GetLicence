@@ -3075,11 +3075,21 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
   };
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ full_name: "", email: "", password: "" });
+  const [form, setForm] = useState<{ full_name: string; email: string; password: string; role: "admin" | "operator" }>({
+    full_name: "",
+    email: "",
+    password: "",
+    role: "admin",
+  });
 
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<Profile | null>(null);
-  const [editForm, setEditForm] = useState({ full_name: "", email: "", password: "" });
+  const [editForm, setEditForm] = useState<{ full_name: string; email: string; password: string; role: "admin" | "operator" }>({
+    full_name: "",
+    email: "",
+    password: "",
+    role: "admin",
+  });
 
   const save = async () => {
     if (!form.full_name.trim() || !form.email.trim() || form.password.length < 6) {
@@ -3087,10 +3097,10 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
     }
     setSaving(true);
     try {
-      await createSystemUserFn({ data: { ...form, role: "admin" } });
+      await createSystemUserFn({ data: { ...form } });
       toast.success("Usuário do sistema cadastrado");
       setOpen(false);
-      setForm({ full_name: "", email: "", password: "" });
+      setForm({ full_name: "", email: "", password: "", role: "admin" });
       onChange();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao cadastrar");
