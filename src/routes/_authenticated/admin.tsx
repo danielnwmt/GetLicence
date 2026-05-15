@@ -218,7 +218,7 @@ function AdminPage() {
 
   const reload = useCallback(async () => {
     try {
-      const [p, l, pay, pr, ur, pb] = await Promise.all([
+      const [p, l, pay, pr, ur, pb, su] = await Promise.all([
         supabase.from("products").select("*").order("created_at", { ascending: false }),
         supabase
           .from("licenses")
@@ -237,6 +237,10 @@ function AdminPage() {
           .from("payables")
           .select("*")
           .order("due_date", { ascending: true, nullsFirst: false }),
+        listSystemUsersFn().catch((e) => {
+          console.error("listSystemUsers failed:", e);
+          return [] as Profile[];
+        }),
       ]);
       setProducts((p.data as Product[]) || []);
       setLicenses((l.data as unknown as LicenseRow[]) || []);
@@ -244,10 +248,11 @@ function AdminPage() {
       setProfiles(Array.isArray(pr) ? (pr as Profile[]) : []);
       setAdminIds(((ur.data as { user_id: string }[]) || []).map((r) => r.user_id));
       setPayables((pb.data as unknown as PayableRow[]) || []);
+      setSystemUsers(Array.isArray(su) ? (su as Profile[]) : []);
     } catch (e) {
       console.error("Admin reload failed:", e);
     }
-  }, [listAdminProfilesFn]);
+  }, [listAdminProfilesFn, listSystemUsersFn]);
 
   useEffect(() => {
     if (role === "admin") reload();
