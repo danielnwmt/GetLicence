@@ -10,6 +10,7 @@ import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -115,23 +116,8 @@ function Dashboard() {
         .eq("id", upgradeLicense.id);
       if (error) throw error;
 
-      if (cost > 0) {
-        const due = new Date();
-        due.setDate(due.getDate() + 7);
-        const { error: pErr } = await supabase.from("payments").insert({
-          user_id: user.id,
-          license_id: upgradeLicense.id,
-          amount: Number(cost.toFixed(2)),
-          status: "pending",
-          method: "boleto",
-          due_date: due.toISOString().slice(0, 10),
-          notes: `Armazenamento extra: ${selectedStorageProduct.name} (+${add} ${selectedStorageProduct.storage_unit ?? "GB"})`,
-        });
-        if (pErr) throw pErr;
-      }
-
       setLicenses((prev) => prev.map((x) => x.id === upgradeLicense.id ? { ...x, extra_storage_gb: newExtra } : x));
-      toast.success(`+${add} ${selectedStorageProduct.storage_unit ?? "GB"} adicionados. Acréscimo: ${formatBRL(cost)}.`);
+      toast.success(`+${add} ${selectedStorageProduct.storage_unit ?? "GB"} adicionados. Acréscimo de ${formatBRL(cost)}/mês será incluído na próxima fatura.`);
       setUpgradeLicense(null);
     } catch (e: any) {
       toast.error(e.message ?? "Erro ao aplicar upgrade");
@@ -173,45 +159,49 @@ function Dashboard() {
         .eq("id", vpsUpgradeLicense.id);
       if (error) throw error;
 
-      if (vpsDiff > 0) {
-        const due = new Date();
-        due.setDate(due.getDate() + 7);
-        const { error: pErr } = await supabase.from("payments").insert({
-          user_id: user.id,
-          license_id: vpsUpgradeLicense.id,
-          amount: Number(vpsDiff.toFixed(2)),
-          status: "pending",
-          method: "boleto",
-          due_date: due.toISOString().slice(0, 10),
-          notes: `Upgrade de VPS: ${vpsUpgradeLicense.product?.vps_specs ?? "—"} → ${selectedVpsProduct.vps_specs ?? selectedVpsProduct.name}. Acréscimo mensal.`,
-        });
-        if (pErr) throw pErr;
-      }
-
       const msg = vpsDiff > 0
-        ? `VPS atualizada. Acréscimo na mensalidade: ${formatBRL(vpsDiff)}.`
+        ? `VPS atualizada. Acréscimo de ${formatBRL(vpsDiff)}/mês será incluído na próxima fatura.`
         : vpsDiff < 0
-          ? `VPS atualizada. Redução na mensalidade: ${formatBRL(Math.abs(vpsDiff))}.`
+          ? `VPS atualizada. Redução de ${formatBRL(Math.abs(vpsDiff))}/mês na próxima fatura.`
           : `VPS atualizada sem alteração de valor.`;
       toast.success(msg);
       setVpsUpgradeLicense(null);
     } catch (e: any) {
-      toast.error(e.message ?? "Erro ao solicitar upgrade");
+      toast.error(e.message ?? "Erro ao solicitar alteração");
     } finally {
       setVpsUpgradeSubmitting(false);
     }
   };
 
-  const removeExtraStorage = async (lic: License) => {
-    if (!Number(lic.extra_storage_gb)) return;
-    if (!confirm(`Remover ${Number(lic.extra_storage_gb)} GB de armazenamento extra desta licença?`)) return;
-    const { error } = await supabase
-      .from("licenses")
-      .update({ extra_storage_gb: 0 })
-      .eq("id", lic.id);
-    if (error) { toast.error(error.message); return; }
-    setLicenses((prev) => prev.map((x) => x.id === lic.id ? { ...x, extra_storage_gb: 0 } : x));
-    toast.success("Armazenamento extra removido. A próxima fatura voltará ao valor base.");
+  const [downgradeLicense, setDowngradeLicense] = useState<License | null>(null);
+  const [downgradeKeepGb, setDowngradeKeepGb] = useState<string>("0");
+  const [downgradeSubmitting, setDowngradeSubmitting] = useState(false);
+
+  const openDowngrade = (lic: License) => {
+    setDowngradeLicense(lic);
+    setDowngradeKeepGb(String(Number(lic.extra_storage_gb ?? 0)));
+  };
+
+  const submitDowngrade = async () => {
+    if (!downgradeLicense) return;
+    const current = Number(downgradeLicense.extra_storage_gb ?? 0);
+    const keep = Math.max(0, Math.min(current, Number(downgradeKeepGb) || 0));
+    if (keep === current) { setDowngradeLicense(null); return; }
+    setDowngradeSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from("licenses")
+        .update({ extra_storage_gb: keep })
+        .eq("id", downgradeLicense.id);
+      if (error) throw error;
+      setLicenses((prev) => prev.map((x) => x.id === downgradeLicense.id ? { ...x, extra_storage_gb: keep } : x));
+      toast.success(`Armazenamento extra ajustado para ${keep} GB. A próxima fatura refletirá o novo valor.`);
+      setDowngradeLicense(null);
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao reduzir armazenamento");
+    } finally {
+      setDowngradeSubmitting(false);
+    }
   };
 
   useEffect(() => {
@@ -348,8 +338,8 @@ function Dashboard() {
                     Armazenamento extra
                   </Button>
                   {Number(l.extra_storage_gb) > 0 && (
-                    <Button size="sm" variant="outline" onClick={() => removeExtraStorage(l)}>
-                      Remover extra ({Number(l.extra_storage_gb)} GB)
+                    <Button size="sm" variant="outline" onClick={() => openDowngrade(l)}>
+                      Reduzir extra ({Number(l.extra_storage_gb)} GB)
                     </Button>
                   )}
                   {l.product?.vps_specs && (
@@ -515,6 +505,42 @@ function Dashboard() {
             <Button variant="outline" onClick={() => setVpsUpgradeLicense(null)}>Cancelar</Button>
             <Button onClick={submitVpsUpgrade} disabled={vpsUpgradeSubmitting || !selectedVpsProduct}>
               {vpsUpgradeSubmitting ? "Enviando..." : "Confirmar alteração"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!downgradeLicense} onOpenChange={(o) => !o && setDowngradeLicense(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reduzir armazenamento extra</DialogTitle>
+            <DialogDescription>
+              {downgradeLicense?.product?.name} — {downgradeLicense?.license_key}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="rounded-md border bg-muted/30 p-3 text-sm">
+              <div className="text-muted-foreground">Extra atual</div>
+              <div className="font-medium">{Number(downgradeLicense?.extra_storage_gb ?? 0)} GB</div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Quanto de extra deseja manter? (GB)</Label>
+              <Input
+                type="number"
+                min={0}
+                max={Number(downgradeLicense?.extra_storage_gb ?? 0)}
+                value={downgradeKeepGb}
+                onChange={(e) => setDowngradeKeepGb(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Informe 0 para remover todo o extra. A próxima fatura será recalculada.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDowngradeLicense(null)}>Cancelar</Button>
+            <Button onClick={submitDowngrade} disabled={downgradeSubmitting}>
+              {downgradeSubmitting ? "Enviando..." : "Confirmar redução"}
             </Button>
           </DialogFooter>
         </DialogContent>
