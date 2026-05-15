@@ -52,6 +52,8 @@ import {
   Ban,
   ShieldOff,
   CloudUpload,
+  HardDrive,
+  Upload,
 } from "lucide-react";
 import { runBackupNow, restoreBackup } from "@/lib/backup.functions";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
