@@ -443,26 +443,36 @@ function Dashboard() {
             <div className="rounded-md border bg-muted/30 p-3 text-sm">
               <div className="text-muted-foreground">VPS atual</div>
               <div className="font-medium">{vpsUpgradeLicense?.product?.vps_specs || "—"}</div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                Mensalidade atual: {formatBRL(Number(vpsUpgradeLicense?.product?.price_monthly ?? 0))}
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label>Nova configuração</Label>
-              <Select value={vpsUpgradePlan} onValueChange={setVpsUpgradePlan}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select value={vpsUpgradeProductId} onValueChange={setVpsUpgradeProductId}>
+                <SelectTrigger><SelectValue placeholder={vpsProducts.length ? "Selecione" : "Nenhum upgrade disponível"} /></SelectTrigger>
                 <SelectContent>
-                  {vpsUpgradeOptions.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  {vpsProducts.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {(p.vps_specs || p.name)} — {formatBRL(Number(p.price_monthly))}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
-                A cobrança proporcional será calculada e enviada por boleto.
-              </p>
+              {selectedVpsProduct && (
+                <div className="mt-2 rounded-md border bg-muted/30 p-3 text-sm">
+                  <div className="text-muted-foreground">Acréscimo na mensalidade</div>
+                  <div className="font-semibold">
+                    {formatBRL(Number(selectedVpsProduct.price_monthly))} − {formatBRL(Number(vpsUpgradeLicense?.product?.price_monthly ?? 0))} = <span className="text-primary">{formatBRL(vpsDiff)}</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setVpsUpgradeLicense(null)}>Cancelar</Button>
-            <Button onClick={submitVpsUpgrade} disabled={vpsUpgradeSubmitting}>
-              {vpsUpgradeSubmitting ? "Enviando..." : "Solicitar upgrade"}
+            <Button onClick={submitVpsUpgrade} disabled={vpsUpgradeSubmitting || !selectedVpsProduct}>
+              {vpsUpgradeSubmitting ? "Enviando..." : "Confirmar upgrade"}
             </Button>
           </DialogFooter>
         </DialogContent>
