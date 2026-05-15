@@ -201,7 +201,7 @@ function Dashboard() {
 
       const { data: lic } = await supabase
         .from("licenses")
-        .select("id, user_id, license_key, plan, status, starts_at, expires_at, extra_storage_gb, product:products(name, description, vps_specs, vps_storage_amount, vps_storage_unit, storage_amount, storage_unit)")
+        .select("id, user_id, product_id, license_key, plan, status, starts_at, expires_at, extra_storage_gb, product:products(id, name, description, vps_specs, vps_storage_amount, vps_storage_unit, storage_amount, storage_unit, price_monthly)")
         .order("created_at", { ascending: false });
       const licList = (lic as unknown as License[]) || [];
       setLicenses(licList);
