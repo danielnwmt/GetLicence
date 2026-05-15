@@ -1543,6 +1543,14 @@ function PaymentsTab({
     }
   };
 
+  const excluir = async (id: string) => {
+    if (!confirm("Excluir este boleto cancelado? Esta ação não pode ser desfeita.")) return;
+    const { error } = await supabase.from("payments").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Boleto excluído");
+    onChange();
+  };
+
   const initials = (name?: string | null, email?: string | null) => {
     const src = (name || email || "?").trim();
     const parts = src.split(/\s+/).filter(Boolean);
