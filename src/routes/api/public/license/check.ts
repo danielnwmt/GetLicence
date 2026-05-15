@@ -84,7 +84,9 @@ async function handle(
     blocked: newStatus === "blocked",
     expired: newStatus === "expired",
     storage: prod ? {
-      amount: Number(prod.storage_amount ?? 0),
+      amount: Number(prod.storage_amount ?? 0) + Number((lic as any).extra_storage_gb ?? 0),
+      base_amount: Number(prod.storage_amount ?? 0),
+      extra_amount: Number((lic as any).extra_storage_gb ?? 0),
       unit: prod.storage_unit ?? "GB",
       vps_amount: Number(prod.vps_storage_amount ?? 0),
       vps_unit: prod.vps_storage_unit ?? "GB",
