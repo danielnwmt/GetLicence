@@ -429,11 +429,41 @@ function Dashboard() {
               )}
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setUpgradeLicense(null)}>Cancelar</Button>
-            <Button onClick={submitUpgrade} disabled={upgradeSubmitting || !selectedStorageProduct}>
-              {upgradeSubmitting ? "Enviando..." : "Confirmar alteração"}
-            </Button>
+          <DialogFooter className="gap-2 sm:justify-between">
+            {Number(upgradeLicense?.extra_storage_gb ?? 0) > 0 && (
+              <Button
+                variant="destructive"
+                onClick={async () => {
+                  if (!upgradeLicense) return;
+                  setUpgradeSubmitting(true);
+                  try {
+                    const { error } = await supabase
+                      .from("licenses")
+                      .update({ extra_storage_gb: 0 })
+                      .eq("id", upgradeLicense.id);
+                    if (error) throw error;
+                    setLicenses((prev) => prev.map((x) => x.id === upgradeLicense.id ? { ...x, extra_storage_gb: 0 } : x));
+                    toast.success(currentStoragePrice > 0
+                      ? `Armazenamento extra removido. Redução de ${formatBRL(currentStoragePrice)}/mês na próxima fatura.`
+                      : "Armazenamento extra removido.");
+                    setUpgradeLicense(null);
+                  } catch (e: any) {
+                    toast.error(e.message ?? "Erro ao remover armazenamento extra");
+                  } finally {
+                    setUpgradeSubmitting(false);
+                  }
+                }}
+                disabled={upgradeSubmitting}
+              >
+                Remover extra
+              </Button>
+            )}
+            <div className="flex gap-2 sm:ml-auto">
+              <Button variant="outline" onClick={() => setUpgradeLicense(null)}>Cancelar</Button>
+              <Button onClick={submitUpgrade} disabled={upgradeSubmitting || !selectedStorageProduct}>
+                {upgradeSubmitting ? "Enviando..." : "Confirmar alteração"}
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
