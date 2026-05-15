@@ -59,6 +59,7 @@ function Dashboard() {
   const [vpsUpgradeLicense, setVpsUpgradeLicense] = useState<License | null>(null);
   const [vpsUpgradePlan, setVpsUpgradePlan] = useState<string>("2vcpu-4gb");
   const [vpsUpgradeSubmitting, setVpsUpgradeSubmitting] = useState(false);
+  const [customerName, setCustomerName] = useState<string>("");
 
   const upgradeOptions = [
     { value: "50", label: "+50 GB" },
@@ -103,6 +104,13 @@ function Dashboard() {
   useEffect(() => {
     if (!user) return;
     (async () => {
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setCustomerName((prof as any)?.full_name || user.email || "");
+
       const { data: lic } = await supabase
         .from("licenses")
         .select("id, license_key, plan, status, starts_at, expires_at, product:products(name, description, vps_specs, vps_storage_amount, vps_storage_unit, storage_amount, storage_unit)")
@@ -159,6 +167,9 @@ function Dashboard() {
                   <div>
                     <div className="text-xs uppercase tracking-wide text-muted-foreground">{l.product?.name ?? "Software"}</div>
                     <div className="mt-1 font-mono text-lg font-semibold">{l.license_key}</div>
+                    {customerName && (
+                      <div className="mt-1 text-sm text-muted-foreground">{customerName}</div>
+                    )}
                   </div>
                   <Badge className={statusVariant[l.status]} variant="outline">{statusLabel[l.status]}</Badge>
                 </div>
