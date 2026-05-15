@@ -306,6 +306,43 @@ function Dashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!vpsUpgradeLicense} onOpenChange={(o) => !o && setVpsUpgradeLicense(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upgrade de VPS</DialogTitle>
+            <DialogDescription>
+              {vpsUpgradeLicense?.product?.name} — {vpsUpgradeLicense?.license_key}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="rounded-md border bg-muted/30 p-3 text-sm">
+              <div className="text-muted-foreground">VPS atual</div>
+              <div className="font-medium">{vpsUpgradeLicense?.product?.vps_specs || "—"}</div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Nova configuração</Label>
+              <Select value={vpsUpgradePlan} onValueChange={setVpsUpgradePlan}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {vpsUpgradeOptions.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                A cobrança proporcional será calculada e enviada por boleto.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVpsUpgradeLicense(null)}>Cancelar</Button>
+            <Button onClick={submitVpsUpgrade} disabled={vpsUpgradeSubmitting}>
+              {vpsUpgradeSubmitting ? "Enviando..." : "Solicitar upgrade"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
