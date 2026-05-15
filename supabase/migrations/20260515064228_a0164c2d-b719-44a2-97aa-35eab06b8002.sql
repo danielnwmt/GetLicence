@@ -1,0 +1,1 @@
+ALTER TABLE public.payment_settings ADD COLUMN IF NOT EXISTS gdrive_owner_email text;
