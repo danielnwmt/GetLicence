@@ -74,7 +74,8 @@ function Dashboard() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
   const [upgradeLicense, setUpgradeLicense] = useState<License | null>(null);
-  const [upgradeAmount, setUpgradeAmount] = useState<string>("100");
+  const [storageProducts, setStorageProducts] = useState<StorageProduct[]>([]);
+  const [storageProductId, setStorageProductId] = useState<string>("");
   const [upgradeSubmitting, setUpgradeSubmitting] = useState(false);
   const [vpsUpgradeLicense, setVpsUpgradeLicense] = useState<License | null>(null);
   const [vpsProducts, setVpsProducts] = useState<VpsProduct[]>([]);
@@ -82,6 +83,8 @@ function Dashboard() {
   const [vpsUpgradeSubmitting, setVpsUpgradeSubmitting] = useState(false);
   const [customerName, setCustomerName] = useState<string>("");
   const [customerNames, setCustomerNames] = useState<Record<string, string>>({});
+
+  const selectedStorageProduct = storageProducts.find((p) => p.id === storageProductId) || null;
 
   const upgradeOptions = [
     { value: "50", label: "+50 GB" },
