@@ -222,12 +222,17 @@ function Dashboard() {
                         </div>
                       </div>
                     )}
-                    {Number(l.product?.storage_amount) > 0 && (
+                    {(Number(l.product?.storage_amount) > 0 || Number(l.extra_storage_gb) > 0) && (
                       <div className="flex items-start gap-2">
                         <HardDrive className="mt-0.5 h-4 w-4 text-primary" />
                         <div>
                           <div className="text-xs uppercase tracking-wide text-muted-foreground">Armazenamento</div>
-                          <div className="font-medium">{Number(l.product?.storage_amount)} {l.product?.storage_unit}</div>
+                          <div className="font-medium">
+                            {Number(l.product?.storage_amount ?? 0) + Number(l.extra_storage_gb ?? 0)} {l.product?.storage_unit ?? "GB"}
+                            {Number(l.extra_storage_gb) > 0 && (
+                              <span className="ml-1 text-xs text-muted-foreground">({Number(l.product?.storage_amount ?? 0)} + {Number(l.extra_storage_gb)} extra)</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}
