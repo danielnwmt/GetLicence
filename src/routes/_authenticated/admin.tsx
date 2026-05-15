@@ -3250,6 +3250,22 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
                 placeholder="deixe vazio para não alterar"
               />
             </div>
+            <div className="space-y-2">
+              <Label>Tipo *</Label>
+              <Select
+                value={editForm.role}
+                onValueChange={(v) => setEditForm({ ...editForm, role: v as "admin" | "operator" })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Administrador</SelectItem>
+                  <SelectItem value="operator">Operador</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Operadores acessam o painel mas não podem emitir boletos.
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button onClick={saveEdit} disabled={saving}>
