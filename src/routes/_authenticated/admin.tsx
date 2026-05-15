@@ -1494,12 +1494,25 @@ function PaymentsTab({
   const [notaOpen, setNotaOpen] = useState(false);
   const [notaDesc, setNotaDesc] = useState("");
   const [notaPayment, setNotaPayment] = useState<PaymentRow | null>(null);
+  const [descOpen, setDescOpen] = useState(false);
+  const [descList, setDescList] = useState<{ id: string; text: string }[]>([]);
+  const [newDescText, setNewDescText] = useState("");
+  const loadDescriptions = () =>
+    supabase
+      .from("boleto_descriptions")
+      .select("id, text")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => setDescList((data as { id: string; text: string }[]) || []));
+  useEffect(() => {
+    loadDescriptions();
+  }, []);
   const [newForm, setNewForm] = useState({
     user_id: "",
     license_id: "",
     amount: "",
     due_date: "",
     quantity: "1",
+    description: "",
   });
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<
