@@ -121,6 +121,16 @@ export const updateSystemUser = createServerFn({ method: "POST" })
       await admin.from("profiles").update(patch).eq("user_id", data.user_id);
     }
 
+    if (data.role) {
+      // Reset to base admin role and add operator if requested
+      await admin.from("user_roles").delete().eq("user_id", data.user_id);
+      const rolesToInsert: { user_id: string; role: "admin" | "operator" }[] = [
+        { user_id: data.user_id, role: "admin" },
+      ];
+      if (data.role === "operator") rolesToInsert.push({ user_id: data.user_id, role: "operator" });
+      await admin.from("user_roles").insert(rolesToInsert);
+    }
+
     return { ok: true };
   });
 
