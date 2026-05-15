@@ -106,25 +106,18 @@ export const listAdminProfiles = createServerFn({ method: "GET" })
     });
     if (!isAdmin) throw new Response("Forbidden", { status: 403 });
 
-    // admin client imported at top
-
-    const [{ data: profiles, error: profilesError }, { data: usersData, error: usersError }] = await Promise.all([
-      admin.from("profiles").select("user_id, full_name, email, address_city, address_state, customer_number, cpf_cnpj, phone, address_zip, address_street, address_number, address_complement, address_neighborhood"),
-      admin.auth.admin.listUsers({ page: 1, perPage: 1000 }),
-    ]);
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("user_id, full_name, email, address_city, address_state, customer_number, cpf_cnpj, phone, address_zip, address_street, address_number, address_complement, address_neighborhood");
 
     if (profilesError) throw new Response(profilesError.message, { status: 400 });
-    if (usersError) throw new Response(usersError.message, { status: 400 });
 
-    const profileByUserId = new Map((profiles ?? []).map((p) => [p.user_id, p]));
-
-    return usersData.users.map((user) => {
-      const profile = profileByUserId.get(user.id);
+    return ((profiles ?? []) as AdminProfile[]).map((profile) => {
       return {
-        user_id: user.id,
+        user_id: profile.user_id,
         customer_number: profile?.customer_number ?? null,
-        full_name: profile?.full_name ?? (typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null),
-        email: profile?.email ?? user.email ?? null,
+        full_name: profile?.full_name ?? null,
+        email: profile?.email ?? null,
         cpf_cnpj: profile?.cpf_cnpj ?? null,
         phone: profile?.phone ?? null,
         address_zip: profile?.address_zip ?? null,
