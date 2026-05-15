@@ -20,6 +20,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 interface License {
   id: string;
   user_id: string;
+  product_id: string;
   license_key: string;
   plan: string;
   status: string;
@@ -27,6 +28,7 @@ interface License {
   expires_at: string;
   extra_storage_gb: number | null;
   product: {
+    id?: string;
     name: string;
     description: string | null;
     vps_specs: string | null;
@@ -34,7 +36,15 @@ interface License {
     vps_storage_unit: string | null;
     storage_amount: number | null;
     storage_unit: string | null;
+    price_monthly: number | null;
   } | null;
+}
+
+interface VpsProduct {
+  id: string;
+  name: string;
+  vps_specs: string | null;
+  price_monthly: number;
 }
 
 interface Payment {
