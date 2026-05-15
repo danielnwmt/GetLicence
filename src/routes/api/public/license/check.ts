@@ -98,13 +98,20 @@ export const Route = createFileRoute("/api/public/license/check")({
       POST: async ({ request }) => {
         let body: any = {};
         try { body = await request.json(); } catch {}
-        return handle(request, { license_key: body?.license_key, hostname: body?.hostname });
+        return handle(request, {
+          license_key: body?.license_key,
+          hostname: body?.hostname,
+          ipv4: body?.ipv4,
+          ipv6: body?.ipv6,
+        });
       },
       GET: async ({ request }) => {
         const u = new URL(request.url);
         return handle(request, {
           license_key: u.searchParams.get("license_key") ?? undefined,
           hostname: u.searchParams.get("hostname") ?? undefined,
+          ipv4: u.searchParams.get("ipv4") ?? undefined,
+          ipv6: u.searchParams.get("ipv6") ?? undefined,
         });
       },
     },
