@@ -3291,7 +3291,9 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
                 <td className="p-3 font-medium">{p.full_name || "—"}</td>
                 <td className="p-3">{p.email}</td>
                 <td className="p-3">
-                  <Badge variant="outline">admin</Badge>
+                  <Badge variant={p.role === "operator" ? "secondary" : "outline"}>
+                    {p.role === "operator" ? "operador" : "admin"}
+                  </Badge>
                 </td>
                 <td className="p-3">
                   <div className="flex gap-1">
