@@ -245,7 +245,7 @@ function Dashboard() {
                   </Button>
                   <Button size="sm" onClick={() => { setUpgradeLicense(l); setUpgradeAmount("100"); }}>
                     <ArrowUpCircle className="mr-2 h-3.5 w-3.5" />
-                    Upgrade de armazenamento
+                    Armazenamento extra
                   </Button>
                   {l.product?.vps_specs && (
                     <Button size="sm" variant="secondary" onClick={() => { setVpsUpgradeLicense(l); setVpsUpgradePlan("4vcpu-8gb"); }}>
