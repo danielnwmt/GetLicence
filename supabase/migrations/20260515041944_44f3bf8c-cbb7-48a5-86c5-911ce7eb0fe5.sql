@@ -1,0 +1,1 @@
+ALTER TABLE public.licenses ADD COLUMN IF NOT EXISTS extra_storage_gb numeric NOT NULL DEFAULT 0;
