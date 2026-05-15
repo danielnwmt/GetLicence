@@ -1337,7 +1337,7 @@ function LicensesTab({
             </tr>
           </thead>
           <tbody>
-            {licenses.map((l) => {
+            {visibleLicenses.map((l) => {
               const prof = profileById(l.user_id);
               return (
                 <tr key={l.id} className="border-t border-border">
@@ -1369,7 +1369,7 @@ function LicensesTab({
                         <SelectItem value="pending">Pendente</SelectItem>
                         <SelectItem value="blocked">Bloqueada</SelectItem>
                         <SelectItem value="expired">Expirada</SelectItem>
-                        <SelectItem value="cancelled">Cancelada</SelectItem>
+                        <SelectItem value="cancelled">Inativa</SelectItem>
                       </SelectContent>
                     </Select>
                   </td>
@@ -1394,6 +1394,27 @@ function LicensesTab({
                           <Ban className="h-3.5 w-3.5 text-destructive" />
                         </Button>
                       )}
+                      {l.status === "cancelled" ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          title="Reativar licença"
+                          onClick={() => setStatus(l.id, "active")}
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          title="Inativar licença"
+                          onClick={() => {
+                            if (confirm("Inativar esta licença?")) setStatus(l.id, "cancelled");
+                          }}
+                        >
+                          <XCircle className="h-3.5 w-3.5 text-destructive" />
+                        </Button>
+                      )}
                       <Button size="sm" variant="ghost" onClick={() => remove(l.id)}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
@@ -1402,10 +1423,10 @@ function LicensesTab({
                 </tr>
               );
             })}
-            {licenses.length === 0 && (
+            {visibleLicenses.length === 0 && (
               <tr>
                 <td colSpan={9} className="p-6 text-center text-muted-foreground">
-                  Nenhuma licença emitida.
+                  {view === "inactive" ? "Nenhuma licença inativa." : "Nenhuma licença emitida."}
                 </td>
               </tr>
             )}
