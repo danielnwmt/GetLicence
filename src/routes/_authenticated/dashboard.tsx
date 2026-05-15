@@ -184,37 +184,6 @@ function Dashboard() {
     }
   };
 
-  const [downgradeLicense, setDowngradeLicense] = useState<License | null>(null);
-  const [downgradeKeepGb, setDowngradeKeepGb] = useState<string>("0");
-  const [downgradeSubmitting, setDowngradeSubmitting] = useState(false);
-
-  const openDowngrade = (lic: License) => {
-    setDowngradeLicense(lic);
-    setDowngradeKeepGb(String(Number(lic.extra_storage_gb ?? 0)));
-  };
-
-  const submitDowngrade = async () => {
-    if (!downgradeLicense) return;
-    const current = Number(downgradeLicense.extra_storage_gb ?? 0);
-    const keep = Math.max(0, Math.min(current, Number(downgradeKeepGb) || 0));
-    if (keep === current) { setDowngradeLicense(null); return; }
-    setDowngradeSubmitting(true);
-    try {
-      const { error } = await supabase
-        .from("licenses")
-        .update({ extra_storage_gb: keep })
-        .eq("id", downgradeLicense.id);
-      if (error) throw error;
-      setLicenses((prev) => prev.map((x) => x.id === downgradeLicense.id ? { ...x, extra_storage_gb: keep } : x));
-      toast.success(`Armazenamento extra ajustado para ${keep} GB. A próxima fatura refletirá o novo valor.`);
-      setDowngradeLicense(null);
-    } catch (e: any) {
-      toast.error(e.message ?? "Erro ao reduzir armazenamento");
-    } finally {
-      setDowngradeSubmitting(false);
-    }
-  };
-
   useEffect(() => {
     if (!user) return;
     (async () => {
