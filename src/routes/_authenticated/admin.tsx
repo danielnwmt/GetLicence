@@ -1940,6 +1940,17 @@ function PaymentsTab({
                           {cancelingId === p.id ? "Cancelando..." : "Cancelar"}
                         </Button>
                       )}
+                      {p.status === "failed" && p.notes === "Boleto cancelado" && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => excluir(p.id)}
+                          title="Excluir boleto cancelado"
+                        >
+                          <Trash2 className="mr-1 h-3.5 w-3.5" /> Excluir
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="ghost"
