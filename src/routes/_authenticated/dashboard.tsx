@@ -69,7 +69,8 @@ function Dashboard() {
   const [upgradeAmount, setUpgradeAmount] = useState<string>("100");
   const [upgradeSubmitting, setUpgradeSubmitting] = useState(false);
   const [vpsUpgradeLicense, setVpsUpgradeLicense] = useState<License | null>(null);
-  const [vpsUpgradePlan, setVpsUpgradePlan] = useState<string>("2vcpu-4gb");
+  const [vpsProducts, setVpsProducts] = useState<VpsProduct[]>([]);
+  const [vpsUpgradeProductId, setVpsUpgradeProductId] = useState<string>("");
   const [vpsUpgradeSubmitting, setVpsUpgradeSubmitting] = useState(false);
   const [customerName, setCustomerName] = useState<string>("");
   const [customerNames, setCustomerNames] = useState<Record<string, string>>({});
@@ -82,28 +83,51 @@ function Dashboard() {
     { value: "1000", label: "+1 TB" },
   ];
 
-  const vpsUpgradeOptions = [
-    { value: "2vcpu-4gb", label: "2 vCPU • 4 GB RAM" },
-    { value: "4vcpu-8gb", label: "4 vCPU • 8 GB RAM" },
-    { value: "6vcpu-16gb", label: "6 vCPU • 16 GB RAM" },
-    { value: "8vcpu-32gb", label: "8 vCPU • 32 GB RAM" },
-    { value: "16vcpu-64gb", label: "16 vCPU • 64 GB RAM" },
-  ];
+  // Preço por GB extra: derivado proporcionalmente do produto (price_monthly / storage_amount).
+  const pricePerGb = (lic: License | null) => {
+    if (!lic?.product) return 0;
+    const base = Number(lic.product.storage_amount ?? 0);
+    const monthly = Number(lic.product.price_monthly ?? 0);
+    if (base <= 0 || monthly <= 0) return 0;
+    return monthly / base;
+  };
+
+  const extraStorageCost = (lic: License | null, addGb: number) => {
+    return pricePerGb(lic) * addGb;
+  };
 
   const submitUpgrade = async () => {
-    if (!upgradeLicense) return;
+    if (!upgradeLicense || !user) return;
     setUpgradeSubmitting(true);
     try {
       const add = Number(upgradeAmount) || 0;
       const current = Number(upgradeLicense.extra_storage_gb ?? 0);
       const newExtra = current + add;
+      const cost = extraStorageCost(upgradeLicense, add);
+
       const { error } = await supabase
         .from("licenses")
         .update({ extra_storage_gb: newExtra })
         .eq("id", upgradeLicense.id);
       if (error) throw error;
+
+      if (cost > 0) {
+        const due = new Date();
+        due.setDate(due.getDate() + 7);
+        const { error: pErr } = await supabase.from("payments").insert({
+          user_id: user.id,
+          license_id: upgradeLicense.id,
+          amount: Number(cost.toFixed(2)),
+          status: "pending",
+          method: "boleto",
+          due_date: due.toISOString().slice(0, 10),
+          notes: `Armazenamento extra: +${add} GB (mensal)`,
+        });
+        if (pErr) throw pErr;
+      }
+
       setLicenses((prev) => prev.map((x) => x.id === upgradeLicense.id ? { ...x, extra_storage_gb: newExtra } : x));
-      toast.success(`Upgrade aplicado: +${add} GB (total extra: ${newExtra} GB).`);
+      toast.success(`+${add} GB adicionados. Acréscimo na mensalidade: ${formatBRL(cost)}.`);
       setUpgradeLicense(null);
     } catch (e: any) {
       toast.error(e.message ?? "Erro ao aplicar upgrade");
@@ -112,13 +136,54 @@ function Dashboard() {
     }
   };
 
+  const openVpsUpgrade = async (lic: License) => {
+    setVpsUpgradeLicense(lic);
+    setVpsUpgradeProductId("");
+    const { data } = await supabase
+      .from("products")
+      .select("id, name, vps_specs, price_monthly")
+      .eq("active", true)
+      .not("vps_specs", "is", null)
+      .neq("vps_specs", "")
+      .gt("price_monthly", Number(lic.product?.price_monthly ?? 0))
+      .order("price_monthly", { ascending: true });
+    setVpsProducts(((data as any[]) || []).filter((p) => p.id !== lic.product_id) as VpsProduct[]);
+  };
+
+  const selectedVpsProduct = vpsProducts.find((p) => p.id === vpsUpgradeProductId) || null;
+  const vpsDiff = selectedVpsProduct && vpsUpgradeLicense
+    ? Number(selectedVpsProduct.price_monthly) - Number(vpsUpgradeLicense.product?.price_monthly ?? 0)
+    : 0;
+
   const submitVpsUpgrade = async () => {
-    if (!vpsUpgradeLicense) return;
+    if (!vpsUpgradeLicense || !selectedVpsProduct || !user) return;
     setVpsUpgradeSubmitting(true);
     try {
-      await new Promise((r) => setTimeout(r, 600));
-      toast.success("Solicitação de upgrade de VPS enviada. Em breve entraremos em contato.");
+      const { error } = await supabase
+        .from("licenses")
+        .update({ product_id: selectedVpsProduct.id })
+        .eq("id", vpsUpgradeLicense.id);
+      if (error) throw error;
+
+      if (vpsDiff > 0) {
+        const due = new Date();
+        due.setDate(due.getDate() + 7);
+        const { error: pErr } = await supabase.from("payments").insert({
+          user_id: user.id,
+          license_id: vpsUpgradeLicense.id,
+          amount: Number(vpsDiff.toFixed(2)),
+          status: "pending",
+          method: "boleto",
+          due_date: due.toISOString().slice(0, 10),
+          notes: `Upgrade de VPS: ${vpsUpgradeLicense.product?.vps_specs ?? "—"} → ${selectedVpsProduct.vps_specs ?? selectedVpsProduct.name}. Acréscimo mensal.`,
+        });
+        if (pErr) throw pErr;
+      }
+
+      toast.success(`VPS atualizada. Acréscimo na mensalidade: ${formatBRL(vpsDiff)}.`);
       setVpsUpgradeLicense(null);
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao solicitar upgrade");
     } finally {
       setVpsUpgradeSubmitting(false);
     }
