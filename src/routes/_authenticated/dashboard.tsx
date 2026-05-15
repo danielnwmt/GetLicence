@@ -431,7 +431,7 @@ function Dashboard() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setUpgradeLicense(null)}>Cancelar</Button>
-            <Button onClick={submitUpgrade} disabled={upgradeSubmitting}>
+            <Button onClick={submitUpgrade} disabled={upgradeSubmitting || !selectedStorageProduct}>
               {upgradeSubmitting ? "Enviando..." : "Solicitar upgrade"}
             </Button>
           </DialogFooter>
