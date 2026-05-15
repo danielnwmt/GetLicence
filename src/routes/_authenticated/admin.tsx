@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { createCustomer, listAdminProfiles, updateCustomer } from "@/lib/customers.functions";
 import { createSystemUser, updateSystemUser, deleteSystemUser } from "@/lib/system-users.functions";
 import { issueAsaasBoleto, cancelAsaasBoleto } from "@/lib/boletos.functions";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
