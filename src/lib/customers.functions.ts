@@ -32,11 +32,7 @@ export const createCustomer = createServerFn({ method: "POST" })
       throw new Response("Forbidden", { status: 403 });
     }
 
-    const SUPABASE_URL = process.env.SUPABASE_URL!;
-    const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const admin = createClient<Database>(SUPABASE_URL, SERVICE_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
+    // admin client imported at top
 
     const { data: created, error } = await admin.auth.admin.createUser({
       email: data.email,
