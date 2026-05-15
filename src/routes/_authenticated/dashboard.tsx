@@ -20,6 +20,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 interface License {
   id: string;
   user_id: string;
+  product_id: string;
   license_key: string;
   plan: string;
   status: string;
@@ -27,6 +28,7 @@ interface License {
   expires_at: string;
   extra_storage_gb: number | null;
   product: {
+    id?: string;
     name: string;
     description: string | null;
     vps_specs: string | null;
@@ -34,7 +36,15 @@ interface License {
     vps_storage_unit: string | null;
     storage_amount: number | null;
     storage_unit: string | null;
+    price_monthly: number | null;
   } | null;
+}
+
+interface VpsProduct {
+  id: string;
+  name: string;
+  vps_specs: string | null;
+  price_monthly: number;
 }
 
 interface Payment {
@@ -59,7 +69,8 @@ function Dashboard() {
   const [upgradeAmount, setUpgradeAmount] = useState<string>("100");
   const [upgradeSubmitting, setUpgradeSubmitting] = useState(false);
   const [vpsUpgradeLicense, setVpsUpgradeLicense] = useState<License | null>(null);
-  const [vpsUpgradePlan, setVpsUpgradePlan] = useState<string>("2vcpu-4gb");
+  const [vpsProducts, setVpsProducts] = useState<VpsProduct[]>([]);
+  const [vpsUpgradeProductId, setVpsUpgradeProductId] = useState<string>("");
   const [vpsUpgradeSubmitting, setVpsUpgradeSubmitting] = useState(false);
   const [customerName, setCustomerName] = useState<string>("");
   const [customerNames, setCustomerNames] = useState<Record<string, string>>({});
@@ -72,28 +83,51 @@ function Dashboard() {
     { value: "1000", label: "+1 TB" },
   ];
 
-  const vpsUpgradeOptions = [
-    { value: "2vcpu-4gb", label: "2 vCPU • 4 GB RAM" },
-    { value: "4vcpu-8gb", label: "4 vCPU • 8 GB RAM" },
-    { value: "6vcpu-16gb", label: "6 vCPU • 16 GB RAM" },
-    { value: "8vcpu-32gb", label: "8 vCPU • 32 GB RAM" },
-    { value: "16vcpu-64gb", label: "16 vCPU • 64 GB RAM" },
-  ];
+  // Preço por GB extra: derivado proporcionalmente do produto (price_monthly / storage_amount).
+  const pricePerGb = (lic: License | null) => {
+    if (!lic?.product) return 0;
+    const base = Number(lic.product.storage_amount ?? 0);
+    const monthly = Number(lic.product.price_monthly ?? 0);
+    if (base <= 0 || monthly <= 0) return 0;
+    return monthly / base;
+  };
+
+  const extraStorageCost = (lic: License | null, addGb: number) => {
+    return pricePerGb(lic) * addGb;
+  };
 
   const submitUpgrade = async () => {
-    if (!upgradeLicense) return;
+    if (!upgradeLicense || !user) return;
     setUpgradeSubmitting(true);
     try {
       const add = Number(upgradeAmount) || 0;
       const current = Number(upgradeLicense.extra_storage_gb ?? 0);
       const newExtra = current + add;
+      const cost = extraStorageCost(upgradeLicense, add);
+
       const { error } = await supabase
         .from("licenses")
         .update({ extra_storage_gb: newExtra })
         .eq("id", upgradeLicense.id);
       if (error) throw error;
+
+      if (cost > 0) {
+        const due = new Date();
+        due.setDate(due.getDate() + 7);
+        const { error: pErr } = await supabase.from("payments").insert({
+          user_id: user.id,
+          license_id: upgradeLicense.id,
+          amount: Number(cost.toFixed(2)),
+          status: "pending",
+          method: "boleto",
+          due_date: due.toISOString().slice(0, 10),
+          notes: `Armazenamento extra: +${add} GB (mensal)`,
+        });
+        if (pErr) throw pErr;
+      }
+
       setLicenses((prev) => prev.map((x) => x.id === upgradeLicense.id ? { ...x, extra_storage_gb: newExtra } : x));
-      toast.success(`Upgrade aplicado: +${add} GB (total extra: ${newExtra} GB).`);
+      toast.success(`+${add} GB adicionados. Acréscimo na mensalidade: ${formatBRL(cost)}.`);
       setUpgradeLicense(null);
     } catch (e: any) {
       toast.error(e.message ?? "Erro ao aplicar upgrade");
@@ -102,13 +136,54 @@ function Dashboard() {
     }
   };
 
+  const openVpsUpgrade = async (lic: License) => {
+    setVpsUpgradeLicense(lic);
+    setVpsUpgradeProductId("");
+    const { data } = await supabase
+      .from("products")
+      .select("id, name, vps_specs, price_monthly")
+      .eq("active", true)
+      .not("vps_specs", "is", null)
+      .neq("vps_specs", "")
+      .gt("price_monthly", Number(lic.product?.price_monthly ?? 0))
+      .order("price_monthly", { ascending: true });
+    setVpsProducts(((data as any[]) || []).filter((p) => p.id !== lic.product_id) as VpsProduct[]);
+  };
+
+  const selectedVpsProduct = vpsProducts.find((p) => p.id === vpsUpgradeProductId) || null;
+  const vpsDiff = selectedVpsProduct && vpsUpgradeLicense
+    ? Number(selectedVpsProduct.price_monthly) - Number(vpsUpgradeLicense.product?.price_monthly ?? 0)
+    : 0;
+
   const submitVpsUpgrade = async () => {
-    if (!vpsUpgradeLicense) return;
+    if (!vpsUpgradeLicense || !selectedVpsProduct || !user) return;
     setVpsUpgradeSubmitting(true);
     try {
-      await new Promise((r) => setTimeout(r, 600));
-      toast.success("Solicitação de upgrade de VPS enviada. Em breve entraremos em contato.");
+      const { error } = await supabase
+        .from("licenses")
+        .update({ product_id: selectedVpsProduct.id })
+        .eq("id", vpsUpgradeLicense.id);
+      if (error) throw error;
+
+      if (vpsDiff > 0) {
+        const due = new Date();
+        due.setDate(due.getDate() + 7);
+        const { error: pErr } = await supabase.from("payments").insert({
+          user_id: user.id,
+          license_id: vpsUpgradeLicense.id,
+          amount: Number(vpsDiff.toFixed(2)),
+          status: "pending",
+          method: "boleto",
+          due_date: due.toISOString().slice(0, 10),
+          notes: `Upgrade de VPS: ${vpsUpgradeLicense.product?.vps_specs ?? "—"} → ${selectedVpsProduct.vps_specs ?? selectedVpsProduct.name}. Acréscimo mensal.`,
+        });
+        if (pErr) throw pErr;
+      }
+
+      toast.success(`VPS atualizada. Acréscimo na mensalidade: ${formatBRL(vpsDiff)}.`);
       setVpsUpgradeLicense(null);
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao solicitar upgrade");
     } finally {
       setVpsUpgradeSubmitting(false);
     }
@@ -126,7 +201,7 @@ function Dashboard() {
 
       const { data: lic } = await supabase
         .from("licenses")
-        .select("id, user_id, license_key, plan, status, starts_at, expires_at, extra_storage_gb, product:products(name, description, vps_specs, vps_storage_amount, vps_storage_unit, storage_amount, storage_unit)")
+        .select("id, user_id, product_id, license_key, plan, status, starts_at, expires_at, extra_storage_gb, product:products(id, name, description, vps_specs, vps_storage_amount, vps_storage_unit, storage_amount, storage_unit, price_monthly)")
         .order("created_at", { ascending: false });
       const licList = (lic as unknown as License[]) || [];
       setLicenses(licList);
@@ -248,7 +323,7 @@ function Dashboard() {
                     Armazenamento extra
                   </Button>
                   {l.product?.vps_specs && (
-                    <Button size="sm" variant="secondary" onClick={() => { setVpsUpgradeLicense(l); setVpsUpgradePlan("4vcpu-8gb"); }}>
+                    <Button size="sm" variant="secondary" onClick={() => openVpsUpgrade(l)}>
                       <Server className="mr-2 h-3.5 w-3.5" />
                       Upgrade de VPS
                     </Button>
@@ -342,9 +417,17 @@ function Dashboard() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
-                A cobrança proporcional será calculada e enviada por boleto.
-              </p>
+              <div className="mt-2 rounded-md border bg-muted/30 p-3 text-sm">
+                <div className="text-muted-foreground">Acréscimo na mensalidade</div>
+                <div className="font-semibold">
+                  {Number(upgradeAmount || 0)} GB × {formatBRL(pricePerGb(upgradeLicense))}/GB = <span className="text-primary">{formatBRL(extraStorageCost(upgradeLicense, Number(upgradeAmount || 0)))}</span>
+                </div>
+                {pricePerGb(upgradeLicense) === 0 && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Preço por GB não pôde ser calculado (produto sem mensalidade ou armazenamento base).
+                  </p>
+                )}
+              </div>
             </div>
           </div>
           <DialogFooter>
@@ -368,26 +451,36 @@ function Dashboard() {
             <div className="rounded-md border bg-muted/30 p-3 text-sm">
               <div className="text-muted-foreground">VPS atual</div>
               <div className="font-medium">{vpsUpgradeLicense?.product?.vps_specs || "—"}</div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                Mensalidade atual: {formatBRL(Number(vpsUpgradeLicense?.product?.price_monthly ?? 0))}
+              </div>
             </div>
             <div className="space-y-1.5">
               <Label>Nova configuração</Label>
-              <Select value={vpsUpgradePlan} onValueChange={setVpsUpgradePlan}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select value={vpsUpgradeProductId} onValueChange={setVpsUpgradeProductId}>
+                <SelectTrigger><SelectValue placeholder={vpsProducts.length ? "Selecione" : "Nenhum upgrade disponível"} /></SelectTrigger>
                 <SelectContent>
-                  {vpsUpgradeOptions.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  {vpsProducts.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {(p.vps_specs || p.name)} — {formatBRL(Number(p.price_monthly))}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
-                A cobrança proporcional será calculada e enviada por boleto.
-              </p>
+              {selectedVpsProduct && (
+                <div className="mt-2 rounded-md border bg-muted/30 p-3 text-sm">
+                  <div className="text-muted-foreground">Acréscimo na mensalidade</div>
+                  <div className="font-semibold">
+                    {formatBRL(Number(selectedVpsProduct.price_monthly))} − {formatBRL(Number(vpsUpgradeLicense?.product?.price_monthly ?? 0))} = <span className="text-primary">{formatBRL(vpsDiff)}</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setVpsUpgradeLicense(null)}>Cancelar</Button>
-            <Button onClick={submitVpsUpgrade} disabled={vpsUpgradeSubmitting}>
-              {vpsUpgradeSubmitting ? "Enviando..." : "Solicitar upgrade"}
+            <Button onClick={submitVpsUpgrade} disabled={vpsUpgradeSubmitting || !selectedVpsProduct}>
+              {vpsUpgradeSubmitting ? "Enviando..." : "Confirmar upgrade"}
             </Button>
           </DialogFooter>
         </DialogContent>
