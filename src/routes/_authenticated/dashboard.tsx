@@ -84,9 +84,19 @@ function Dashboard() {
     if (!upgradeLicense) return;
     setUpgradeSubmitting(true);
     try {
-      await new Promise((r) => setTimeout(r, 600));
-      toast.success("Solicitação de upgrade enviada. Em breve entraremos em contato.");
+      const add = Number(upgradeAmount) || 0;
+      const current = Number(upgradeLicense.extra_storage_gb ?? 0);
+      const newExtra = current + add;
+      const { error } = await supabase
+        .from("licenses")
+        .update({ extra_storage_gb: newExtra })
+        .eq("id", upgradeLicense.id);
+      if (error) throw error;
+      setLicenses((prev) => prev.map((x) => x.id === upgradeLicense.id ? { ...x, extra_storage_gb: newExtra } : x));
+      toast.success(`Upgrade aplicado: +${add} GB (total extra: ${newExtra} GB).`);
       setUpgradeLicense(null);
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao aplicar upgrade");
     } finally {
       setUpgradeSubmitting(false);
     }
