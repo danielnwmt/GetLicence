@@ -3810,7 +3810,10 @@ function BackupTab() {
   } | null>(null);
   const [saving, setSaving] = useState(false);
   const [running, setRunning] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const runFn = useServerFn(runBackupNow);
+  const restoreFn = useServerFn(restoreBackup);
 
   const load = async () => {
     const { data } = await supabase
