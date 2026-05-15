@@ -315,13 +315,8 @@ function Dashboard() {
                   </Button>
                   <Button size="sm" onClick={() => openStorageUpgrade(l)}>
                     <ArrowUpCircle className="mr-2 h-3.5 w-3.5" />
-                    Armazenamento extra
+                    Alterar armazenamento
                   </Button>
-                  {Number(l.extra_storage_gb) > 0 && (
-                    <Button size="sm" variant="outline" onClick={() => openDowngrade(l)}>
-                      Reduzir extra ({Number(l.extra_storage_gb)} GB)
-                    </Button>
-                  )}
                   {l.product?.vps_specs && (
                     <Button size="sm" variant="secondary" onClick={() => openVpsUpgrade(l)}>
                       <Server className="mr-2 h-3.5 w-3.5" />
