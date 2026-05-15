@@ -321,7 +321,7 @@ function Dashboard() {
                     {copied === l.license_key ? <Check className="mr-2 h-3.5 w-3.5" /> : <Copy className="mr-2 h-3.5 w-3.5" />}
                     Copiar chave
                   </Button>
-                  <Button size="sm" onClick={() => { setUpgradeLicense(l); setUpgradeAmount("100"); }}>
+                  <Button size="sm" onClick={() => openStorageUpgrade(l)}>
                     <ArrowUpCircle className="mr-2 h-3.5 w-3.5" />
                     Armazenamento extra
                   </Button>
