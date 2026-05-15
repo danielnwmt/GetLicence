@@ -8,7 +8,7 @@ const schema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   full_name: z.string().min(1),
-  role: z.literal("admin").default("admin"),
+  role: z.enum(["admin", "operator"]).default("admin"),
 });
 
 export const createSystemUser = createServerFn({ method: "POST" })
