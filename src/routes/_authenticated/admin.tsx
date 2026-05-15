@@ -149,6 +149,8 @@ interface LicenseRow {
   user_id: string;
   product_id: string;
   device_ip?: string | null;
+  device_ip_v4?: string | null;
+  device_ip_v6?: string | null;
   last_seen_at?: string | null;
   activated_at?: string | null;
   product: { name: string } | null;
