@@ -1494,12 +1494,25 @@ function PaymentsTab({
   const [notaOpen, setNotaOpen] = useState(false);
   const [notaDesc, setNotaDesc] = useState("");
   const [notaPayment, setNotaPayment] = useState<PaymentRow | null>(null);
+  const [descOpen, setDescOpen] = useState(false);
+  const [descList, setDescList] = useState<{ id: string; text: string }[]>([]);
+  const [newDescText, setNewDescText] = useState("");
+  const loadDescriptions = () =>
+    supabase
+      .from("boleto_descriptions")
+      .select("id, text")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => setDescList((data as { id: string; text: string }[]) || []));
+  useEffect(() => {
+    loadDescriptions();
+  }, []);
   const [newForm, setNewForm] = useState({
     user_id: "",
     license_id: "",
     amount: "",
     due_date: "",
     quantity: "1",
+    description: "",
   });
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<
@@ -1564,6 +1577,7 @@ function PaymentsTab({
             amount,
             status: "pending" as const,
             due_date: due,
+            notes: newForm.description || null,
           })
           .select()
           .single();
@@ -1574,7 +1588,7 @@ function PaymentsTab({
       toast.success(qty > 1 ? `${qty} boletos emitidos` : "Boleto emitido");
       if (firstUrl) window.open(firstUrl, "_blank");
       setNewOpen(false);
-      setNewForm({ user_id: "", license_id: "", amount: "", due_date: "", quantity: "1" });
+      setNewForm({ user_id: "", license_id: "", amount: "", due_date: "", quantity: "1", description: "" });
       onChange();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao emitir boleto");
@@ -1826,12 +1840,105 @@ function PaymentsTab({
                     Para mais de 1, vencimentos são gerados mês a mês a partir da data informada.
                   </p>
                 </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Descrição</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => setDescOpen(true)}
+                    >
+                      Cadastrar descrições
+                    </Button>
+                  </div>
+                  {descList.length > 0 && (
+                    <Select
+                      value=""
+                      onValueChange={(v) => setNewForm({ ...newForm, description: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma descrição salva (opcional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {descList.map((d) => (
+                          <SelectItem key={d.id} value={d.text}>
+                            {d.text}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <Textarea
+                    rows={2}
+                    placeholder="Descrição que aparecerá no boleto"
+                    value={newForm.description}
+                    onChange={(e) => setNewForm({ ...newForm, description: e.target.value })}
+                  />
+                </div>
               </div>
               <DialogFooter>
                 <Button onClick={createBoleto} disabled={creating}>
                   {creating ? "Emitindo..." : "Emitir boleto"}
                 </Button>
               </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          <Dialog open={descOpen} onOpenChange={setDescOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Descrições de boleto</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 py-2">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Nova descrição"
+                    value={newDescText}
+                    onChange={(e) => setNewDescText(e.target.value)}
+                  />
+                  <Button
+                    onClick={async () => {
+                      const t = newDescText.trim();
+                      if (!t) return;
+                      const { error } = await supabase
+                        .from("boleto_descriptions")
+                        .insert({ text: t });
+                      if (error) return toast.error(error.message);
+                      setNewDescText("");
+                      loadDescriptions();
+                    }}
+                  >
+                    Adicionar
+                  </Button>
+                </div>
+                <div className="max-h-72 overflow-auto divide-y rounded-md border">
+                  {descList.length === 0 && (
+                    <p className="p-3 text-sm text-muted-foreground">
+                      Nenhuma descrição cadastrada.
+                    </p>
+                  )}
+                  {descList.map((d) => (
+                    <div key={d.id} className="flex items-center justify-between p-3 gap-2">
+                      <span className="text-sm">{d.text}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                          const { error } = await supabase
+                            .from("boleto_descriptions")
+                            .delete()
+                            .eq("id", d.id);
+                          if (error) return toast.error(error.message);
+                          loadDescriptions();
+                        }}
+                      >
+                        Remover
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </DialogContent>
           </Dialog>
         </div>

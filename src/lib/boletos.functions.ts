@@ -52,7 +52,7 @@ export const issueAsaasBoleto = createServerFn({ method: "POST" })
 
     const { data: payment, error: pErr } = await supabase
       .from("payments")
-      .select("id, amount, user_id, due_date, status")
+      .select("id, amount, user_id, due_date, status, notes")
       .eq("id", data.payment_id)
       .single();
     if (pErr || !payment) throw new Error(pErr?.message || "Pagamento não encontrado");
@@ -100,7 +100,7 @@ export const issueAsaasBoleto = createServerFn({ method: "POST" })
         billingType: "BOLETO",
         value: Number(payment.amount),
         dueDate,
-        description: `Pagamento ${payment.id}`,
+        description: (payment.notes && payment.notes.trim()) || `Pagamento ${payment.id}`,
         externalReference: payment.id,
       }),
     });
