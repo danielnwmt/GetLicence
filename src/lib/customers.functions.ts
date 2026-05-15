@@ -164,11 +164,16 @@ export const updateCustomer = createServerFn({ method: "POST" })
     if (data.email) authUpdate.email = data.email;
     if (data.password && data.password.length >= 6) authUpdate.password = data.password;
     if (Object.keys(authUpdate).length > 0) {
-      const { error } = await admin.auth.admin.updateUserById(data.user_id, authUpdate);
+      let error;
+      try {
+        ({ error } = await admin.auth.admin.updateUserById(data.user_id, authUpdate));
+      } catch {
+        throw new Response("Configure SUPABASE_SERVICE_ROLE_KEY nos secrets do backend para alterar e-mail/senha.", { status: 500 });
+      }
       if (error) throw new Response(error.message, { status: 400 });
     }
 
-    const { error: pErr } = await admin.from("profiles").update({
+    const { error: pErr } = await supabase.from("profiles").update({
       full_name: data.full_name,
       email: data.email ?? undefined,
       cpf_cnpj: data.cpf_cnpj.replace(/\D/g, ""),
