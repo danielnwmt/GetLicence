@@ -86,35 +86,27 @@ function Dashboard() {
 
   const selectedStorageProduct = storageProducts.find((p) => p.id === storageProductId) || null;
 
-  const upgradeOptions = [
-    { value: "50", label: "+50 GB" },
-    { value: "100", label: "+100 GB" },
-    { value: "250", label: "+250 GB" },
-    { value: "500", label: "+500 GB" },
-    { value: "1000", label: "+1 TB" },
-  ];
-
-  // Preço por GB extra: derivado proporcionalmente do produto (price_monthly / storage_amount).
-  const pricePerGb = (lic: License | null) => {
-    if (!lic?.product) return 0;
-    const base = Number(lic.product.storage_amount ?? 0);
-    const monthly = Number(lic.product.price_monthly ?? 0);
-    if (base <= 0 || monthly <= 0) return 0;
-    return monthly / base;
-  };
-
-  const extraStorageCost = (lic: License | null, addGb: number) => {
-    return pricePerGb(lic) * addGb;
+  const openStorageUpgrade = async (lic: License) => {
+    setUpgradeLicense(lic);
+    setStorageProductId("");
+    const { data } = await supabase
+      .from("products")
+      .select("id, name, storage_amount, storage_unit, price_monthly")
+      .eq("active", true)
+      .eq("kind", "storage")
+      .gt("storage_amount", 0)
+      .order("storage_amount", { ascending: true });
+    setStorageProducts(((data as any[]) || []) as StorageProduct[]);
   };
 
   const submitUpgrade = async () => {
-    if (!upgradeLicense || !user) return;
+    if (!upgradeLicense || !selectedStorageProduct || !user) return;
     setUpgradeSubmitting(true);
     try {
-      const add = Number(upgradeAmount) || 0;
+      const add = Number(selectedStorageProduct.storage_amount) || 0;
+      const cost = Number(selectedStorageProduct.price_monthly) || 0;
       const current = Number(upgradeLicense.extra_storage_gb ?? 0);
       const newExtra = current + add;
-      const cost = extraStorageCost(upgradeLicense, add);
 
       const { error } = await supabase
         .from("licenses")
@@ -132,13 +124,13 @@ function Dashboard() {
           status: "pending",
           method: "boleto",
           due_date: due.toISOString().slice(0, 10),
-          notes: `Armazenamento extra: +${add} GB (mensal)`,
+          notes: `Armazenamento extra: ${selectedStorageProduct.name} (+${add} ${selectedStorageProduct.storage_unit ?? "GB"})`,
         });
         if (pErr) throw pErr;
       }
 
       setLicenses((prev) => prev.map((x) => x.id === upgradeLicense.id ? { ...x, extra_storage_gb: newExtra } : x));
-      toast.success(`+${add} GB adicionados. Acréscimo na mensalidade: ${formatBRL(cost)}.`);
+      toast.success(`+${add} ${selectedStorageProduct.storage_unit ?? "GB"} adicionados. Acréscimo: ${formatBRL(cost)}.`);
       setUpgradeLicense(null);
     } catch (e: any) {
       toast.error(e.message ?? "Erro ao aplicar upgrade");
