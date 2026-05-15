@@ -52,6 +52,7 @@ O instalador automaticamente:
 | --- | --- |
 | `sudo bash /opt/getlicence/update.sh` | Recompilar e reiniciar o app |
 | `sudo bash /opt/getlicence/backup.sh` | Backup SQL em `/root/` |
+| `sudo bash /opt/getlicence/local/repair-auth.sh` | Reparar login local quando o auth retornar erro 500 |
 | `sudo bash /opt/getlicence/uninstall.sh` | Remover instalação completa |
 | `systemctl status getlicence-app` | Status do frontend |
 | `systemctl status getlicence-auth` | Status do GoTrue |
