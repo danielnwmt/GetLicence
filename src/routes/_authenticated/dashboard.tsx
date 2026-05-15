@@ -146,8 +146,7 @@ function Dashboard() {
       .from("products")
       .select("id, name, vps_specs, price_monthly")
       .eq("active", true)
-      .not("vps_specs", "is", null)
-      .neq("vps_specs", "")
+      .eq("kind", "vps")
       .gt("price_monthly", Number(lic.product?.price_monthly ?? 0))
       .order("price_monthly", { ascending: true });
     setVpsProducts(((data as any[]) || []).filter((p) => p.id !== lic.product_id) as VpsProduct[]);
