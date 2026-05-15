@@ -1,7 +1,22 @@
 import { createServerFn } from "@tanstack/react-start";
-import { supabaseAdmin as admin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+type AdminProfile = {
+  user_id: string;
+  full_name: string | null;
+  email: string | null;
+  address_city: string | null;
+  address_state: string | null;
+  customer_number: number | null;
+  cpf_cnpj: string | null;
+  phone: string | null;
+  address_zip: string | null;
+  address_street: string | null;
+  address_number: string | null;
+  address_complement: string | null;
+  address_neighborhood: string | null;
+};
 
 
 const schema = z.object({
@@ -32,9 +47,7 @@ export const createCustomer = createServerFn({ method: "POST" })
       throw new Response("Forbidden", { status: 403 });
     }
 
-    // admin client imported at top
-
-    const { data: created, error } = await admin.auth.admin.createUser({
+    const { data: created, error } = await supabase.auth.admin.createUser({
       email: data.email,
       password: data.password,
       email_confirm: true,
@@ -44,7 +57,7 @@ export const createCustomer = createServerFn({ method: "POST" })
 
     const newUserId = created.user?.id;
     if (newUserId) {
-      const { error: profileError } = await admin.from("profiles").upsert({
+      const { error: profileError } = await supabase.from("profiles").upsert({
         user_id: newUserId,
         email: data.email,
         full_name: data.full_name,
@@ -59,16 +72,16 @@ export const createCustomer = createServerFn({ method: "POST" })
         address_state: data.address_state ?? null,
       }, { onConflict: "user_id" });
       if (profileError) {
-        await admin.auth.admin.deleteUser(newUserId);
+        await supabase.auth.admin.deleteUser(newUserId);
         throw new Response(profileError.message, { status: 400 });
       }
 
-      const { error: roleError } = await admin.from("user_roles").upsert(
+      const { error: roleError } = await supabase.from("user_roles").upsert(
         { user_id: newUserId, role: "client" },
         { onConflict: "user_id,role" }
       );
       if (roleError) {
-        await admin.auth.admin.deleteUser(newUserId);
+        await supabase.auth.admin.deleteUser(newUserId);
         throw new Response(roleError.message, { status: 400 });
       }
     }
