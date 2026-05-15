@@ -47,6 +47,14 @@ interface VpsProduct {
   price_monthly: number;
 }
 
+interface StorageProduct {
+  id: string;
+  name: string;
+  storage_amount: number;
+  storage_unit: string | null;
+  price_monthly: number;
+}
+
 interface Payment {
   id: string;
   amount: number;
@@ -66,7 +74,8 @@ function Dashboard() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
   const [upgradeLicense, setUpgradeLicense] = useState<License | null>(null);
-  const [upgradeAmount, setUpgradeAmount] = useState<string>("100");
+  const [storageProducts, setStorageProducts] = useState<StorageProduct[]>([]);
+  const [storageProductId, setStorageProductId] = useState<string>("");
   const [upgradeSubmitting, setUpgradeSubmitting] = useState(false);
   const [vpsUpgradeLicense, setVpsUpgradeLicense] = useState<License | null>(null);
   const [vpsProducts, setVpsProducts] = useState<VpsProduct[]>([]);
@@ -75,35 +84,29 @@ function Dashboard() {
   const [customerName, setCustomerName] = useState<string>("");
   const [customerNames, setCustomerNames] = useState<Record<string, string>>({});
 
-  const upgradeOptions = [
-    { value: "50", label: "+50 GB" },
-    { value: "100", label: "+100 GB" },
-    { value: "250", label: "+250 GB" },
-    { value: "500", label: "+500 GB" },
-    { value: "1000", label: "+1 TB" },
-  ];
+  const selectedStorageProduct = storageProducts.find((p) => p.id === storageProductId) || null;
 
-  // Preço por GB extra: derivado proporcionalmente do produto (price_monthly / storage_amount).
-  const pricePerGb = (lic: License | null) => {
-    if (!lic?.product) return 0;
-    const base = Number(lic.product.storage_amount ?? 0);
-    const monthly = Number(lic.product.price_monthly ?? 0);
-    if (base <= 0 || monthly <= 0) return 0;
-    return monthly / base;
-  };
-
-  const extraStorageCost = (lic: License | null, addGb: number) => {
-    return pricePerGb(lic) * addGb;
+  const openStorageUpgrade = async (lic: License) => {
+    setUpgradeLicense(lic);
+    setStorageProductId("");
+    const { data } = await supabase
+      .from("products")
+      .select("id, name, storage_amount, storage_unit, price_monthly")
+      .eq("active", true)
+      .eq("kind", "storage")
+      .gt("storage_amount", 0)
+      .order("storage_amount", { ascending: true });
+    setStorageProducts(((data as any[]) || []) as StorageProduct[]);
   };
 
   const submitUpgrade = async () => {
-    if (!upgradeLicense || !user) return;
+    if (!upgradeLicense || !selectedStorageProduct || !user) return;
     setUpgradeSubmitting(true);
     try {
-      const add = Number(upgradeAmount) || 0;
+      const add = Number(selectedStorageProduct.storage_amount) || 0;
+      const cost = Number(selectedStorageProduct.price_monthly) || 0;
       const current = Number(upgradeLicense.extra_storage_gb ?? 0);
       const newExtra = current + add;
-      const cost = extraStorageCost(upgradeLicense, add);
 
       const { error } = await supabase
         .from("licenses")
@@ -121,13 +124,13 @@ function Dashboard() {
           status: "pending",
           method: "boleto",
           due_date: due.toISOString().slice(0, 10),
-          notes: `Armazenamento extra: +${add} GB (mensal)`,
+          notes: `Armazenamento extra: ${selectedStorageProduct.name} (+${add} ${selectedStorageProduct.storage_unit ?? "GB"})`,
         });
         if (pErr) throw pErr;
       }
 
       setLicenses((prev) => prev.map((x) => x.id === upgradeLicense.id ? { ...x, extra_storage_gb: newExtra } : x));
-      toast.success(`+${add} GB adicionados. Acréscimo na mensalidade: ${formatBRL(cost)}.`);
+      toast.success(`+${add} ${selectedStorageProduct.storage_unit ?? "GB"} adicionados. Acréscimo: ${formatBRL(cost)}.`);
       setUpgradeLicense(null);
     } catch (e: any) {
       toast.error(e.message ?? "Erro ao aplicar upgrade");
@@ -143,8 +146,7 @@ function Dashboard() {
       .from("products")
       .select("id, name, vps_specs, price_monthly")
       .eq("active", true)
-      .not("vps_specs", "is", null)
-      .neq("vps_specs", "")
+      .eq("kind", "vps")
       .gt("price_monthly", Number(lic.product?.price_monthly ?? 0))
       .order("price_monthly", { ascending: true });
     setVpsProducts(((data as any[]) || []).filter((p) => p.id !== lic.product_id) as VpsProduct[]);
@@ -318,7 +320,7 @@ function Dashboard() {
                     {copied === l.license_key ? <Check className="mr-2 h-3.5 w-3.5" /> : <Copy className="mr-2 h-3.5 w-3.5" />}
                     Copiar chave
                   </Button>
-                  <Button size="sm" onClick={() => { setUpgradeLicense(l); setUpgradeAmount("100"); }}>
+                  <Button size="sm" onClick={() => openStorageUpgrade(l)}>
                     <ArrowUpCircle className="mr-2 h-3.5 w-3.5" />
                     Armazenamento extra
                   </Button>
@@ -404,35 +406,32 @@ function Dashboard() {
                 )}
               </div>
               <div className="mt-1 text-xs text-muted-foreground">
-                Após o upgrade: {Number(upgradeLicense?.product?.storage_amount ?? 0) + Number(upgradeLicense?.extra_storage_gb ?? 0) + Number(upgradeAmount || 0)} {upgradeLicense?.product?.storage_unit ?? "GB"}
+                Após o upgrade: {Number(upgradeLicense?.product?.storage_amount ?? 0) + Number(upgradeLicense?.extra_storage_gb ?? 0) + Number(selectedStorageProduct?.storage_amount ?? 0)} {upgradeLicense?.product?.storage_unit ?? "GB"}
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>Quanto deseja adicionar?</Label>
-              <Select value={upgradeAmount} onValueChange={setUpgradeAmount}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Label>Pacote de armazenamento</Label>
+              <Select value={storageProductId} onValueChange={setStorageProductId}>
+                <SelectTrigger><SelectValue placeholder={storageProducts.length ? "Selecione um pacote" : "Nenhum pacote disponível"} /></SelectTrigger>
                 <SelectContent>
-                  {upgradeOptions.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  {storageProducts.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name} (+{Number(p.storage_amount)} {p.storage_unit ?? "GB"}) — {formatBRL(Number(p.price_monthly))}/mês
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <div className="mt-2 rounded-md border bg-muted/30 p-3 text-sm">
-                <div className="text-muted-foreground">Acréscimo na mensalidade</div>
-                <div className="font-semibold">
-                  {Number(upgradeAmount || 0)} GB × {formatBRL(pricePerGb(upgradeLicense))}/GB = <span className="text-primary">{formatBRL(extraStorageCost(upgradeLicense, Number(upgradeAmount || 0)))}</span>
+              {selectedStorageProduct && (
+                <div className="mt-2 rounded-md border bg-muted/30 p-3 text-sm">
+                  <div className="text-muted-foreground">Acréscimo na mensalidade</div>
+                  <div className="font-semibold text-primary">{formatBRL(Number(selectedStorageProduct.price_monthly))}</div>
                 </div>
-                {pricePerGb(upgradeLicense) === 0 && (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Preço por GB não pôde ser calculado (produto sem mensalidade ou armazenamento base).
-                  </p>
-                )}
-              </div>
+              )}
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setUpgradeLicense(null)}>Cancelar</Button>
-            <Button onClick={submitUpgrade} disabled={upgradeSubmitting}>
+            <Button onClick={submitUpgrade} disabled={upgradeSubmitting || !selectedStorageProduct}>
               {upgradeSubmitting ? "Enviando..." : "Solicitar upgrade"}
             </Button>
           </DialogFooter>
