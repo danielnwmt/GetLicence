@@ -81,6 +81,7 @@ function Dashboard() {
   const [vpsProducts, setVpsProducts] = useState<VpsProduct[]>([]);
   const [vpsUpgradeProductId, setVpsUpgradeProductId] = useState<string>("");
   const [vpsUpgradeSubmitting, setVpsUpgradeSubmitting] = useState(false);
+  const [currentVpsPrice, setCurrentVpsPrice] = useState<number>(0);
   const [customerName, setCustomerName] = useState<string>("");
   const [customerNames, setCustomerNames] = useState<Record<string, string>>({});
 
