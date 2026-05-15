@@ -484,42 +484,6 @@ function Dashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <Dialog open={!!downgradeLicense} onOpenChange={(o) => !o && setDowngradeLicense(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reduzir armazenamento extra</DialogTitle>
-            <DialogDescription>
-              {downgradeLicense?.product?.name} — {downgradeLicense?.license_key}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 py-2">
-            <div className="rounded-md border bg-muted/30 p-3 text-sm">
-              <div className="text-muted-foreground">Extra atual</div>
-              <div className="font-medium">{Number(downgradeLicense?.extra_storage_gb ?? 0)} GB</div>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Quanto de extra deseja manter? (GB)</Label>
-              <Input
-                type="number"
-                min={0}
-                max={Number(downgradeLicense?.extra_storage_gb ?? 0)}
-                value={downgradeKeepGb}
-                onChange={(e) => setDowngradeKeepGb(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Informe 0 para remover todo o extra. A próxima fatura será recalculada.
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDowngradeLicense(null)}>Cancelar</Button>
-            <Button onClick={submitDowngrade} disabled={downgradeSubmitting}>
-              {downgradeSubmitting ? "Enviando..." : "Confirmar redução"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
