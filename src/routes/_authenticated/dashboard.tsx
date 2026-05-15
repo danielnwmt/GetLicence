@@ -428,6 +428,7 @@ function Dashboard() {
                   </p>
                 )}
               </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setUpgradeLicense(null)}>Cancelar</Button>
