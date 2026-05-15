@@ -498,7 +498,7 @@ export type Database = {
       refresh_license_statuses: { Args: never; Returns: undefined }
     }
     Enums: {
-      app_role: "admin" | "client"
+      app_role: "admin" | "client" | "operator"
       license_plan: "monthly" | "yearly" | "semestral"
       license_status: "active" | "expired" | "cancelled" | "pending" | "blocked"
       payable_category: "vps" | "storage" | "other"
@@ -632,7 +632,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "client"],
+      app_role: ["admin", "client", "operator"],
       license_plan: ["monthly", "yearly", "semestral"],
       license_status: ["active", "expired", "cancelled", "pending", "blocked"],
       payable_category: ["vps", "storage", "other"],
