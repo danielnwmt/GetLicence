@@ -321,7 +321,15 @@ function Dashboard() {
             <div className="rounded-md border bg-muted/30 p-3 text-sm">
               <div className="text-muted-foreground">Armazenamento atual</div>
               <div className="font-medium">
-                {Number(upgradeLicense?.product?.storage_amount ?? 0)} {upgradeLicense?.product?.storage_unit ?? "GB"}
+                {Number(upgradeLicense?.product?.storage_amount ?? 0) + Number(upgradeLicense?.extra_storage_gb ?? 0)} {upgradeLicense?.product?.storage_unit ?? "GB"}
+                {Number(upgradeLicense?.extra_storage_gb) > 0 && (
+                  <span className="ml-1 text-xs text-muted-foreground">
+                    ({Number(upgradeLicense?.product?.storage_amount ?? 0)} base + {Number(upgradeLicense?.extra_storage_gb)} extra)
+                  </span>
+                )}
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                Após o upgrade: {Number(upgradeLicense?.product?.storage_amount ?? 0) + Number(upgradeLicense?.extra_storage_gb ?? 0) + Number(upgradeAmount || 0)} {upgradeLicense?.product?.storage_unit ?? "GB"}
               </div>
             </div>
             <div className="space-y-1.5">
