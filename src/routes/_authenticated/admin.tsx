@@ -1840,6 +1840,43 @@ function PaymentsTab({
                     Para mais de 1, vencimentos são gerados mês a mês a partir da data informada.
                   </p>
                 </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Descrição</Label>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => setDescOpen(true)}
+                    >
+                      Cadastrar descrições
+                    </Button>
+                  </div>
+                  {descList.length > 0 && (
+                    <Select
+                      value=""
+                      onValueChange={(v) => setNewForm({ ...newForm, description: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma descrição salva (opcional)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {descList.map((d) => (
+                          <SelectItem key={d.id} value={d.text}>
+                            {d.text}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  <Textarea
+                    rows={2}
+                    placeholder="Descrição que aparecerá no boleto"
+                    value={newForm.description}
+                    onChange={(e) => setNewForm({ ...newForm, description: e.target.value })}
+                  />
+                </div>
               </div>
               <DialogFooter>
                 <Button onClick={createBoleto} disabled={creating}>
