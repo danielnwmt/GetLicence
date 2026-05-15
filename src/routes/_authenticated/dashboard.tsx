@@ -126,9 +126,21 @@ function Dashboard() {
 
       const { data: lic } = await supabase
         .from("licenses")
-        .select("id, license_key, plan, status, starts_at, expires_at, product:products(name, description, vps_specs, vps_storage_amount, vps_storage_unit, storage_amount, storage_unit)")
+        .select("id, user_id, license_key, plan, status, starts_at, expires_at, extra_storage_gb, product:products(name, description, vps_specs, vps_storage_amount, vps_storage_unit, storage_amount, storage_unit)")
         .order("created_at", { ascending: false });
-      setLicenses((lic as unknown as License[]) || []);
+      const licList = (lic as unknown as License[]) || [];
+      setLicenses(licList);
+
+      const ids = Array.from(new Set(licList.map((l) => l.user_id).filter(Boolean)));
+      if (ids.length) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("user_id, full_name, email")
+          .in("user_id", ids);
+        const map: Record<string, string> = {};
+        (profs || []).forEach((p: any) => { map[p.user_id] = p.full_name || p.email || ""; });
+        setCustomerNames(map);
+      }
 
       const { data: pay } = await supabase
         .from("payments")
