@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { createCustomer, listAdminProfiles, updateCustomer } from "@/lib/customers.functions";
-import { createSystemUser, updateSystemUser, deleteSystemUser } from "@/lib/system-users.functions";
+import { createSystemUser, updateSystemUser, deleteSystemUser, listSystemUsers } from "@/lib/system-users.functions";
 import { issueAsaasBoleto, cancelAsaasBoleto } from "@/lib/boletos.functions";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -194,6 +194,7 @@ interface PayableRow {
 function AdminPage() {
   const { user, role, loading } = useAuth();
   const listAdminProfilesFn = useServerFn(listAdminProfiles);
+  const listSystemUsersFn = useServerFn(listSystemUsers);
   const navigate = useNavigate();
   const search = Route.useSearch();
   const currentTab: AdminTab = search.tab ?? "dashboard";
@@ -211,6 +212,7 @@ function AdminPage() {
   const [licenses, setLicenses] = useState<LicenseRow[]>([]);
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [systemUsers, setSystemUsers] = useState<Profile[]>([]);
   const [adminIds, setAdminIds] = useState<string[]>([]);
   const [payables, setPayables] = useState<PayableRow[]>([]);
 
@@ -335,7 +337,7 @@ function AdminPage() {
           </TabsList>
           <TabsContent value="users">
             <SystemUsersTab
-              profiles={profiles.filter((p) => adminIds.includes(p.user_id))}
+              profiles={systemUsers}
               onChange={reload}
             />
           </TabsContent>
