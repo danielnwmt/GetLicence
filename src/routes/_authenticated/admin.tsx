@@ -3111,7 +3111,12 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
 
   const openEdit = (p: Profile) => {
     setEditing(p);
-    setEditForm({ full_name: p.full_name ?? "", email: p.email ?? "", password: "" });
+    setEditForm({
+      full_name: p.full_name ?? "",
+      email: p.email ?? "",
+      password: "",
+      role: p.role ?? "admin",
+    });
     setEditOpen(true);
   };
 
@@ -3130,6 +3135,7 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
           user_id: editing.user_id,
           full_name: editForm.full_name,
           email: editForm.email,
+          role: editForm.role,
           ...(editForm.password ? { password: editForm.password } : {}),
         },
       });
