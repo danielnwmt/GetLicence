@@ -56,6 +56,9 @@ function Dashboard() {
   const [upgradeLicense, setUpgradeLicense] = useState<License | null>(null);
   const [upgradeAmount, setUpgradeAmount] = useState<string>("100");
   const [upgradeSubmitting, setUpgradeSubmitting] = useState(false);
+  const [vpsUpgradeLicense, setVpsUpgradeLicense] = useState<License | null>(null);
+  const [vpsUpgradePlan, setVpsUpgradePlan] = useState<string>("2vcpu-4gb");
+  const [vpsUpgradeSubmitting, setVpsUpgradeSubmitting] = useState(false);
 
   const upgradeOptions = [
     { value: "50", label: "+50 GB" },
@@ -63,6 +66,14 @@ function Dashboard() {
     { value: "250", label: "+250 GB" },
     { value: "500", label: "+500 GB" },
     { value: "1000", label: "+1 TB" },
+  ];
+
+  const vpsUpgradeOptions = [
+    { value: "2vcpu-4gb", label: "2 vCPU • 4 GB RAM" },
+    { value: "4vcpu-8gb", label: "4 vCPU • 8 GB RAM" },
+    { value: "6vcpu-16gb", label: "6 vCPU • 16 GB RAM" },
+    { value: "8vcpu-32gb", label: "8 vCPU • 32 GB RAM" },
+    { value: "16vcpu-64gb", label: "16 vCPU • 64 GB RAM" },
   ];
 
   const submitUpgrade = async () => {
@@ -74,6 +85,18 @@ function Dashboard() {
       setUpgradeLicense(null);
     } finally {
       setUpgradeSubmitting(false);
+    }
+  };
+
+  const submitVpsUpgrade = async () => {
+    if (!vpsUpgradeLicense) return;
+    setVpsUpgradeSubmitting(true);
+    try {
+      await new Promise((r) => setTimeout(r, 600));
+      toast.success("Solicitação de upgrade de VPS enviada. Em breve entraremos em contato.");
+      setVpsUpgradeLicense(null);
+    } finally {
+      setVpsUpgradeSubmitting(false);
     }
   };
 
@@ -183,6 +206,12 @@ function Dashboard() {
                     <ArrowUpCircle className="mr-2 h-3.5 w-3.5" />
                     Upgrade de armazenamento
                   </Button>
+                  {l.product?.vps_specs && (
+                    <Button size="sm" variant="secondary" onClick={() => { setVpsUpgradeLicense(l); setVpsUpgradePlan("4vcpu-8gb"); }}>
+                      <Server className="mr-2 h-3.5 w-3.5" />
+                      Upgrade de VPS
+                    </Button>
+                  )}
                 </div>
               </Card>
             ))}
@@ -273,6 +302,43 @@ function Dashboard() {
             <Button variant="outline" onClick={() => setUpgradeLicense(null)}>Cancelar</Button>
             <Button onClick={submitUpgrade} disabled={upgradeSubmitting}>
               {upgradeSubmitting ? "Enviando..." : "Solicitar upgrade"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!vpsUpgradeLicense} onOpenChange={(o) => !o && setVpsUpgradeLicense(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upgrade de VPS</DialogTitle>
+            <DialogDescription>
+              {vpsUpgradeLicense?.product?.name} — {vpsUpgradeLicense?.license_key}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="rounded-md border bg-muted/30 p-3 text-sm">
+              <div className="text-muted-foreground">VPS atual</div>
+              <div className="font-medium">{vpsUpgradeLicense?.product?.vps_specs || "—"}</div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Nova configuração</Label>
+              <Select value={vpsUpgradePlan} onValueChange={setVpsUpgradePlan}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {vpsUpgradeOptions.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                A cobrança proporcional será calculada e enviada por boleto.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setVpsUpgradeLicense(null)}>Cancelar</Button>
+            <Button onClick={submitVpsUpgrade} disabled={vpsUpgradeSubmitting}>
+              {vpsUpgradeSubmitting ? "Enviando..." : "Solicitar upgrade"}
             </Button>
           </DialogFooter>
         </DialogContent>
