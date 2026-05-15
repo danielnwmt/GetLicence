@@ -20,7 +20,17 @@ function clientIp(request: Request): string | null {
   );
 }
 
-async function handle(request: Request, params: { license_key?: string; hostname?: string }) {
+function isIPv6(ip: string | null | undefined): boolean {
+  return !!ip && ip.includes(":");
+}
+function isIPv4(ip: string | null | undefined): boolean {
+  return !!ip && /^\d{1,3}(\.\d{1,3}){3}$/.test(ip);
+}
+
+async function handle(
+  request: Request,
+  params: { license_key?: string; hostname?: string; ipv4?: string; ipv6?: string },
+) {
   const sb = admin();
   const key = (params.license_key || "").trim().toUpperCase();
   if (!key) return Response.json({ ok: false, status: "invalid", reason: "missing license_key" }, { status: 400 });
