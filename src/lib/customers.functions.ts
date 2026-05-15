@@ -1,8 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
-import { createClient } from "@supabase/supabase-js";
+import { supabaseAdmin as admin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import type { Database } from "@/integrations/supabase/types";
+
 
 const schema = z.object({
   email: z.string().email(),
@@ -32,11 +32,7 @@ export const createCustomer = createServerFn({ method: "POST" })
       throw new Response("Forbidden", { status: 403 });
     }
 
-    const SUPABASE_URL = process.env.SUPABASE_URL!;
-    const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-    const admin = createClient<Database>(SUPABASE_URL, SERVICE_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
+    // admin client imported at top
 
     const { data: created, error } = await admin.auth.admin.createUser({
       email: data.email,
@@ -89,11 +85,7 @@ export const listAdminProfiles = createServerFn({ method: "GET" })
     });
     if (!isAdmin) throw new Response("Forbidden", { status: 403 });
 
-    const admin = createClient<Database>(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { persistSession: false, autoRefreshToken: false } }
-    );
+    // admin client imported at top
 
     const [{ data: profiles, error: profilesError }, { data: usersData, error: usersError }] = await Promise.all([
       admin.from("profiles").select("user_id, full_name, email, address_city, address_state, customer_number, cpf_cnpj, phone, address_zip, address_street, address_number, address_complement, address_neighborhood"),
@@ -152,11 +144,7 @@ export const updateCustomer = createServerFn({ method: "POST" })
     });
     if (!isAdmin) throw new Response("Forbidden", { status: 403 });
 
-    const admin = createClient<Database>(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { persistSession: false, autoRefreshToken: false } }
-    );
+    // admin client imported at top
 
     const authUpdate: { email?: string; password?: string } = {};
     if (data.email) authUpdate.email = data.email;
