@@ -22,6 +22,7 @@ export type Database = {
           device_hostname: string | null
           device_ip: string | null
           expires_at: string
+          extra_storage_gb: number
           id: string
           last_seen_at: string | null
           license_key: string
@@ -42,6 +43,7 @@ export type Database = {
           device_hostname?: string | null
           device_ip?: string | null
           expires_at: string
+          extra_storage_gb?: number
           id?: string
           last_seen_at?: string | null
           license_key?: string
@@ -62,6 +64,7 @@ export type Database = {
           device_hostname?: string | null
           device_ip?: string | null
           expires_at?: string
+          extra_storage_gb?: number
           id?: string
           last_seen_at?: string | null
           license_key?: string

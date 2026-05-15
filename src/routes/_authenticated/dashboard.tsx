@@ -19,11 +19,13 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 interface License {
   id: string;
+  user_id: string;
   license_key: string;
   plan: string;
   status: string;
   starts_at: string;
   expires_at: string;
+  extra_storage_gb: number | null;
   product: {
     name: string;
     description: string | null;
@@ -60,6 +62,7 @@ function Dashboard() {
   const [vpsUpgradePlan, setVpsUpgradePlan] = useState<string>("2vcpu-4gb");
   const [vpsUpgradeSubmitting, setVpsUpgradeSubmitting] = useState(false);
   const [customerName, setCustomerName] = useState<string>("");
+  const [customerNames, setCustomerNames] = useState<Record<string, string>>({});
 
   const upgradeOptions = [
     { value: "50", label: "+50 GB" },
@@ -81,9 +84,19 @@ function Dashboard() {
     if (!upgradeLicense) return;
     setUpgradeSubmitting(true);
     try {
-      await new Promise((r) => setTimeout(r, 600));
-      toast.success("Solicitação de upgrade enviada. Em breve entraremos em contato.");
+      const add = Number(upgradeAmount) || 0;
+      const current = Number(upgradeLicense.extra_storage_gb ?? 0);
+      const newExtra = current + add;
+      const { error } = await supabase
+        .from("licenses")
+        .update({ extra_storage_gb: newExtra })
+        .eq("id", upgradeLicense.id);
+      if (error) throw error;
+      setLicenses((prev) => prev.map((x) => x.id === upgradeLicense.id ? { ...x, extra_storage_gb: newExtra } : x));
+      toast.success(`Upgrade aplicado: +${add} GB (total extra: ${newExtra} GB).`);
       setUpgradeLicense(null);
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao aplicar upgrade");
     } finally {
       setUpgradeSubmitting(false);
     }
@@ -113,9 +126,21 @@ function Dashboard() {
 
       const { data: lic } = await supabase
         .from("licenses")
-        .select("id, license_key, plan, status, starts_at, expires_at, product:products(name, description, vps_specs, vps_storage_amount, vps_storage_unit, storage_amount, storage_unit)")
+        .select("id, user_id, license_key, plan, status, starts_at, expires_at, extra_storage_gb, product:products(name, description, vps_specs, vps_storage_amount, vps_storage_unit, storage_amount, storage_unit)")
         .order("created_at", { ascending: false });
-      setLicenses((lic as unknown as License[]) || []);
+      const licList = (lic as unknown as License[]) || [];
+      setLicenses(licList);
+
+      const ids = Array.from(new Set(licList.map((l) => l.user_id).filter(Boolean)));
+      if (ids.length) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("user_id, full_name, email")
+          .in("user_id", ids);
+        const map: Record<string, string> = {};
+        (profs || []).forEach((p: any) => { map[p.user_id] = p.full_name || p.email || ""; });
+        setCustomerNames(map);
+      }
 
       const { data: pay } = await supabase
         .from("payments")
@@ -167,8 +192,8 @@ function Dashboard() {
                   <div>
                     <div className="text-xs uppercase tracking-wide text-muted-foreground">{l.product?.name ?? "Software"}</div>
                     <div className="mt-1 font-mono text-lg font-semibold">{l.license_key}</div>
-                    {customerName && (
-                      <div className="mt-1 text-sm text-muted-foreground">{customerName}</div>
+                    {(customerNames[l.user_id] || customerName) && (
+                      <div className="mt-1 text-sm text-muted-foreground">{customerNames[l.user_id] || customerName}</div>
                     )}
                   </div>
                   <Badge className={statusVariant[l.status]} variant="outline">{statusLabel[l.status]}</Badge>
@@ -197,12 +222,17 @@ function Dashboard() {
                         </div>
                       </div>
                     )}
-                    {Number(l.product?.storage_amount) > 0 && (
+                    {(Number(l.product?.storage_amount) > 0 || Number(l.extra_storage_gb) > 0) && (
                       <div className="flex items-start gap-2">
                         <HardDrive className="mt-0.5 h-4 w-4 text-primary" />
                         <div>
                           <div className="text-xs uppercase tracking-wide text-muted-foreground">Armazenamento</div>
-                          <div className="font-medium">{Number(l.product?.storage_amount)} {l.product?.storage_unit}</div>
+                          <div className="font-medium">
+                            {Number(l.product?.storage_amount ?? 0) + Number(l.extra_storage_gb ?? 0)} {l.product?.storage_unit ?? "GB"}
+                            {Number(l.extra_storage_gb) > 0 && (
+                              <span className="ml-1 text-xs text-muted-foreground">({Number(l.product?.storage_amount ?? 0)} + {Number(l.extra_storage_gb)} extra)</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}
@@ -291,7 +321,15 @@ function Dashboard() {
             <div className="rounded-md border bg-muted/30 p-3 text-sm">
               <div className="text-muted-foreground">Armazenamento atual</div>
               <div className="font-medium">
-                {Number(upgradeLicense?.product?.storage_amount ?? 0)} {upgradeLicense?.product?.storage_unit ?? "GB"}
+                {Number(upgradeLicense?.product?.storage_amount ?? 0) + Number(upgradeLicense?.extra_storage_gb ?? 0)} {upgradeLicense?.product?.storage_unit ?? "GB"}
+                {Number(upgradeLicense?.extra_storage_gb) > 0 && (
+                  <span className="ml-1 text-xs text-muted-foreground">
+                    ({Number(upgradeLicense?.product?.storage_amount ?? 0)} base + {Number(upgradeLicense?.extra_storage_gb)} extra)
+                  </span>
+                )}
+              </div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                Após o upgrade: {Number(upgradeLicense?.product?.storage_amount ?? 0) + Number(upgradeLicense?.extra_storage_gb ?? 0) + Number(upgradeAmount || 0)} {upgradeLicense?.product?.storage_unit ?? "GB"}
               </div>
             </div>
             <div className="space-y-1.5">
