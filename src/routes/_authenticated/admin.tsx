@@ -1885,6 +1885,62 @@ function PaymentsTab({
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          <Dialog open={descOpen} onOpenChange={setDescOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Descrições de boleto</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 py-2">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Nova descrição"
+                    value={newDescText}
+                    onChange={(e) => setNewDescText(e.target.value)}
+                  />
+                  <Button
+                    onClick={async () => {
+                      const t = newDescText.trim();
+                      if (!t) return;
+                      const { error } = await supabase
+                        .from("boleto_descriptions")
+                        .insert({ text: t });
+                      if (error) return toast.error(error.message);
+                      setNewDescText("");
+                      loadDescriptions();
+                    }}
+                  >
+                    Adicionar
+                  </Button>
+                </div>
+                <div className="max-h-72 overflow-auto divide-y rounded-md border">
+                  {descList.length === 0 && (
+                    <p className="p-3 text-sm text-muted-foreground">
+                      Nenhuma descrição cadastrada.
+                    </p>
+                  )}
+                  {descList.map((d) => (
+                    <div key={d.id} className="flex items-center justify-between p-3 gap-2">
+                      <span className="text-sm">{d.text}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                          const { error } = await supabase
+                            .from("boleto_descriptions")
+                            .delete()
+                            .eq("id", d.id);
+                          if (error) return toast.error(error.message);
+                          loadDescriptions();
+                        }}
+                      >
+                        Remover
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
