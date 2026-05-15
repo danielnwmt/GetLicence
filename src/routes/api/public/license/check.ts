@@ -27,7 +27,7 @@ async function handle(request: Request, params: { license_key?: string; hostname
 
   const { data: lic, error } = await sb
     .from("licenses")
-    .select("id, status, expires_at, activated_at, user_id, product_id, products:product_id(name, storage_amount, storage_unit, vps_storage_amount, vps_storage_unit)")
+    .select("id, status, expires_at, activated_at, user_id, product_id, products:product_id(storage_amount, storage_unit, vps_storage_amount, vps_storage_unit)")
     .eq("license_key", key)
     .maybeSingle();
 
@@ -63,35 +63,12 @@ async function handle(request: Request, params: { license_key?: string; hostname
 
   const allowed = newStatus === "active";
   const prod: any = (lic as any).products ?? null;
-
-  // Buscar dados do cliente (customer)
-  let customer: { user_id: string; full_name: string | null; email: string | null; cpf_cnpj: string | null; phone: string | null; customer_number: number | null } | null = null;
-  if (lic.user_id) {
-    const { data: prof } = await sb
-      .from("profiles")
-      .select("user_id, full_name, email, cpf_cnpj, phone, customer_number")
-      .eq("user_id", lic.user_id)
-      .maybeSingle();
-    if (prof) {
-      customer = {
-        user_id: prof.user_id,
-        full_name: prof.full_name,
-        email: prof.email,
-        cpf_cnpj: prof.cpf_cnpj,
-        phone: prof.phone,
-        customer_number: prof.customer_number,
-      };
-    }
-  }
-
   return Response.json({
     ok: allowed,
     status: newStatus,
     expires_at: lic.expires_at,
     blocked: newStatus === "blocked",
     expired: newStatus === "expired",
-    customer,
-    product: prod ? { name: prod.name } : null,
     storage: prod ? {
       amount: Number(prod.storage_amount ?? 0),
       unit: prod.storage_unit ?? "GB",
