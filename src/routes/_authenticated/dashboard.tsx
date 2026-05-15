@@ -382,42 +382,49 @@ function Dashboard() {
       <Dialog open={!!upgradeLicense} onOpenChange={(o) => !o && setUpgradeLicense(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Armazenamento extra</DialogTitle>
+            <DialogTitle>Alterar armazenamento</DialogTitle>
             <DialogDescription>
               {upgradeLicense?.product?.name} — {upgradeLicense?.license_key}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <div className="rounded-md border bg-muted/30 p-3 text-sm">
-              <div className="text-muted-foreground">Armazenamento atual</div>
+              <div className="text-muted-foreground">Armazenamento extra atual</div>
               <div className="font-medium">
-                {Number(upgradeLicense?.product?.storage_amount ?? 0) + Number(upgradeLicense?.extra_storage_gb ?? 0)} {upgradeLicense?.product?.storage_unit ?? "GB"}
-                {Number(upgradeLicense?.extra_storage_gb) > 0 && (
-                  <span className="ml-1 text-xs text-muted-foreground">
-                    ({Number(upgradeLicense?.product?.storage_amount ?? 0)} base + {Number(upgradeLicense?.extra_storage_gb)} extra)
-                  </span>
-                )}
+                {Number(upgradeLicense?.extra_storage_gb ?? 0)} {upgradeLicense?.product?.storage_unit ?? "GB"}
+                <span className="ml-1 text-xs text-muted-foreground">
+                  (base: {Number(upgradeLicense?.product?.storage_amount ?? 0)} {upgradeLicense?.product?.storage_unit ?? "GB"})
+                </span>
               </div>
               <div className="mt-1 text-xs text-muted-foreground">
-                Após o upgrade: {Number(upgradeLicense?.product?.storage_amount ?? 0) + Number(upgradeLicense?.extra_storage_gb ?? 0) + Number(selectedStorageProduct?.storage_amount ?? 0)} {upgradeLicense?.product?.storage_unit ?? "GB"}
+                {currentStoragePrice > 0
+                  ? `Mensalidade do extra atual: ${formatBRL(currentStoragePrice)}`
+                  : "Sem pacote extra contratado."}
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label>Pacote de armazenamento</Label>
+              <Label>Novo pacote (upgrade ou downgrade)</Label>
               <Select value={storageProductId} onValueChange={setStorageProductId}>
-                <SelectTrigger><SelectValue placeholder={storageProducts.length ? "Selecione um pacote" : "Nenhum pacote disponível"} /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={storageProducts.length ? "Selecione" : "Nenhum pacote disponível"} /></SelectTrigger>
                 <SelectContent>
                   {storageProducts.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.name} (+{Number(p.storage_amount)} {p.storage_unit ?? "GB"}) — {formatBRL(Number(p.price_monthly))}/mês
+                      {p.name} ({Number(p.storage_amount)} {p.storage_unit ?? "GB"}) — {formatBRL(Number(p.price_monthly))}/mês
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               {selectedStorageProduct && (
                 <div className="mt-2 rounded-md border bg-muted/30 p-3 text-sm">
-                  <div className="text-muted-foreground">Acréscimo na mensalidade</div>
-                  <div className="font-semibold text-primary">{formatBRL(Number(selectedStorageProduct.price_monthly))}</div>
+                  <div className="text-muted-foreground">
+                    {storageDiff > 0 ? "Acréscimo na mensalidade" : storageDiff < 0 ? "Redução na mensalidade" : "Sem alteração de valor"}
+                  </div>
+                  <div className="font-semibold">
+                    {formatBRL(Number(selectedStorageProduct.price_monthly))} − {formatBRL(currentStoragePrice)} ={" "}
+                    <span className={storageDiff > 0 ? "text-primary" : storageDiff < 0 ? "text-success" : ""}>
+                      {storageDiff >= 0 ? formatBRL(storageDiff) : `− ${formatBRL(Math.abs(storageDiff))}`}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
@@ -425,7 +432,7 @@ function Dashboard() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setUpgradeLicense(null)}>Cancelar</Button>
             <Button onClick={submitUpgrade} disabled={upgradeSubmitting || !selectedStorageProduct}>
-              {upgradeSubmitting ? "Enviando..." : "Solicitar upgrade"}
+              {upgradeSubmitting ? "Enviando..." : "Confirmar alteração"}
             </Button>
           </DialogFooter>
         </DialogContent>
