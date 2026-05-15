@@ -106,13 +106,21 @@ export const listAdminProfiles = createServerFn({ method: "GET" })
     });
     if (!isAdmin) throw new Response("Forbidden", { status: 403 });
 
+    const { data: adminRoles } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "admin");
+    const adminIds = new Set((adminRoles ?? []).map((r: any) => r.user_id));
+
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select("user_id, full_name, email, address_city, address_state, customer_number, cpf_cnpj, phone, address_zip, address_street, address_number, address_complement, address_neighborhood");
 
     if (profilesError) throw new Response(profilesError.message, { status: 400 });
 
-    return ((profiles ?? []) as AdminProfile[]).map((profile) => {
+    const filtered = (profiles ?? []).filter((p: any) => !adminIds.has(p.user_id));
+
+    return (filtered as AdminProfile[]).map((profile) => {
       return {
         user_id: profile.user_id,
         customer_number: profile?.customer_number ?? null,

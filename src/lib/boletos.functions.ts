@@ -56,6 +56,9 @@ export const issueAsaasBoleto = createServerFn({ method: "POST" })
       .eq("id", data.payment_id)
       .single();
     if (pErr || !payment) throw new Error(pErr?.message || "Pagamento não encontrado");
+    if (!payment.user_id) throw new Error("Boleto sem cliente associado.");
+    const { data: targetIsAdmin } = await supabase.rpc("has_role", { _user_id: payment.user_id, _role: "admin" });
+    if (targetIsAdmin) throw new Error("Não é possível emitir boleto para usuário administrador.");
 
     const { data: profile, error: profErr } = await supabase
       .from("profiles")
