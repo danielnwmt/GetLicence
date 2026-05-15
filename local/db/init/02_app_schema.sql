@@ -147,6 +147,12 @@ alter table public.licenses add column if not exists extra_storage_gb numeric no
 alter table public.licenses add column if not exists device_ip_v4 text;
 alter table public.licenses add column if not exists device_ip_v6 text;
 
+-- helper has_role
+create or replace function public.has_role(_user_id uuid, _role public.app_role)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.user_roles where user_id = _user_id and role = _role)
+$$;
+
 -- Tabela payables (Contas a Pagar)
 do $$ begin create type public.payable_status as enum ('pending','paid','overdue','cancelled'); exception when duplicate_object then null; end $$;
 do $$ begin create type public.payable_category as enum ('vps','storage','software','tax','salary','other'); exception when duplicate_object then null; end $$;
@@ -169,12 +175,6 @@ create table if not exists public.payables (
 alter table public.payables enable row level security;
 drop policy if exists "Admins manage payables" on public.payables;
 create policy "Admins manage payables" on public.payables for all using (public.has_role(auth.uid(),'admin')) with check (public.has_role(auth.uid(),'admin'));
-
--- helper has_role
-create or replace function public.has_role(_user_id uuid, _role public.app_role)
-returns boolean language sql stable security definer set search_path = public as $$
-  select exists (select 1 from public.user_roles where user_id = _user_id and role = _role)
-$$;
 
 -- updated_at trigger
 create or replace function public.set_updated_at() returns trigger language plpgsql as
