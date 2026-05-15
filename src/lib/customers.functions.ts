@@ -144,11 +144,7 @@ export const updateCustomer = createServerFn({ method: "POST" })
     });
     if (!isAdmin) throw new Response("Forbidden", { status: 403 });
 
-    const admin = createClient<Database>(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { persistSession: false, autoRefreshToken: false } }
-    );
+    // admin client imported at top
 
     const authUpdate: { email?: string; password?: string } = {};
     if (data.email) authUpdate.email = data.email;
