@@ -417,10 +417,17 @@ function Dashboard() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
-                A cobrança proporcional será calculada e enviada por boleto.
-              </p>
-            </div>
+              <div className="mt-2 rounded-md border bg-muted/30 p-3 text-sm">
+                <div className="text-muted-foreground">Acréscimo na mensalidade</div>
+                <div className="font-semibold">
+                  {Number(upgradeAmount || 0)} GB × {formatBRL(pricePerGb(upgradeLicense))}/GB = <span className="text-primary">{formatBRL(extraStorageCost(upgradeLicense, Number(upgradeAmount || 0)))}</span>
+                </div>
+                {pricePerGb(upgradeLicense) === 0 && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Preço por GB não pôde ser calculado (produto sem mensalidade ou armazenamento base).
+                  </p>
+                )}
+              </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setUpgradeLicense(null)}>Cancelar</Button>
