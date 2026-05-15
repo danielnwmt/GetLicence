@@ -67,16 +67,17 @@ export const listSystemUsers = createServerFn({ method: "GET" })
     const { data: roles } = await supabase
       .from("user_roles")
       .select("user_id, role")
-      .in("role", ["admin"]);
-    const ids = (roles ?? []).map((r) => r.user_id);
-    if (ids.length === 0) return [];
+      .in("role", ["admin", "operator"]);
+    const adminIds = Array.from(new Set((roles ?? []).filter((r) => r.role === "admin").map((r) => r.user_id)));
+    if (adminIds.length === 0) return [];
+    const operatorSet = new Set((roles ?? []).filter((r) => r.role === "operator").map((r) => r.user_id));
     const { data: profiles } = await supabase
       .from("profiles")
       .select("user_id, full_name, email")
-      .in("user_id", ids);
+      .in("user_id", adminIds);
     return (profiles ?? []).map((p) => ({
       ...p,
-      role: roles?.find((r) => r.user_id === p.user_id)?.role ?? "admin",
+      role: operatorSet.has(p.user_id) ? "operator" : "admin",
     }));
   });
 
