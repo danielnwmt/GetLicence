@@ -312,7 +312,7 @@ function Dashboard() {
       <Dialog open={!!upgradeLicense} onOpenChange={(o) => !o && setUpgradeLicense(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Upgrade de armazenamento</DialogTitle>
+            <DialogTitle>Armazenamento extra</DialogTitle>
             <DialogDescription>
               {upgradeLicense?.product?.name} — {upgradeLicense?.license_key}
             </DialogDescription>
