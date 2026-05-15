@@ -115,23 +115,8 @@ function Dashboard() {
         .eq("id", upgradeLicense.id);
       if (error) throw error;
 
-      if (cost > 0) {
-        const due = new Date();
-        due.setDate(due.getDate() + 7);
-        const { error: pErr } = await supabase.from("payments").insert({
-          user_id: user.id,
-          license_id: upgradeLicense.id,
-          amount: Number(cost.toFixed(2)),
-          status: "pending",
-          method: "boleto",
-          due_date: due.toISOString().slice(0, 10),
-          notes: `Armazenamento extra: ${selectedStorageProduct.name} (+${add} ${selectedStorageProduct.storage_unit ?? "GB"})`,
-        });
-        if (pErr) throw pErr;
-      }
-
       setLicenses((prev) => prev.map((x) => x.id === upgradeLicense.id ? { ...x, extra_storage_gb: newExtra } : x));
-      toast.success(`+${add} ${selectedStorageProduct.storage_unit ?? "GB"} adicionados. Acréscimo: ${formatBRL(cost)}.`);
+      toast.success(`+${add} ${selectedStorageProduct.storage_unit ?? "GB"} adicionados. Acréscimo de ${formatBRL(cost)}/mês será incluído na próxima fatura.`);
       setUpgradeLicense(null);
     } catch (e: any) {
       toast.error(e.message ?? "Erro ao aplicar upgrade");
