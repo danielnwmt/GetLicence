@@ -85,11 +85,7 @@ export const listAdminProfiles = createServerFn({ method: "GET" })
     });
     if (!isAdmin) throw new Response("Forbidden", { status: 403 });
 
-    const admin = createClient<Database>(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { persistSession: false, autoRefreshToken: false } }
-    );
+    // admin client imported at top
 
     const [{ data: profiles, error: profilesError }, { data: usersData, error: usersError }] = await Promise.all([
       admin.from("profiles").select("user_id, full_name, email, address_city, address_state, customer_number, cpf_cnpj, phone, address_zip, address_street, address_number, address_complement, address_neighborhood"),
