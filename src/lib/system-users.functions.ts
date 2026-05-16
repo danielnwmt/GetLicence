@@ -38,18 +38,27 @@ export const createSystemUser = createServerFn({ method: "POST" })
 
     const newUserId = created.user?.id;
     if (newUserId) {
-      await admin.from("profiles").upsert(
+      const { error: pErr } = await admin.from("profiles").upsert(
         { user_id: newUserId, email: data.email, full_name: data.full_name },
         { onConflict: "user_id" }
       );
-      // Remove default client role and assign requested role(s).
-      // Operators also get 'admin' role so existing RLS policies grant panel access.
+      if (pErr) {
+        await admin.auth.admin.deleteUser(newUserId);
+        throw new Response(pErr.message, { status: 400 });
+      }
+      // Remove default client role and assign admin (+ operator if requested)
       await admin.from("user_roles").delete().eq("user_id", newUserId);
-      const rolesToInsert: { user_id: string; role: "admin" | "operator" }[] = [
-        { user_id: newUserId, role: "admin" },
-      ];
-      if (data.role === "operator") rolesToInsert.push({ user_id: newUserId, role: "operator" });
-      await admin.from("user_roles").insert(rolesToInsert);
+      const { error: rErr } = await admin
+        .from("user_roles")
+        .insert([{ user_id: newUserId, role: "admin" }]);
+      if (rErr) {
+        await admin.auth.admin.deleteUser(newUserId);
+        throw new Response(rErr.message, { status: 400 });
+      }
+      if (data.role === "operator") {
+        // tolerate missing 'operator' enum on older local installs
+        await admin.from("user_roles").insert([{ user_id: newUserId, role: "operator" as any }]);
+      }
     }
     return { user_id: newUserId };
   });
