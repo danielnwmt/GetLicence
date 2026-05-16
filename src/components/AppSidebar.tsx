@@ -112,7 +112,7 @@ export function AppSidebar({
             className={cn("w-full justify-start gap-3", collapsed && "justify-center px-0")}
             onClick={async () => {
               await signOut();
-              navigate({ to: "/" });
+              window.location.href = "/";
             }}
             title={collapsed ? "Sair" : undefined}
           >
