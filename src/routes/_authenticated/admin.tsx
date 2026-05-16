@@ -1,7 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { createCustomer, listAdminProfiles, updateCustomer } from "@/lib/customers.functions";
-import { createSystemUser, updateSystemUser, deleteSystemUser, listSystemUsers } from "@/lib/system-users.functions";
+import {
+  createSystemUser,
+  updateSystemUser,
+  deleteSystemUser,
+  listSystemUsers,
+} from "@/lib/system-users.functions";
 import { issueAsaasBoleto, cancelAsaasBoleto } from "@/lib/boletos.functions";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -342,10 +347,7 @@ function AdminPage() {
             <TabsTrigger value="mobile">App Mobile</TabsTrigger>
           </TabsList>
           <TabsContent value="users">
-            <SystemUsersTab
-              profiles={systemUsers}
-              onChange={reload}
-            />
+            <SystemUsersTab profiles={systemUsers} onChange={reload} />
           </TabsContent>
           <TabsContent value="integrations">
             <IntegrationsTab />
@@ -1368,13 +1370,15 @@ function LicensesTab({
                   </td>
 
                   <td className="p-3 font-mono text-xs">
-                    {l.device_ip_v4 || (l.device_ip && !l.device_ip.includes(":") ? l.device_ip : null) ? (
+                    {l.device_ip_v4 ||
+                    (l.device_ip && !l.device_ip.includes(":") ? l.device_ip : null) ? (
                       <div>
                         <span className="text-muted-foreground">v4:</span>{" "}
                         {l.device_ip_v4 || l.device_ip}
                       </div>
                     ) : null}
-                    {l.device_ip_v6 || (l.device_ip && l.device_ip.includes(":") ? l.device_ip : null) ? (
+                    {l.device_ip_v6 ||
+                    (l.device_ip && l.device_ip.includes(":") ? l.device_ip : null) ? (
                       <div>
                         <span className="text-muted-foreground">v6:</span>{" "}
                         {l.device_ip_v6 || l.device_ip}
@@ -1571,12 +1575,11 @@ function PaymentsTab({
     try {
       let firstUrl: string | null = null;
       for (let i = 0; i < qty; i++) {
-        const due =
-          baseDue
-            ? new Date(baseDue.getFullYear(), baseDue.getMonth() + i, baseDue.getDate())
-                .toISOString()
-                .slice(0, 10)
-            : null;
+        const due = baseDue
+          ? new Date(baseDue.getFullYear(), baseDue.getMonth() + i, baseDue.getDate())
+              .toISOString()
+              .slice(0, 10)
+          : null;
         const { data: pay, error } = await supabase
           .from("payments")
           .insert({
@@ -1596,7 +1599,14 @@ function PaymentsTab({
       toast.success(qty > 1 ? `${qty} boletos emitidos` : "Boleto emitido");
       if (firstUrl) window.open(firstUrl, "_blank");
       setNewOpen(false);
-      setNewForm({ user_id: "", license_id: "", amount: "", due_date: "", quantity: "1", description: "" });
+      setNewForm({
+        user_id: "",
+        license_id: "",
+        amount: "",
+        due_date: "",
+        quantity: "1",
+        description: "",
+      });
       onChange();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao emitir boleto");
@@ -3031,7 +3041,6 @@ function IntegrationsTab() {
         </div>
       </Card>
 
-
       <Card className="p-6 space-y-3">
         <div>
           <h3 className="text-lg font-semibold">URL do Webhook</h3>
@@ -3075,7 +3084,12 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
   };
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<{ full_name: string; email: string; password: string; role: "admin" | "operator" }>({
+  const [form, setForm] = useState<{
+    full_name: string;
+    email: string;
+    password: string;
+    role: "admin" | "operator";
+  }>({
     full_name: "",
     email: "",
     password: "",
@@ -3084,7 +3098,12 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
 
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<Profile | null>(null);
-  const [editForm, setEditForm] = useState<{ full_name: string; email: string; password: string; role: "admin" | "operator" }>({
+  const [editForm, setEditForm] = useState<{
+    full_name: string;
+    email: string;
+    password: string;
+    role: "admin" | "operator";
+  }>({
     full_name: "",
     email: "",
     password: "",
@@ -3200,7 +3219,9 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
                   value={form.role}
                   onValueChange={(v) => setForm({ ...form, role: v as "admin" | "operator" })}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="admin">Administrador</SelectItem>
                     <SelectItem value="operator">Operador</SelectItem>
@@ -3256,7 +3277,9 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
                 value={editForm.role}
                 onValueChange={(v) => setEditForm({ ...editForm, role: v as "admin" | "operator" })}
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Administrador</SelectItem>
                   <SelectItem value="operator">Operador</SelectItem>
@@ -3332,7 +3355,10 @@ function SystemUsersTab({ profiles, onChange }: { profiles: Profile[]; onChange:
 }
 
 function BlockRulesTab() {
-  const [settings, setSettings] = useState<{ block_auto: boolean; block_grace_days: number } | null>(null);
+  const [settings, setSettings] = useState<{
+    block_auto: boolean;
+    block_grace_days: number;
+  } | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -3357,7 +3383,11 @@ function BlockRulesTab() {
   const save = async () => {
     setSaving(true);
     try {
-      const { data: existing } = await supabase.from("payment_settings").select("id").limit(1).maybeSingle();
+      const { data: existing } = await supabase
+        .from("payment_settings")
+        .select("id")
+        .limit(1)
+        .maybeSingle();
       if (existing?.id) {
         const { error } = await supabase
           .from("payment_settings")
@@ -3380,8 +3410,8 @@ function BlockRulesTab() {
         <div>
           <h3 className="text-lg font-semibold">Regra de bloqueio de licenças</h3>
           <p className="text-sm text-muted-foreground">
-            Define quando uma licença é bloqueada automaticamente por inadimplência.
-            Quando o boleto for pago, a licença é reativada automaticamente.
+            Define quando uma licença é bloqueada automaticamente por inadimplência. Quando o boleto
+            for pago, a licença é reativada automaticamente.
           </p>
         </div>
       </div>
@@ -3392,7 +3422,9 @@ function BlockRulesTab() {
             value={settings.block_auto ? "on" : "off"}
             onValueChange={(v) => update("block_auto", v === "on")}
           >
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="on">Ativado</SelectItem>
               <SelectItem value="off">Desativado</SelectItem>
@@ -3407,7 +3439,9 @@ function BlockRulesTab() {
             value={settings.block_grace_days}
             onChange={(e) => update("block_grace_days", Math.max(0, Number(e.target.value) || 0))}
           />
-          <p className="text-xs text-muted-foreground">0 = bloqueia no dia seguinte ao vencimento.</p>
+          <p className="text-xs text-muted-foreground">
+            0 = bloqueia no dia seguinte ao vencimento.
+          </p>
         </div>
       </div>
       <div className="flex justify-end">
@@ -3441,8 +3475,8 @@ function LicenseApiTab() {
       <div>
         <h3 className="text-lg font-semibold">API de Verificação de Licença</h3>
         <p className="text-sm text-muted-foreground mt-1">
-          Endpoint público para o sistema cliente verificar se a licença está ativa.
-          Sem autenticação — a chave da licença é o segredo.
+          Endpoint público para o sistema cliente verificar se a licença está ativa. Sem
+          autenticação — a chave da licença é o segredo.
         </p>
       </div>
 
@@ -3450,7 +3484,9 @@ function LicenseApiTab() {
         <Label>Endpoint</Label>
         <div className="flex gap-2">
           <Input readOnly value={endpoint} className="font-mono text-sm" />
-          <Button variant="outline" onClick={() => copy(endpoint, "Endpoint")}>Copiar</Button>
+          <Button variant="outline" onClick={() => copy(endpoint, "Endpoint")}>
+            Copiar
+          </Button>
         </div>
         <p className="text-xs text-muted-foreground">Aceita POST (JSON) ou GET (query string)</p>
       </div>
@@ -3458,25 +3494,49 @@ function LicenseApiTab() {
       <div className="space-y-2">
         <Label>Exemplo de requisição (cURL)</Label>
         <div className="relative">
-          <pre className="bg-muted p-3 rounded text-xs overflow-x-auto font-mono">{curlExample}</pre>
-          <Button size="sm" variant="outline" className="absolute top-2 right-2" onClick={() => copy(curlExample, "cURL")}>Copiar</Button>
+          <pre className="bg-muted p-3 rounded text-xs overflow-x-auto font-mono">
+            {curlExample}
+          </pre>
+          <Button
+            size="sm"
+            variant="outline"
+            className="absolute top-2 right-2"
+            onClick={() => copy(curlExample, "cURL")}
+          >
+            Copiar
+          </Button>
         </div>
       </div>
 
       <div className="space-y-2">
         <Label>Exemplo de resposta</Label>
-        <pre className="bg-muted p-3 rounded text-xs overflow-x-auto font-mono">{responseExample}</pre>
+        <pre className="bg-muted p-3 rounded text-xs overflow-x-auto font-mono">
+          {responseExample}
+        </pre>
       </div>
 
       <div className="space-y-2">
         <Label>Regras de retorno</Label>
         <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
-          <li><code className="text-foreground">ok: true</code> → libera o uso do sistema</li>
-          <li><code className="text-foreground">blocked: true</code> → boleto vencido, bloquear acesso</li>
-          <li><code className="text-foreground">expired: true</code> → licença expirou</li>
-          <li>Primeira chamada com licença <code>pending</code> ativa automaticamente</li>
-          <li>Cada chamada atualiza <code>last_seen_at</code>, IP e hostname do dispositivo</li>
-          <li>Backend usa <code>SUPABASE_SERVICE_ROLE_KEY</code> nos secrets internos; nunca coloque o valor dessa chave no cliente ou na documentação pública.</li>
+          <li>
+            <code className="text-foreground">ok: true</code> → libera o uso do sistema
+          </li>
+          <li>
+            <code className="text-foreground">blocked: true</code> → boleto vencido, bloquear acesso
+          </li>
+          <li>
+            <code className="text-foreground">expired: true</code> → licença expirou
+          </li>
+          <li>
+            Primeira chamada com licença <code>pending</code> ativa automaticamente
+          </li>
+          <li>
+            Cada chamada atualiza <code>last_seen_at</code>, IP e hostname do dispositivo
+          </li>
+          <li>
+            Backend usa <code>SUPABASE_SERVICE_ROLE_KEY</code> nos secrets internos; nunca coloque o
+            valor dessa chave no cliente ou na documentação pública.
+          </li>
         </ul>
       </div>
     </Card>
@@ -3668,7 +3728,6 @@ function PayablesTab({
     if (error) return toast.error(error.message);
     onChange();
   };
-
 
   const catLabel = (c: string) =>
     c === "vps" ? "VPS" : c === "storage" ? "Armazenamento" : "Software";
@@ -3994,7 +4053,9 @@ function BackupTab() {
   const load = async () => {
     const { data } = await supabase
       .from("payment_settings")
-      .select("gdrive_service_account_json, gdrive_folder_id, gdrive_owner_email, backup_enabled, backup_retention_days, backup_last_run_at, backup_last_status")
+      .select(
+        "gdrive_service_account_json, gdrive_folder_id, gdrive_owner_email, backup_enabled, backup_retention_days, backup_last_run_at, backup_last_status",
+      )
       .limit(1)
       .maybeSingle();
     setS({
@@ -4008,7 +4069,9 @@ function BackupTab() {
     });
     setFolderInput(data?.gdrive_folder_id ?? "");
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   if (!s) return <div className="text-muted-foreground">Carregando...</div>;
 
@@ -4018,15 +4081,25 @@ function BackupTab() {
   const save = async () => {
     setSaving(true);
     try {
-      const { data: ex } = await supabase.from("payment_settings").select("id").limit(1).maybeSingle();
-      if (!ex?.id) { toast.error("Configurações não inicializadas"); return; }
-      const { error } = await supabase.from("payment_settings").update({
-        gdrive_service_account_json: s.gdrive_service_account_json || null,
-        gdrive_folder_id: folderId || null,
-        gdrive_owner_email: s.gdrive_owner_email || null,
-        backup_enabled: s.backup_enabled,
-        backup_retention_days: s.backup_retention_days,
-      } as any).eq("id", ex.id);
+      const { data: ex } = await supabase
+        .from("payment_settings")
+        .select("id")
+        .limit(1)
+        .maybeSingle();
+      if (!ex?.id) {
+        toast.error("Configurações não inicializadas");
+        return;
+      }
+      const { error } = await supabase
+        .from("payment_settings")
+        .update({
+          gdrive_service_account_json: s.gdrive_service_account_json || null,
+          gdrive_folder_id: folderId || null,
+          gdrive_owner_email: s.gdrive_owner_email || null,
+          backup_enabled: s.backup_enabled,
+          backup_retention_days: s.backup_retention_days,
+        } as any)
+        .eq("id", ex.id);
       if (error) throw error;
       toast.success("Configurações de backup salvas");
       await load();
@@ -4056,7 +4129,10 @@ function BackupTab() {
     const file = e.target.files?.[0];
     if (e.target) e.target.value = "";
     if (!file) return;
-    if (!confirm(`Restaurar backup a partir de "${file.name}"? Os dados atuais serão sobrescritos.`)) return;
+    if (
+      !confirm(`Restaurar backup a partir de "${file.name}"? Os dados atuais serão sobrescritos.`)
+    )
+      return;
     setRestoring(true);
     try {
       const dump = await file.text();
@@ -4111,7 +4187,10 @@ function BackupTab() {
         <p className="text-xs text-muted-foreground">
           O ID está na URL da pasta: drive.google.com/drive/folders/<strong>ID_AQUI</strong>
           {folderId && folderId !== folderInput && (
-            <> — detectado: <code className="text-foreground">{folderId}</code></>
+            <>
+              {" "}
+              — detectado: <code className="text-foreground">{folderId}</code>
+            </>
           )}
         </p>
       </div>
@@ -4147,7 +4226,8 @@ function BackupTab() {
           className="font-mono text-xs"
         />
         <p className="text-xs text-muted-foreground">
-          Compartilhe a pasta do Drive com o email <code>client_email</code> dessa conta (permissão Editor).
+          Compartilhe a pasta do Drive com o email <code>client_email</code> dessa conta (permissão
+          Editor).
         </p>
       </div>
 
@@ -4158,7 +4238,9 @@ function BackupTab() {
             type="number"
             min={1}
             value={s.backup_retention_days}
-            onChange={(e) => setS({ ...s, backup_retention_days: Math.max(1, Number(e.target.value) || 5) })}
+            onChange={(e) =>
+              setS({ ...s, backup_retention_days: Math.max(1, Number(e.target.value) || 5) })
+            }
           />
         </div>
         <div className="space-y-2">
@@ -4167,7 +4249,9 @@ function BackupTab() {
             value={s.backup_enabled ? "on" : "off"}
             onValueChange={(v) => setS({ ...s, backup_enabled: v === "on" })}
           >
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="on">Ativado</SelectItem>
               <SelectItem value="off">Desativado</SelectItem>
@@ -4185,15 +4269,21 @@ function BackupTab() {
 
       {s.backup_last_run_at && (
         <div className="rounded-md border p-3 text-sm">
-          <div><span className="text-muted-foreground">Último backup:</span> {new Date(s.backup_last_run_at).toLocaleString("pt-BR")}</div>
-          <div><span className="text-muted-foreground">Status:</span> {s.backup_last_status}</div>
+          <div>
+            <span className="text-muted-foreground">Último backup:</span>{" "}
+            {new Date(s.backup_last_run_at).toLocaleString("pt-BR")}
+          </div>
+          <div>
+            <span className="text-muted-foreground">Status:</span> {s.backup_last_status}
+          </div>
         </div>
       )}
 
       <div className="rounded-md border border-dashed p-3 space-y-2">
         <div className="text-sm font-medium">Restaurar backup (.json)</div>
         <p className="text-xs text-muted-foreground">
-          Envie um arquivo de backup gerado anteriormente. Os registros existentes serão sobrescritos pelo conteúdo do arquivo.
+          Envie um arquivo de backup gerado anteriormente. Os registros existentes serão
+          sobrescritos pelo conteúdo do arquivo.
         </p>
         <input
           ref={fileRef}

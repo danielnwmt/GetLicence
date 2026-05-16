@@ -73,17 +73,34 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Lovable App" },
-      { name: "description", content: "License Butler manages software licenses and their associated payments." },
+      {
+        name: "description",
+        content: "License Butler manages software licenses and their associated payments.",
+      },
       { name: "author", content: "Lovable" },
       { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "License Butler manages software licenses and their associated payments." },
+      {
+        property: "og:description",
+        content: "License Butler manages software licenses and their associated payments.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "Lovable App" },
-      { name: "twitter:description", content: "License Butler manages software licenses and their associated payments." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/689985c4-0493-4ffd-8d60-837d51af774a/id-preview-d5768f3e--31a68169-6ba5-491b-b1dd-a4ca31ebbd78.lovable.app-1778454878728.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/689985c4-0493-4ffd-8d60-837d51af774a/id-preview-d5768f3e--31a68169-6ba5-491b-b1dd-a4ca31ebbd78.lovable.app-1778454878728.png" },
+      {
+        name: "twitter:description",
+        content: "License Butler manages software licenses and their associated payments.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/689985c4-0493-4ffd-8d60-837d51af774a/id-preview-d5768f3e--31a68169-6ba5-491b-b1dd-a4ca31ebbd78.lovable.app-1778454878728.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/689985c4-0493-4ffd-8d60-837d51af774a/id-preview-d5768f3e--31a68169-6ba5-491b-b1dd-a4ca31ebbd78.lovable.app-1778454878728.png",
+      },
     ],
     links: [
       {

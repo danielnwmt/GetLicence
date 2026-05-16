@@ -25,9 +25,15 @@ function ChangePasswordPage() {
     if (pwd !== pwd2) return toast.error("As senhas não coincidem.");
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password: pwd });
-    if (error) { setLoading(false); return toast.error(error.message); }
+    if (error) {
+      setLoading(false);
+      return toast.error(error.message);
+    }
     if (user) {
-      await supabase.from("profiles").update({ must_change_password: false }).eq("user_id", user.id);
+      await supabase
+        .from("profiles")
+        .update({ must_change_password: false })
+        .eq("user_id", user.id);
     }
     toast.success("Senha atualizada!");
     navigate({ to: "/dashboard" });
@@ -44,11 +50,25 @@ function ChangePasswordPage() {
           <form onSubmit={submit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="pwd">Nova senha</Label>
-              <Input id="pwd" type="password" value={pwd} onChange={(e) => setPwd(e.target.value)} required minLength={8} />
+              <Input
+                id="pwd"
+                type="password"
+                value={pwd}
+                onChange={(e) => setPwd(e.target.value)}
+                required
+                minLength={8}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="pwd2">Confirmar senha</Label>
-              <Input id="pwd2" type="password" value={pwd2} onChange={(e) => setPwd2(e.target.value)} required minLength={8} />
+              <Input
+                id="pwd2"
+                type="password"
+                value={pwd2}
+                onChange={(e) => setPwd2(e.target.value)}
+                required
+                minLength={8}
+              />
             </div>
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? "Salvando..." : "Salvar nova senha"}

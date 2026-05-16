@@ -14,7 +14,11 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "GetLicence — Gerencie licenças e pagamentos" },
-      { name: "description", content: "Plataforma para emitir, controlar e cobrar licenças de software com renovação automática e portal do cliente." },
+      {
+        name: "description",
+        content:
+          "Plataforma para emitir, controlar e cobrar licenças de software com renovação automática e portal do cliente.",
+      },
     ],
   }),
   component: Index,
@@ -40,8 +44,8 @@ function Index() {
               <span className="text-white/80">e pagamentos</span> com GetLicence.
             </h1>
             <p className="mt-6 max-w-xl text-lg text-white/80">
-              Emita chaves de licença, controle expiração, renove assinaturas e
-              acompanhe pagamentos em um painel limpo e poderoso.
+              Emita chaves de licença, controle expiração, renove assinaturas e acompanhe pagamentos
+              em um painel limpo e poderoso.
             </p>
           </div>
 
@@ -59,12 +63,31 @@ function Index() {
         </div>
         <div className="mt-16 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[
-            { icon: KeyRound, title: "Chaves de licença", desc: "Geração automática com validade e plano (mensal/anual)." },
-            { icon: ShieldCheck, title: "Controle de acesso", desc: "Perfis admin e cliente com permissões separadas." },
-            { icon: CreditCard, title: "Pagamentos", desc: "Registre cobranças, marque como pago e mantenha o histórico." },
-            { icon: BarChart3, title: "Painel admin", desc: "Visão completa de clientes, licenças e receita." },
+            {
+              icon: KeyRound,
+              title: "Chaves de licença",
+              desc: "Geração automática com validade e plano (mensal/anual).",
+            },
+            {
+              icon: ShieldCheck,
+              title: "Controle de acesso",
+              desc: "Perfis admin e cliente com permissões separadas.",
+            },
+            {
+              icon: CreditCard,
+              title: "Pagamentos",
+              desc: "Registre cobranças, marque como pago e mantenha o histórico.",
+            },
+            {
+              icon: BarChart3,
+              title: "Painel admin",
+              desc: "Visão completa de clientes, licenças e receita.",
+            },
           ].map((f) => (
-            <Card key={f.title} className="bg-gradient-card p-6 transition-all hover:shadow-elevated">
+            <Card
+              key={f.title}
+              className="bg-gradient-card p-6 transition-all hover:shadow-elevated"
+            >
               <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-gradient-primary text-primary-foreground">
                 <f.icon className="h-5 w-5" />
               </div>
@@ -74,7 +97,6 @@ function Index() {
           ))}
         </div>
       </section>
-
     </div>
   );
 }
@@ -115,7 +137,9 @@ function LoginCard() {
       </Link>
       <form onSubmit={submit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="li-email" className="text-white">E-mail</Label>
+          <Label htmlFor="li-email" className="text-white">
+            E-mail
+          </Label>
           <Input
             id="li-email"
             type="email"
@@ -126,7 +150,9 @@ function LoginCard() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="li-pwd" className="text-white">Senha</Label>
+          <Label htmlFor="li-pwd" className="text-white">
+            Senha
+          </Label>
           <Input
             id="li-pwd"
             type="password"

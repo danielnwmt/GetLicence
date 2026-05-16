@@ -38,13 +38,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (mounted) setLoading(false);
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, sess) => {
       void applySession(sess);
     });
 
     supabase.auth.getSession().then(({ data }) => applySession(data.session));
 
-    return () => { mounted = false; subscription.unsubscribe(); };
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const fetchRole = async (userId: string) => {
@@ -56,10 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Role fetch failed:", e);
     }
 
-    const { data } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId);
+    const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
     const isAdmin = (data ?? []).some((r: { role: string }) => r.role === "admin");
     if (!isAdmin && userId) {
       setRole("client");

@@ -16,7 +16,8 @@ function admin() {
 function mapAsaasStatus(s: string): "paid" | "pending" | "failed" | "refunded" {
   const v = s.toUpperCase();
   if (["RECEIVED", "CONFIRMED", "RECEIVED_IN_CASH"].includes(v)) return "paid";
-  if (["REFUNDED", "CHARGEBACK_REQUESTED", "CHARGEBACK_DISPUTE", "REFUND_REQUESTED"].includes(v)) return "refunded";
+  if (["REFUNDED", "CHARGEBACK_REQUESTED", "CHARGEBACK_DISPUTE", "REFUND_REQUESTED"].includes(v))
+    return "refunded";
   if (["OVERDUE"].includes(v)) return "failed";
   return "pending";
 }
@@ -41,7 +42,8 @@ async function handleAsaas(payload: any, sb: ReturnType<typeof admin>) {
   const pay = payload?.payment;
   if (!pay?.id) return { ok: false, reason: "no payment id" };
   const status = mapAsaasStatus(pay.status || payload?.event || "");
-  const paid_at = status === "paid" ? (pay.paymentDate || pay.clientPaymentDate || new Date().toISOString()) : null;
+  const paid_at =
+    status === "paid" ? pay.paymentDate || pay.clientPaymentDate || new Date().toISOString() : null;
 
   // Try update by provider_charge_id; if not found, insert log row
   const { data: existing } = await sb
@@ -51,12 +53,15 @@ async function handleAsaas(payload: any, sb: ReturnType<typeof admin>) {
     .maybeSingle();
 
   if (existing) {
-    await sb.from("payments").update({
-      status,
-      paid_at,
-      method: pay.billingType ?? null,
-      boleto_url: pay.bankSlipUrl ?? null,
-    }).eq("id", existing.id);
+    await sb
+      .from("payments")
+      .update({
+        status,
+        paid_at,
+        method: pay.billingType ?? null,
+        boleto_url: pay.bankSlipUrl ?? null,
+      })
+      .eq("id", existing.id);
   }
   return { ok: true, matched: !!existing };
 }
@@ -74,10 +79,13 @@ async function handleSicredi(payload: any, sb: ReturnType<typeof admin>) {
       .eq("provider_charge_id", txid)
       .maybeSingle();
     if (existing) {
-      await sb.from("payments").update({
-        status,
-        paid_at: status === "paid" ? (c?.horario || new Date().toISOString()) : null,
-      }).eq("id", existing.id);
+      await sb
+        .from("payments")
+        .update({
+          status,
+          paid_at: status === "paid" ? c?.horario || new Date().toISOString() : null,
+        })
+        .eq("id", existing.id);
     }
   }
   return { ok: true };
@@ -95,10 +103,13 @@ async function handleSicoob(payload: any, sb: ReturnType<typeof admin>) {
       .eq("provider_charge_id", txid)
       .maybeSingle();
     if (existing) {
-      await sb.from("payments").update({
-        status,
-        paid_at: status === "paid" ? (c?.horario || new Date().toISOString()) : null,
-      }).eq("id", existing.id);
+      await sb
+        .from("payments")
+        .update({
+          status,
+          paid_at: status === "paid" ? c?.horario || new Date().toISOString() : null,
+        })
+        .eq("id", existing.id);
     }
   }
   return { ok: true };
@@ -130,7 +141,11 @@ export const Route = createFileRoute("/api/public/webhooks/$provider")({
         }
 
         let payload: any = {};
-        try { payload = await request.json(); } catch { payload = {}; }
+        try {
+          payload = await request.json();
+        } catch {
+          payload = {};
+        }
 
         try {
           let result;

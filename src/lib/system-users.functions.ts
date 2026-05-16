@@ -25,7 +25,7 @@ export const createSystemUser = createServerFn({ method: "POST" })
     const admin = createClient<Database>(
       process.env.SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { persistSession: false, autoRefreshToken: false } }
+      { auth: { persistSession: false, autoRefreshToken: false } },
     );
 
     const { data: created, error } = await admin.auth.admin.createUser({
@@ -38,10 +38,12 @@ export const createSystemUser = createServerFn({ method: "POST" })
 
     const newUserId = created.user?.id;
     if (newUserId) {
-      const { error: pErr } = await admin.from("profiles").upsert(
-        { user_id: newUserId, email: data.email, full_name: data.full_name },
-        { onConflict: "user_id" }
-      );
+      const { error: pErr } = await admin
+        .from("profiles")
+        .upsert(
+          { user_id: newUserId, email: data.email, full_name: data.full_name },
+          { onConflict: "user_id" },
+        );
       if (pErr) {
         await admin.auth.admin.deleteUser(newUserId);
         throw new Response(pErr.message, { status: 400 });
@@ -76,7 +78,7 @@ export const listSystemUsers = createServerFn({ method: "GET" })
     const admin = createClient<Database>(
       process.env.SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { persistSession: false, autoRefreshToken: false } }
+      { auth: { persistSession: false, autoRefreshToken: false } },
     );
 
     const { data: adminRoles, error: adminErr } = await admin
@@ -95,7 +97,9 @@ export const listSystemUsers = createServerFn({ method: "GET" })
         .select("user_id")
         .eq("role", "operator" as any);
       operatorSet = new Set((opRoles ?? []).map((r: any) => r.user_id));
-    } catch { /* operator role not supported */ }
+    } catch {
+      /* operator role not supported */
+    }
 
     const { data: profiles, error: profErr } = await admin
       .from("profiles")
@@ -130,7 +134,7 @@ export const updateSystemUser = createServerFn({ method: "POST" })
     const admin = createClient<Database>(
       process.env.SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { persistSession: false, autoRefreshToken: false } }
+      { auth: { persistSession: false, autoRefreshToken: false } },
     );
 
     const attrs: { email?: string; password?: string } = {};
@@ -163,9 +167,7 @@ export const updateSystemUser = createServerFn({ method: "POST" })
 
 export const deleteSystemUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ user_id: z.string().uuid() }).parse(input)
-  )
+  .inputValidator((input: unknown) => z.object({ user_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: isAdmin } = await supabase.rpc("has_role", {
@@ -180,7 +182,7 @@ export const deleteSystemUser = createServerFn({ method: "POST" })
     const admin = createClient<Database>(
       process.env.SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { persistSession: false, autoRefreshToken: false } }
+      { auth: { persistSession: false, autoRefreshToken: false } },
     );
 
     const { error } = await admin.auth.admin.deleteUser(data.user_id);

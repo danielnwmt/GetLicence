@@ -27,9 +27,8 @@ function isValidCpf(cpf: string): boolean {
 function isValidCnpj(cnpj: string): boolean {
   if (cnpj.length !== 14 || /^(\d)\1+$/.test(cnpj)) return false;
   const calc = (slice: number) => {
-    const weights = slice === 12
-      ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
-      : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    const weights =
+      slice === 12 ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2] : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
     let sum = 0;
     for (let i = 0; i < slice; i++) sum += Number(cnpj[i]) * weights[i];
     const rest = sum % 11;

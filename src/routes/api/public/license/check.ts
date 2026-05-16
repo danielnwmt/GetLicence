@@ -3,11 +3,9 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
 function admin() {
-  return createClient<Database>(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } }
-  );
+  return createClient<Database>(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 }
 
 function clientIp(request: Request): string | null {
@@ -33,16 +31,25 @@ async function handle(
 ) {
   const sb = admin();
   const key = (params.license_key || "").trim().toUpperCase();
-  if (!key) return Response.json({ ok: false, status: "invalid", reason: "missing license_key" }, { status: 400 });
+  if (!key)
+    return Response.json(
+      { ok: false, status: "invalid", reason: "missing license_key" },
+      { status: 400 },
+    );
 
   const { data: lic, error } = await sb
     .from("licenses")
-    .select("id, status, expires_at, activated_at, user_id, product_id, extra_storage_gb, products:product_id(storage_amount, storage_unit, vps_storage_amount, vps_storage_unit)")
+    .select(
+      "id, status, expires_at, activated_at, user_id, product_id, extra_storage_gb, products:product_id(storage_amount, storage_unit, vps_storage_amount, vps_storage_unit)",
+    )
     .eq("license_key", key)
     .maybeSingle();
 
   if (error || !lic) {
-    return Response.json({ ok: false, status: "invalid", reason: "license not found" }, { status: 404 });
+    return Response.json(
+      { ok: false, status: "invalid", reason: "license not found" },
+      { status: 404 },
+    );
   }
 
   const ip = clientIp(request);
@@ -83,14 +90,16 @@ async function handle(
     expires_at: lic.expires_at,
     blocked: newStatus === "blocked",
     expired: newStatus === "expired",
-    storage: prod ? {
-      amount: Number(prod.storage_amount ?? 0) + Number((lic as any).extra_storage_gb ?? 0),
-      base_amount: Number(prod.storage_amount ?? 0),
-      extra_amount: Number((lic as any).extra_storage_gb ?? 0),
-      unit: prod.storage_unit ?? "GB",
-      vps_amount: Number(prod.vps_storage_amount ?? 0),
-      vps_unit: prod.vps_storage_unit ?? "GB",
-    } : null,
+    storage: prod
+      ? {
+          amount: Number(prod.storage_amount ?? 0) + Number((lic as any).extra_storage_gb ?? 0),
+          base_amount: Number(prod.storage_amount ?? 0),
+          extra_amount: Number((lic as any).extra_storage_gb ?? 0),
+          unit: prod.storage_unit ?? "GB",
+          vps_amount: Number(prod.vps_storage_amount ?? 0),
+          vps_unit: prod.vps_storage_unit ?? "GB",
+        }
+      : null,
   });
 }
 
@@ -99,7 +108,9 @@ export const Route = createFileRoute("/api/public/license/check")({
     handlers: {
       POST: async ({ request }) => {
         let body: any = {};
-        try { body = await request.json(); } catch {}
+        try {
+          body = await request.json();
+        } catch {}
         return handle(request, {
           license_key: body?.license_key,
           hostname: body?.hostname,
