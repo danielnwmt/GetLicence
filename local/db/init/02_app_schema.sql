@@ -15,7 +15,8 @@ create or replace function auth.email() returns text language sql stable as
 $$ select coalesce(nullif(current_setting('request.jwt.claim.email', true), ''), auth.jwt()->>'email') $$;
 reset role;
 
-do $$ begin create type public.app_role as enum ('admin','client'); exception when duplicate_object then null; end $$;
+do $$ begin create type public.app_role as enum ('admin','client','operator'); exception when duplicate_object then null; end $$;
+do $$ begin alter type public.app_role add value if not exists 'operator'; exception when others then null; end $$;
 do $$ begin create type public.license_status as enum ('pending','active','expired','cancelled','blocked'); exception when duplicate_object then null; end $$;
 do $$ begin alter type public.license_status add value if not exists 'blocked'; exception when others then null; end $$;
 do $$ begin create type public.license_plan as enum ('monthly','yearly'); exception when duplicate_object then null; end $$;
@@ -271,14 +272,30 @@ create trigger trg_on_payment_paid after insert or update on public.payments
 
 create or replace function public.refresh_license_statuses() returns void
 language plpgsql security definer set search_path = public as $$
+declare
+  v_grace integer := 0;
+  v_auto boolean := true;
 begin
-  update public.licenses l set status='blocked'
-   where l.status in ('active','pending')
-     and exists (select 1 from public.payments p
-                  where p.license_id=l.id
-                    and p.status in ('pending','failed')
-                    and p.due_date is not null
-                    and p.due_date < current_date);
+  select coalesce(block_grace_days,0), coalesce(block_auto,true)
+    into v_grace, v_auto
+    from public.payment_settings limit 1;
+
+  if v_auto then
+    update public.licenses l set status='blocked'
+     where l.status in ('active','pending')
+       and exists (select 1 from public.payments p
+                    where p.license_id=l.id
+                      and p.status in ('pending','failed')
+                      and p.due_date is not null
+                      and p.due_date < (current_date - v_grace));
+
+    update public.licenses l set status='blocked'
+     where l.status in ('active','pending')
+       and not exists (select 1 from public.payments p
+                        where p.license_id=l.id
+                          and p.created_at >= (now() - interval '15 days'));
+  end if;
+
   update public.licenses set status='expired'
    where status in ('active','blocked','pending') and expires_at < now();
 end $$;

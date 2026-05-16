@@ -65,7 +65,7 @@ export const createCustomer = createServerFn({ method: "POST" })
 
     const newUserId = created.user?.id;
     if (newUserId) {
-      const { error: profileError } = await supabase.from("profiles").upsert({
+      const { error: profileError } = await admin.from("profiles").upsert({
         user_id: newUserId,
         email: data.email,
         full_name: data.full_name,
@@ -84,7 +84,7 @@ export const createCustomer = createServerFn({ method: "POST" })
         throw new Response(profileError.message, { status: 400 });
       }
 
-      const { error: roleError } = await supabase.from("user_roles").upsert(
+      const { error: roleError } = await admin.from("user_roles").upsert(
         { user_id: newUserId, role: "client" },
         { onConflict: "user_id,role" }
       );
@@ -181,7 +181,8 @@ export const updateCustomer = createServerFn({ method: "POST" })
       if (error) throw new Response(error.message, { status: 400 });
     }
 
-    const { error: pErr } = await supabase.from("profiles").update({
+    const { error: pErr } = await admin.from("profiles").upsert({
+      user_id: data.user_id,
       full_name: data.full_name,
       email: data.email ?? undefined,
       cpf_cnpj: data.cpf_cnpj.replace(/\D/g, ""),
@@ -193,8 +194,14 @@ export const updateCustomer = createServerFn({ method: "POST" })
       address_neighborhood: data.address_neighborhood ?? null,
       address_city: data.address_city ?? null,
       address_state: data.address_state ?? null,
-    }).eq("user_id", data.user_id);
+    }, { onConflict: "user_id" });
     if (pErr) throw new Response(pErr.message, { status: 400 });
+
+    const { error: roleError } = await admin.from("user_roles").upsert(
+      { user_id: data.user_id, role: "client" },
+      { onConflict: "user_id,role" }
+    );
+    if (roleError) throw new Response(roleError.message, { status: 400 });
 
     return { ok: true };
   });
