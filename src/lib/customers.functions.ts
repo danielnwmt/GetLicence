@@ -181,7 +181,8 @@ export const updateCustomer = createServerFn({ method: "POST" })
       if (error) throw new Response(error.message, { status: 400 });
     }
 
-    const { error: pErr } = await admin.from("profiles").update({
+    const { error: pErr } = await admin.from("profiles").upsert({
+      user_id: data.user_id,
       full_name: data.full_name,
       email: data.email ?? undefined,
       cpf_cnpj: data.cpf_cnpj.replace(/\D/g, ""),
@@ -193,7 +194,7 @@ export const updateCustomer = createServerFn({ method: "POST" })
       address_neighborhood: data.address_neighborhood ?? null,
       address_city: data.address_city ?? null,
       address_state: data.address_state ?? null,
-    }).eq("user_id", data.user_id);
+    }, { onConflict: "user_id" });
     if (pErr) throw new Response(pErr.message, { status: 400 });
 
     const { error: roleError } = await admin.from("user_roles").upsert(
