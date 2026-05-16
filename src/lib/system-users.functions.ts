@@ -64,17 +64,35 @@ export const listSystemUsers = createServerFn({ method: "GET" })
     });
     if (!isAdmin) throw new Response("Forbidden", { status: 403 });
 
-    const { data: roles } = await supabase
+    const admin = createClient<Database>(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false, autoRefreshToken: false } }
+    );
+
+    const { data: adminRoles, error: adminErr } = await admin
       .from("user_roles")
-      .select("user_id, role")
-      .in("role", ["admin", "operator"]);
-    const adminIds = Array.from(new Set((roles ?? []).filter((r) => r.role === "admin").map((r) => r.user_id)));
+      .select("user_id")
+      .eq("role", "admin");
+    if (adminErr) throw new Response(adminErr.message, { status: 400 });
+    const adminIds = Array.from(new Set((adminRoles ?? []).map((r: any) => r.user_id)));
     if (adminIds.length === 0) return [];
-    const operatorSet = new Set((roles ?? []).filter((r) => r.role === "operator").map((r) => r.user_id));
-    const { data: profiles } = await supabase
+
+    // operator enum may not exist on older local installs; tolerate failure
+    let operatorSet = new Set<string>();
+    try {
+      const { data: opRoles } = await admin
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "operator" as any);
+      operatorSet = new Set((opRoles ?? []).map((r: any) => r.user_id));
+    } catch { /* operator role not supported */ }
+
+    const { data: profiles, error: profErr } = await admin
       .from("profiles")
       .select("user_id, full_name, email")
       .in("user_id", adminIds);
+    if (profErr) throw new Response(profErr.message, { status: 400 });
     return (profiles ?? []).map((p) => ({
       ...p,
       role: operatorSet.has(p.user_id) ? "operator" : "admin",
