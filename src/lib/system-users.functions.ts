@@ -38,18 +38,27 @@ export const createSystemUser = createServerFn({ method: "POST" })
 
     const newUserId = created.user?.id;
     if (newUserId) {
-      await admin.from("profiles").upsert(
+      const { error: pErr } = await admin.from("profiles").upsert(
         { user_id: newUserId, email: data.email, full_name: data.full_name },
         { onConflict: "user_id" }
       );
-      // Remove default client role and assign requested role(s).
-      // Operators also get 'admin' role so existing RLS policies grant panel access.
+      if (pErr) {
+        await admin.auth.admin.deleteUser(newUserId);
+        throw new Response(pErr.message, { status: 400 });
+      }
+      // Remove default client role and assign admin (+ operator if requested)
       await admin.from("user_roles").delete().eq("user_id", newUserId);
-      const rolesToInsert: { user_id: string; role: "admin" | "operator" }[] = [
-        { user_id: newUserId, role: "admin" },
-      ];
-      if (data.role === "operator") rolesToInsert.push({ user_id: newUserId, role: "operator" });
-      await admin.from("user_roles").insert(rolesToInsert);
+      const { error: rErr } = await admin
+        .from("user_roles")
+        .insert([{ user_id: newUserId, role: "admin" }]);
+      if (rErr) {
+        await admin.auth.admin.deleteUser(newUserId);
+        throw new Response(rErr.message, { status: 400 });
+      }
+      if (data.role === "operator") {
+        // tolerate missing 'operator' enum on older local installs
+        await admin.from("user_roles").insert([{ user_id: newUserId, role: "operator" as any }]);
+      }
     }
     return { user_id: newUserId };
   });
@@ -64,17 +73,35 @@ export const listSystemUsers = createServerFn({ method: "GET" })
     });
     if (!isAdmin) throw new Response("Forbidden", { status: 403 });
 
-    const { data: roles } = await supabase
+    const admin = createClient<Database>(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false, autoRefreshToken: false } }
+    );
+
+    const { data: adminRoles, error: adminErr } = await admin
       .from("user_roles")
-      .select("user_id, role")
-      .in("role", ["admin", "operator"]);
-    const adminIds = Array.from(new Set((roles ?? []).filter((r) => r.role === "admin").map((r) => r.user_id)));
+      .select("user_id")
+      .eq("role", "admin");
+    if (adminErr) throw new Response(adminErr.message, { status: 400 });
+    const adminIds = Array.from(new Set((adminRoles ?? []).map((r: any) => r.user_id)));
     if (adminIds.length === 0) return [];
-    const operatorSet = new Set((roles ?? []).filter((r) => r.role === "operator").map((r) => r.user_id));
-    const { data: profiles } = await supabase
+
+    // operator enum may not exist on older local installs; tolerate failure
+    let operatorSet = new Set<string>();
+    try {
+      const { data: opRoles } = await admin
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "operator" as any);
+      operatorSet = new Set((opRoles ?? []).map((r: any) => r.user_id));
+    } catch { /* operator role not supported */ }
+
+    const { data: profiles, error: profErr } = await admin
       .from("profiles")
       .select("user_id, full_name, email")
       .in("user_id", adminIds);
+    if (profErr) throw new Response(profErr.message, { status: 400 });
     return (profiles ?? []).map((p) => ({
       ...p,
       role: operatorSet.has(p.user_id) ? "operator" : "admin",
