@@ -5,13 +5,37 @@ import { useAuth } from "@/hooks/use-auth";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { KeyRound, Calendar, CreditCard, Package, Copy, Check, FileText, Server, HardDrive, ArrowUpCircle } from "lucide-react";
+import {
+  KeyRound,
+  Calendar,
+  CreditCard,
+  Package,
+  Copy,
+  Check,
+  FileText,
+  Server,
+  HardDrive,
+  ArrowUpCircle,
+} from "lucide-react";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Minhas licenças — GetLicence" }] }),
@@ -104,9 +128,8 @@ function Dashboard() {
       .order("storage_amount", { ascending: true });
     const all = ((data as any[]) || []) as StorageProduct[];
     const currentExtra = Number(lic.extra_storage_gb ?? 0);
-    const match = currentExtra > 0
-      ? all.find((p) => Number(p.storage_amount) === currentExtra)
-      : null;
+    const match =
+      currentExtra > 0 ? all.find((p) => Number(p.storage_amount) === currentExtra) : null;
     setCurrentStoragePrice(Number(match?.price_monthly ?? 0));
     setStorageProducts(all.filter((p) => p.id !== match?.id));
   };
@@ -123,12 +146,15 @@ function Dashboard() {
         .eq("id", upgradeLicense.id);
       if (error) throw error;
 
-      setLicenses((prev) => prev.map((x) => x.id === upgradeLicense.id ? { ...x, extra_storage_gb: newExtra } : x));
-      const msg = storageDiff > 0
-        ? `Armazenamento alterado. Acréscimo de ${formatBRL(storageDiff)}/mês na próxima fatura.`
-        : storageDiff < 0
-          ? `Armazenamento alterado. Redução de ${formatBRL(Math.abs(storageDiff))}/mês na próxima fatura.`
-          : `Armazenamento alterado sem alteração de valor.`;
+      setLicenses((prev) =>
+        prev.map((x) => (x.id === upgradeLicense.id ? { ...x, extra_storage_gb: newExtra } : x)),
+      );
+      const msg =
+        storageDiff > 0
+          ? `Armazenamento alterado. Acréscimo de ${formatBRL(storageDiff)}/mês na próxima fatura.`
+          : storageDiff < 0
+            ? `Armazenamento alterado. Redução de ${formatBRL(Math.abs(storageDiff))}/mês na próxima fatura.`
+            : `Armazenamento alterado sem alteração de valor.`;
       toast.success(msg);
       setUpgradeLicense(null);
     } catch (e: any) {
@@ -170,11 +196,12 @@ function Dashboard() {
         .eq("id", vpsUpgradeLicense.id);
       if (error) throw error;
 
-      const msg = vpsDiff > 0
-        ? `VPS atualizada. Acréscimo de ${formatBRL(vpsDiff)}/mês será incluído na próxima fatura.`
-        : vpsDiff < 0
-          ? `VPS atualizada. Redução de ${formatBRL(Math.abs(vpsDiff))}/mês na próxima fatura.`
-          : `VPS atualizada sem alteração de valor.`;
+      const msg =
+        vpsDiff > 0
+          ? `VPS atualizada. Acréscimo de ${formatBRL(vpsDiff)}/mês será incluído na próxima fatura.`
+          : vpsDiff < 0
+            ? `VPS atualizada. Redução de ${formatBRL(Math.abs(vpsDiff))}/mês na próxima fatura.`
+            : `VPS atualizada sem alteração de valor.`;
       toast.success(msg);
       setVpsUpgradeLicense(null);
     } catch (e: any) {
@@ -196,7 +223,9 @@ function Dashboard() {
 
       const { data: lic } = await supabase
         .from("licenses")
-        .select("id, user_id, product_id, license_key, plan, status, starts_at, expires_at, extra_storage_gb, product:products(id, name, description, vps_specs, vps_storage_amount, vps_storage_unit, storage_amount, storage_unit, price_monthly)")
+        .select(
+          "id, user_id, product_id, license_key, plan, status, starts_at, expires_at, extra_storage_gb, product:products(id, name, description, vps_specs, vps_storage_amount, vps_storage_unit, storage_amount, storage_unit, price_monthly)",
+        )
         .order("created_at", { ascending: false });
       const licList = (lic as unknown as License[]) || [];
       setLicenses(licList);
@@ -208,13 +237,17 @@ function Dashboard() {
           .select("user_id, full_name, email")
           .in("user_id", ids);
         const map: Record<string, string> = {};
-        (profs || []).forEach((p: any) => { map[p.user_id] = p.full_name || p.email || ""; });
+        (profs || []).forEach((p: any) => {
+          map[p.user_id] = p.full_name || p.email || "";
+        });
         setCustomerNames(map);
       }
 
       const { data: pay } = await supabase
         .from("payments")
-        .select("id, amount, status, method, paid_at, created_at, boleto_url, invoice_url, barcode, license:licenses(license_key)")
+        .select(
+          "id, amount, status, method, paid_at, created_at, boleto_url, invoice_url, barcode, license:licenses(license_key)",
+        )
         .order("created_at", { ascending: false });
       setPayments((pay as unknown as Payment[]) || []);
     })();
@@ -260,25 +293,43 @@ function Dashboard() {
               <Card key={l.id} className="bg-gradient-card p-5">
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="text-xs uppercase tracking-wide text-muted-foreground">{l.product?.name ?? "Software"}</div>
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                      {l.product?.name ?? "Software"}
+                    </div>
                     <div className="mt-1 font-mono text-lg font-semibold">{l.license_key}</div>
                     {(customerNames[l.user_id] || customerName) && (
-                      <div className="mt-1 text-sm text-muted-foreground">{customerNames[l.user_id] || customerName}</div>
+                      <div className="mt-1 text-sm text-muted-foreground">
+                        {customerNames[l.user_id] || customerName}
+                      </div>
                     )}
                   </div>
-                  <Badge className={statusVariant[l.status]} variant="outline">{statusLabel[l.status]}</Badge>
+                  <Badge className={statusVariant[l.status]} variant="outline">
+                    {statusLabel[l.status]}
+                  </Badge>
                 </div>
                 <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> Emissão {formatDate(l.starts_at)}</span>
-                  <span className="capitalize">{l.plan === "monthly" ? "Mensal" : l.plan === "semestral" ? "Semestral" : "Anual"}</span>
+                  <span className="flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5" /> Emissão {formatDate(l.starts_at)}
+                  </span>
+                  <span className="capitalize">
+                    {l.plan === "monthly"
+                      ? "Mensal"
+                      : l.plan === "semestral"
+                        ? "Semestral"
+                        : "Anual"}
+                  </span>
                 </div>
-                {(l.product?.vps_specs || Number(l.product?.vps_storage_amount) > 0 || Number(l.product?.storage_amount) > 0) && (
+                {(l.product?.vps_specs ||
+                  Number(l.product?.vps_storage_amount) > 0 ||
+                  Number(l.product?.storage_amount) > 0) && (
                   <div className="mt-4 grid gap-2 rounded-md border border-border/60 bg-muted/30 p-3 text-sm sm:grid-cols-2">
                     {l.product?.vps_specs && (
                       <div className="flex items-start gap-2">
                         <Server className="mt-0.5 h-4 w-4 text-primary" />
                         <div>
-                          <div className="text-xs uppercase tracking-wide text-muted-foreground">VPS</div>
+                          <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                            VPS
+                          </div>
                           <div className="font-medium">{l.product.vps_specs}</div>
                         </div>
                       </div>
@@ -287,8 +338,12 @@ function Dashboard() {
                       <div className="flex items-start gap-2">
                         <HardDrive className="mt-0.5 h-4 w-4 text-primary" />
                         <div>
-                          <div className="text-xs uppercase tracking-wide text-muted-foreground">Disco VPS</div>
-                          <div className="font-medium">{Number(l.product?.vps_storage_amount)} {l.product?.vps_storage_unit}</div>
+                          <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                            Disco VPS
+                          </div>
+                          <div className="font-medium">
+                            {Number(l.product?.vps_storage_amount)} {l.product?.vps_storage_unit}
+                          </div>
                         </div>
                       </div>
                     )}
@@ -296,11 +351,18 @@ function Dashboard() {
                       <div className="flex items-start gap-2">
                         <HardDrive className="mt-0.5 h-4 w-4 text-primary" />
                         <div>
-                          <div className="text-xs uppercase tracking-wide text-muted-foreground">Armazenamento</div>
+                          <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                            Armazenamento
+                          </div>
                           <div className="font-medium">
-                            {Number(l.product?.storage_amount ?? 0) + Number(l.extra_storage_gb ?? 0)} {l.product?.storage_unit ?? "GB"}
+                            {Number(l.product?.storage_amount ?? 0) +
+                              Number(l.extra_storage_gb ?? 0)}{" "}
+                            {l.product?.storage_unit ?? "GB"}
                             {Number(l.extra_storage_gb) > 0 && (
-                              <span className="ml-1 text-xs text-muted-foreground">({Number(l.product?.storage_amount ?? 0)} + {Number(l.extra_storage_gb)} extra)</span>
+                              <span className="ml-1 text-xs text-muted-foreground">
+                                ({Number(l.product?.storage_amount ?? 0)} +{" "}
+                                {Number(l.extra_storage_gb)} extra)
+                              </span>
                             )}
                           </div>
                         </div>
@@ -310,7 +372,11 @@ function Dashboard() {
                 )}
                 <div className="mt-4 flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" onClick={() => copyKey(l.license_key)}>
-                    {copied === l.license_key ? <Check className="mr-2 h-3.5 w-3.5" /> : <Copy className="mr-2 h-3.5 w-3.5" />}
+                    {copied === l.license_key ? (
+                      <Check className="mr-2 h-3.5 w-3.5" />
+                    ) : (
+                      <Copy className="mr-2 h-3.5 w-3.5" />
+                    )}
                     Copiar chave
                   </Button>
                   <Button size="sm" onClick={() => openStorageUpgrade(l)}>
@@ -335,7 +401,9 @@ function Dashboard() {
           <CreditCard className="h-4 w-4" /> Pagamentos
         </h2>
         {payments.length === 0 ? (
-          <Card className="p-8 text-center text-muted-foreground">Nenhum pagamento registrado.</Card>
+          <Card className="p-8 text-center text-muted-foreground">
+            Nenhum pagamento registrado.
+          </Card>
         ) : (
           <Card className="overflow-hidden">
             <table className="w-full text-sm">
@@ -356,7 +424,11 @@ function Dashboard() {
                     <td className="p-3 font-mono text-xs">{p.license?.license_key ?? "—"}</td>
                     <td className="p-3 font-medium">{formatBRL(Number(p.amount))}</td>
                     <td className="p-3">{p.method ?? "—"}</td>
-                    <td className="p-3"><Badge className={statusVariant[p.status]} variant="outline">{statusLabel[p.status]}</Badge></td>
+                    <td className="p-3">
+                      <Badge className={statusVariant[p.status]} variant="outline">
+                        {statusLabel[p.status]}
+                      </Badge>
+                    </td>
                     <td className="p-3">
                       {p.boleto_url || p.invoice_url ? (
                         <a
@@ -391,9 +463,11 @@ function Dashboard() {
             <div className="rounded-md border bg-muted/30 p-3 text-sm">
               <div className="text-muted-foreground">Armazenamento extra atual</div>
               <div className="font-medium">
-                {Number(upgradeLicense?.extra_storage_gb ?? 0)} {upgradeLicense?.product?.storage_unit ?? "GB"}
+                {Number(upgradeLicense?.extra_storage_gb ?? 0)}{" "}
+                {upgradeLicense?.product?.storage_unit ?? "GB"}
                 <span className="ml-1 text-xs text-muted-foreground">
-                  (base: {Number(upgradeLicense?.product?.storage_amount ?? 0)} {upgradeLicense?.product?.storage_unit ?? "GB"})
+                  (base: {Number(upgradeLicense?.product?.storage_amount ?? 0)}{" "}
+                  {upgradeLicense?.product?.storage_unit ?? "GB"})
                 </span>
               </div>
               <div className="mt-1 text-xs text-muted-foreground">
@@ -405,11 +479,16 @@ function Dashboard() {
             <div className="space-y-1.5">
               <Label>Novo pacote (upgrade ou downgrade)</Label>
               <Select value={storageProductId} onValueChange={setStorageProductId}>
-                <SelectTrigger><SelectValue placeholder={storageProducts.length ? "Selecione" : "Nenhum pacote disponível"} /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={storageProducts.length ? "Selecione" : "Nenhum pacote disponível"}
+                  />
+                </SelectTrigger>
                 <SelectContent>
                   {storageProducts.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.name} ({Number(p.storage_amount)} {p.storage_unit ?? "GB"}) — {formatBRL(Number(p.price_monthly))}/mês
+                      {p.name} ({Number(p.storage_amount)} {p.storage_unit ?? "GB"}) —{" "}
+                      {formatBRL(Number(p.price_monthly))}/mês
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -417,12 +496,23 @@ function Dashboard() {
               {selectedStorageProduct && (
                 <div className="mt-2 rounded-md border bg-muted/30 p-3 text-sm">
                   <div className="text-muted-foreground">
-                    {storageDiff > 0 ? "Acréscimo na mensalidade" : storageDiff < 0 ? "Redução na mensalidade" : "Sem alteração de valor"}
+                    {storageDiff > 0
+                      ? "Acréscimo na mensalidade"
+                      : storageDiff < 0
+                        ? "Redução na mensalidade"
+                        : "Sem alteração de valor"}
                   </div>
                   <div className="font-semibold">
-                    {formatBRL(Number(selectedStorageProduct.price_monthly))} − {formatBRL(currentStoragePrice)} ={" "}
-                    <span className={storageDiff > 0 ? "text-primary" : storageDiff < 0 ? "text-success" : ""}>
-                      {storageDiff >= 0 ? formatBRL(storageDiff) : `− ${formatBRL(Math.abs(storageDiff))}`}
+                    {formatBRL(Number(selectedStorageProduct.price_monthly))} −{" "}
+                    {formatBRL(currentStoragePrice)} ={" "}
+                    <span
+                      className={
+                        storageDiff > 0 ? "text-primary" : storageDiff < 0 ? "text-success" : ""
+                      }
+                    >
+                      {storageDiff >= 0
+                        ? formatBRL(storageDiff)
+                        : `− ${formatBRL(Math.abs(storageDiff))}`}
                     </span>
                   </div>
                 </div>
@@ -442,10 +532,16 @@ function Dashboard() {
                       .update({ extra_storage_gb: 0 })
                       .eq("id", upgradeLicense.id);
                     if (error) throw error;
-                    setLicenses((prev) => prev.map((x) => x.id === upgradeLicense.id ? { ...x, extra_storage_gb: 0 } : x));
-                    toast.success(currentStoragePrice > 0
-                      ? `Armazenamento extra removido. Redução de ${formatBRL(currentStoragePrice)}/mês na próxima fatura.`
-                      : "Armazenamento extra removido.");
+                    setLicenses((prev) =>
+                      prev.map((x) =>
+                        x.id === upgradeLicense.id ? { ...x, extra_storage_gb: 0 } : x,
+                      ),
+                    );
+                    toast.success(
+                      currentStoragePrice > 0
+                        ? `Armazenamento extra removido. Redução de ${formatBRL(currentStoragePrice)}/mês na próxima fatura.`
+                        : "Armazenamento extra removido.",
+                    );
                     setUpgradeLicense(null);
                   } catch (e: any) {
                     toast.error(e.message ?? "Erro ao remover armazenamento extra");
@@ -459,8 +555,13 @@ function Dashboard() {
               </Button>
             )}
             <div className="flex gap-2 sm:ml-auto">
-              <Button variant="outline" onClick={() => setUpgradeLicense(null)}>Cancelar</Button>
-              <Button onClick={submitUpgrade} disabled={upgradeSubmitting || !selectedStorageProduct}>
+              <Button variant="outline" onClick={() => setUpgradeLicense(null)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={submitUpgrade}
+                disabled={upgradeSubmitting || !selectedStorageProduct}
+              >
                 {upgradeSubmitting ? "Enviando..." : "Confirmar alteração"}
               </Button>
             </div>
@@ -489,11 +590,15 @@ function Dashboard() {
             <div className="space-y-1.5">
               <Label>Nova configuração (upgrade ou downgrade)</Label>
               <Select value={vpsUpgradeProductId} onValueChange={setVpsUpgradeProductId}>
-                <SelectTrigger><SelectValue placeholder={vpsProducts.length ? "Selecione" : "Nenhuma VPS disponível"} /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={vpsProducts.length ? "Selecione" : "Nenhuma VPS disponível"}
+                  />
+                </SelectTrigger>
                 <SelectContent>
                   {vpsProducts.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {(p.vps_specs || p.name)} — {formatBRL(Number(p.price_monthly))}/mês
+                      {p.vps_specs || p.name} — {formatBRL(Number(p.price_monthly))}/mês
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -501,11 +606,18 @@ function Dashboard() {
               {selectedVpsProduct && (
                 <div className="mt-2 rounded-md border bg-muted/30 p-3 text-sm">
                   <div className="text-muted-foreground">
-                    {vpsDiff > 0 ? "Acréscimo na mensalidade" : vpsDiff < 0 ? "Redução na mensalidade" : "Sem alteração de valor"}
+                    {vpsDiff > 0
+                      ? "Acréscimo na mensalidade"
+                      : vpsDiff < 0
+                        ? "Redução na mensalidade"
+                        : "Sem alteração de valor"}
                   </div>
                   <div className="font-semibold">
-                    {formatBRL(Number(selectedVpsProduct.price_monthly))} − {formatBRL(currentVpsPrice)} ={" "}
-                    <span className={vpsDiff > 0 ? "text-primary" : vpsDiff < 0 ? "text-success" : ""}>
+                    {formatBRL(Number(selectedVpsProduct.price_monthly))} −{" "}
+                    {formatBRL(currentVpsPrice)} ={" "}
+                    <span
+                      className={vpsDiff > 0 ? "text-primary" : vpsDiff < 0 ? "text-success" : ""}
+                    >
                       {vpsDiff >= 0 ? formatBRL(vpsDiff) : `− ${formatBRL(Math.abs(vpsDiff))}`}
                     </span>
                   </div>
@@ -514,8 +626,13 @@ function Dashboard() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setVpsUpgradeLicense(null)}>Cancelar</Button>
-            <Button onClick={submitVpsUpgrade} disabled={vpsUpgradeSubmitting || !selectedVpsProduct}>
+            <Button variant="outline" onClick={() => setVpsUpgradeLicense(null)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={submitVpsUpgrade}
+              disabled={vpsUpgradeSubmitting || !selectedVpsProduct}
+            >
               {vpsUpgradeSubmitting ? "Enviando..." : "Confirmar alteração"}
             </Button>
           </DialogFooter>

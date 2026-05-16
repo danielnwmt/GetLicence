@@ -26,7 +26,10 @@ function AuthenticatedLayout() {
 
   useEffect(() => {
     if (loading) return;
-    if (!user) { navigate({ to: "/auth" }); return; }
+    if (!user) {
+      navigate({ to: "/auth" });
+      return;
+    }
     (async () => {
       const { data } = await supabase
         .from("profiles")

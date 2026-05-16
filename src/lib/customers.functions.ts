@@ -19,7 +19,6 @@ type AdminProfile = {
   address_neighborhood: string | null;
 };
 
-
 const schema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
@@ -51,43 +50,48 @@ export const createCustomer = createServerFn({ method: "POST" })
     let created;
     try {
       const result = await admin.auth.admin.createUser({
-      email: data.email,
-      password: data.password,
-      email_confirm: true,
-      user_metadata: { full_name: data.full_name },
+        email: data.email,
+        password: data.password,
+        email_confirm: true,
+        user_metadata: { full_name: data.full_name },
       });
       if (result.error) throw new Response(result.error.message, { status: 400 });
       created = result.data;
     } catch (err) {
       if (err instanceof Response) throw err;
-      throw new Response("Configure SUPABASE_SERVICE_ROLE_KEY nos secrets do backend para criar clientes.", { status: 500 });
+      throw new Response(
+        "Configure SUPABASE_SERVICE_ROLE_KEY nos secrets do backend para criar clientes.",
+        { status: 500 },
+      );
     }
 
     const newUserId = created.user?.id;
     if (newUserId) {
-      const { error: profileError } = await admin.from("profiles").upsert({
-        user_id: newUserId,
-        email: data.email,
-        full_name: data.full_name,
-        cpf_cnpj: data.cpf_cnpj.replace(/\D/g, ""),
-        phone: data.phone ?? null,
-        address_zip: data.address_zip ?? null,
-        address_street: data.address_street ?? null,
-        address_number: data.address_number ?? null,
-        address_complement: data.address_complement ?? null,
-        address_neighborhood: data.address_neighborhood ?? null,
-        address_city: data.address_city ?? null,
-        address_state: data.address_state ?? null,
-      }, { onConflict: "user_id" });
+      const { error: profileError } = await admin.from("profiles").upsert(
+        {
+          user_id: newUserId,
+          email: data.email,
+          full_name: data.full_name,
+          cpf_cnpj: data.cpf_cnpj.replace(/\D/g, ""),
+          phone: data.phone ?? null,
+          address_zip: data.address_zip ?? null,
+          address_street: data.address_street ?? null,
+          address_number: data.address_number ?? null,
+          address_complement: data.address_complement ?? null,
+          address_neighborhood: data.address_neighborhood ?? null,
+          address_city: data.address_city ?? null,
+          address_state: data.address_state ?? null,
+        },
+        { onConflict: "user_id" },
+      );
       if (profileError) {
         await admin.auth.admin.deleteUser(newUserId);
         throw new Response(profileError.message, { status: 400 });
       }
 
-      const { error: roleError } = await admin.from("user_roles").upsert(
-        { user_id: newUserId, role: "client" },
-        { onConflict: "user_id,role" }
-      );
+      const { error: roleError } = await admin
+        .from("user_roles")
+        .upsert({ user_id: newUserId, role: "client" }, { onConflict: "user_id,role" });
       if (roleError) {
         await admin.auth.admin.deleteUser(newUserId);
         throw new Response(roleError.message, { status: 400 });
@@ -114,7 +118,9 @@ export const listAdminProfiles = createServerFn({ method: "GET" })
 
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
-      .select("user_id, full_name, email, address_city, address_state, customer_number, cpf_cnpj, phone, address_zip, address_street, address_number, address_complement, address_neighborhood");
+      .select(
+        "user_id, full_name, email, address_city, address_state, customer_number, cpf_cnpj, phone, address_zip, address_street, address_number, address_complement, address_neighborhood",
+      );
 
     if (profilesError) throw new Response(profilesError.message, { status: 400 });
 
@@ -176,31 +182,36 @@ export const updateCustomer = createServerFn({ method: "POST" })
       try {
         ({ error } = await admin.auth.admin.updateUserById(data.user_id, authUpdate));
       } catch {
-        throw new Response("Configure SUPABASE_SERVICE_ROLE_KEY nos secrets do backend para alterar e-mail/senha.", { status: 500 });
+        throw new Response(
+          "Configure SUPABASE_SERVICE_ROLE_KEY nos secrets do backend para alterar e-mail/senha.",
+          { status: 500 },
+        );
       }
       if (error) throw new Response(error.message, { status: 400 });
     }
 
-    const { error: pErr } = await admin.from("profiles").upsert({
-      user_id: data.user_id,
-      full_name: data.full_name,
-      email: data.email ?? undefined,
-      cpf_cnpj: data.cpf_cnpj.replace(/\D/g, ""),
-      phone: data.phone ?? null,
-      address_zip: data.address_zip ?? null,
-      address_street: data.address_street ?? null,
-      address_number: data.address_number ?? null,
-      address_complement: data.address_complement ?? null,
-      address_neighborhood: data.address_neighborhood ?? null,
-      address_city: data.address_city ?? null,
-      address_state: data.address_state ?? null,
-    }, { onConflict: "user_id" });
+    const { error: pErr } = await admin.from("profiles").upsert(
+      {
+        user_id: data.user_id,
+        full_name: data.full_name,
+        email: data.email ?? undefined,
+        cpf_cnpj: data.cpf_cnpj.replace(/\D/g, ""),
+        phone: data.phone ?? null,
+        address_zip: data.address_zip ?? null,
+        address_street: data.address_street ?? null,
+        address_number: data.address_number ?? null,
+        address_complement: data.address_complement ?? null,
+        address_neighborhood: data.address_neighborhood ?? null,
+        address_city: data.address_city ?? null,
+        address_state: data.address_state ?? null,
+      },
+      { onConflict: "user_id" },
+    );
     if (pErr) throw new Response(pErr.message, { status: 400 });
 
-    const { error: roleError } = await admin.from("user_roles").upsert(
-      { user_id: data.user_id, role: "client" },
-      { onConflict: "user_id,role" }
-    );
+    const { error: roleError } = await admin
+      .from("user_roles")
+      .upsert({ user_id: data.user_id, role: "client" }, { onConflict: "user_id,role" });
     if (roleError) throw new Response(roleError.message, { status: 400 });
 
     return { ok: true };

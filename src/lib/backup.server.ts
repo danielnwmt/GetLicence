@@ -50,7 +50,11 @@ async function getAccessToken(sa: { client_email: string; private_key: string })
     false,
     ["sign"],
   );
-  const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(unsigned));
+  const sig = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    key,
+    new TextEncoder().encode(unsigned),
+  );
   const jwt = `${unsigned}.${b64url(sig)}`;
 
   const res = await fetch("https://oauth2.googleapis.com/token", {
@@ -128,11 +132,18 @@ async function deleteOldBackups(accessToken: string, folderId: string, retention
   return deleted;
 }
 
-export async function runBackup(): Promise<{ ok: boolean; fileId?: string; deleted?: number; error?: string }> {
+export async function runBackup(): Promise<{
+  ok: boolean;
+  fileId?: string;
+  deleted?: number;
+  error?: string;
+}> {
   try {
     const { data: cfg, error } = await supabaseAdmin
       .from("payment_settings")
-      .select("id, gdrive_service_account_json, gdrive_folder_id, backup_retention_days, backup_enabled")
+      .select(
+        "id, gdrive_service_account_json, gdrive_folder_id, backup_retention_days, backup_enabled",
+      )
       .limit(1)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -147,14 +158,19 @@ export async function runBackup(): Promise<{ ok: boolean; fileId?: string; delet
     } catch {
       throw new Error("JSON da Service Account inválido");
     }
-    if (!sa.client_email || !sa.private_key) throw new Error("Service Account sem client_email/private_key");
+    if (!sa.client_email || !sa.private_key)
+      throw new Error("Service Account sem client_email/private_key");
 
     const token = await getAccessToken(sa);
     const dump = await exportAllTables();
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
     const filename = `backup-${stamp}.json`;
     const fileId = await uploadToDrive(token, cfg.gdrive_folder_id, filename, JSON.stringify(dump));
-    const deleted = await deleteOldBackups(token, cfg.gdrive_folder_id, cfg.backup_retention_days || 5);
+    const deleted = await deleteOldBackups(
+      token,
+      cfg.gdrive_folder_id,
+      cfg.backup_retention_days || 5,
+    );
 
     await supabaseAdmin
       .from("payment_settings")
@@ -169,11 +185,18 @@ export async function runBackup(): Promise<{ ok: boolean; fileId?: string; delet
   } catch (e: any) {
     const msg = e?.message || String(e);
     try {
-      const { data: cfg } = await supabaseAdmin.from("payment_settings").select("id").limit(1).maybeSingle();
+      const { data: cfg } = await supabaseAdmin
+        .from("payment_settings")
+        .select("id")
+        .limit(1)
+        .maybeSingle();
       if (cfg?.id) {
         await supabaseAdmin
           .from("payment_settings")
-          .update({ backup_last_run_at: new Date().toISOString(), backup_last_status: `erro: ${msg}` })
+          .update({
+            backup_last_run_at: new Date().toISOString(),
+            backup_last_status: `erro: ${msg}`,
+          })
           .eq("id", cfg.id);
       }
     } catch {}

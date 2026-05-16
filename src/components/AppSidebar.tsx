@@ -29,14 +29,55 @@ interface NavItem {
 }
 
 const adminItems: NavItem[] = [
-  { label: "Dashboard", to: "/admin", icon: LayoutDashboard, match: (p, s) => p === "/admin" && !s.tab },
-  { label: "Clientes", to: "/admin", search: { tab: "customers" }, icon: Users, match: (p, s) => p === "/admin" && s.tab === "customers" },
-  { label: "Licenças", to: "/admin", search: { tab: "licenses" }, icon: KeyRound, match: (p, s) => p === "/admin" && s.tab === "licenses" },
+  {
+    label: "Dashboard",
+    to: "/admin",
+    icon: LayoutDashboard,
+    match: (p, s) => p === "/admin" && !s.tab,
+  },
+  {
+    label: "Clientes",
+    to: "/admin",
+    search: { tab: "customers" },
+    icon: Users,
+    match: (p, s) => p === "/admin" && s.tab === "customers",
+  },
+  {
+    label: "Licenças",
+    to: "/admin",
+    search: { tab: "licenses" },
+    icon: KeyRound,
+    match: (p, s) => p === "/admin" && s.tab === "licenses",
+  },
   { label: "Minhas licenças", to: "/dashboard", icon: KeyRound, match: (p) => p === "/dashboard" },
-  { label: "Financeiro", to: "/admin", search: { tab: "payments" }, icon: CreditCard, match: (p, s) => p === "/admin" && s.tab === "payments" },
-  { label: "Contas a Pagar", to: "/admin", search: { tab: "payables" }, icon: Receipt, match: (p, s) => p === "/admin" && s.tab === "payables" },
-  { label: "Produtos", to: "/admin", search: { tab: "products" }, icon: Package, match: (p, s) => p === "/admin" && s.tab === "products" },
-  { label: "Configurações", to: "/admin", search: { tab: "settings" }, icon: Settings, match: (p, s) => p === "/admin" && s.tab === "settings" },
+  {
+    label: "Financeiro",
+    to: "/admin",
+    search: { tab: "payments" },
+    icon: CreditCard,
+    match: (p, s) => p === "/admin" && s.tab === "payments",
+  },
+  {
+    label: "Contas a Pagar",
+    to: "/admin",
+    search: { tab: "payables" },
+    icon: Receipt,
+    match: (p, s) => p === "/admin" && s.tab === "payables",
+  },
+  {
+    label: "Produtos",
+    to: "/admin",
+    search: { tab: "products" },
+    icon: Package,
+    match: (p, s) => p === "/admin" && s.tab === "products",
+  },
+  {
+    label: "Configurações",
+    to: "/admin",
+    search: { tab: "settings" },
+    icon: Settings,
+    match: (p, s) => p === "/admin" && s.tab === "settings",
+  },
 ];
 
 const clientItems: NavItem[] = [
@@ -44,13 +85,7 @@ const clientItems: NavItem[] = [
   { label: "Configurações", to: "/account", icon: UserCircle, match: (p) => p === "/account" },
 ];
 
-export function AppSidebar({
-  collapsed,
-  onToggle,
-}: {
-  collapsed: boolean;
-  onToggle: () => void;
-}) {
+export function AppSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
   const { location } = useRouterState();
@@ -63,7 +98,7 @@ export function AppSidebar({
     <aside
       className={cn(
         "sticky top-0 flex h-screen flex-col border-r border-border/60 bg-background transition-[width] duration-200",
-        collapsed ? "w-16" : "w-60"
+        collapsed ? "w-16" : "w-60",
       )}
     >
       <div className="flex h-16 items-center gap-2 border-b border-border/60 px-3">
@@ -93,7 +128,7 @@ export function AppSidebar({
                 active
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                collapsed && "justify-center px-0"
+                collapsed && "justify-center px-0",
               )}
               title={collapsed ? item.label : undefined}
             >
@@ -127,7 +162,11 @@ export function AppSidebar({
           onClick={onToggle}
           title={collapsed ? "Expandir" : "Recolher"}
         >
-          {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          {collapsed ? (
+            <PanelLeftOpen className="h-4 w-4" />
+          ) : (
+            <PanelLeftClose className="h-4 w-4" />
+          )}
           {!collapsed && <span>Recolher</span>}
         </Button>
       </div>

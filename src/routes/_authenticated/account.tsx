@@ -34,9 +34,16 @@ interface ProfileForm {
 }
 
 const empty: ProfileForm = {
-  full_name: "", cpf_cnpj: "", phone: "",
-  address_zip: "", address_street: "", address_number: "",
-  address_complement: "", address_neighborhood: "", address_city: "", address_state: "",
+  full_name: "",
+  cpf_cnpj: "",
+  phone: "",
+  address_zip: "",
+  address_street: "",
+  address_number: "",
+  address_complement: "",
+  address_neighborhood: "",
+  address_city: "",
+  address_state: "",
 };
 
 function AccountPage() {
@@ -69,7 +76,9 @@ function AccountPage() {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("full_name, cpf_cnpj, phone, address_zip, address_street, address_number, address_complement, address_neighborhood, address_city, address_state")
+        .select(
+          "full_name, cpf_cnpj, phone, address_zip, address_street, address_number, address_complement, address_neighborhood, address_city, address_state",
+        )
         .eq("user_id", user.id)
         .maybeSingle();
       if (data) {
@@ -138,7 +147,9 @@ function AccountPage() {
     <div className="mx-auto max-w-3xl">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight">Minha conta</h1>
-        <p className="text-muted-foreground">Mantenha seus dados de cobrança atualizados para emitir boletos.</p>
+        <p className="text-muted-foreground">
+          Mantenha seus dados de cobrança atualizados para emitir boletos.
+        </p>
       </div>
 
       <Card className="p-6 mb-6">
@@ -174,49 +185,98 @@ function AccountPage() {
           <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-2">
               <Label>Nome completo / Razão social</Label>
-              <Input value={profile.full_name} onChange={(e) => setProfile({ ...profile, full_name: e.target.value })} />
+              <Input
+                value={profile.full_name}
+                onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
+              />
             </div>
             <div className="space-y-2">
               <Label>CPF / CNPJ *</Label>
-              <Input value={profile.cpf_cnpj} onChange={(e) => setProfile({ ...profile, cpf_cnpj: formatCpfCnpj(e.target.value) })} placeholder="000.000.000-00" />
+              <Input
+                value={profile.cpf_cnpj}
+                onChange={(e) =>
+                  setProfile({ ...profile, cpf_cnpj: formatCpfCnpj(e.target.value) })
+                }
+                placeholder="000.000.000-00"
+              />
             </div>
             <div className="space-y-2 md:col-span-2">
               <Label>Telefone</Label>
-              <Input value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} />
+              <Input
+                value={profile.phone}
+                onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+              />
             </div>
           </div>
           <div className="pt-2 text-xs uppercase tracking-wide text-muted-foreground">Endereço</div>
           <div className="grid gap-3 md:grid-cols-3">
-            <div className="space-y-2"><Label>CEP</Label>
+            <div className="space-y-2">
+              <Label>CEP</Label>
               <Input
                 value={profile.address_zip}
                 onChange={(e) => setProfile({ ...profile, address_zip: e.target.value })}
                 onBlur={async (e) => {
                   const r = await fetchCep(e.target.value);
-                  if (r) setProfile((p) => ({ ...p, address_street: r.street || p.address_street, address_neighborhood: r.neighborhood || p.address_neighborhood, address_city: r.city || p.address_city, address_state: r.state || p.address_state }));
+                  if (r)
+                    setProfile((p) => ({
+                      ...p,
+                      address_street: r.street || p.address_street,
+                      address_neighborhood: r.neighborhood || p.address_neighborhood,
+                      address_city: r.city || p.address_city,
+                      address_state: r.state || p.address_state,
+                    }));
                 }}
               />
             </div>
-            <div className="space-y-2 md:col-span-2"><Label>Rua / Logradouro</Label>
-              <Input value={profile.address_street} onChange={(e) => setProfile({ ...profile, address_street: e.target.value })} />
+            <div className="space-y-2 md:col-span-2">
+              <Label>Rua / Logradouro</Label>
+              <Input
+                value={profile.address_street}
+                onChange={(e) => setProfile({ ...profile, address_street: e.target.value })}
+              />
             </div>
-            <div className="space-y-2"><Label>Número</Label>
-              <Input value={profile.address_number} onChange={(e) => setProfile({ ...profile, address_number: e.target.value })} />
+            <div className="space-y-2">
+              <Label>Número</Label>
+              <Input
+                value={profile.address_number}
+                onChange={(e) => setProfile({ ...profile, address_number: e.target.value })}
+              />
             </div>
-            <div className="space-y-2"><Label>Complemento</Label>
-              <Input value={profile.address_complement} onChange={(e) => setProfile({ ...profile, address_complement: e.target.value })} />
+            <div className="space-y-2">
+              <Label>Complemento</Label>
+              <Input
+                value={profile.address_complement}
+                onChange={(e) => setProfile({ ...profile, address_complement: e.target.value })}
+              />
             </div>
-            <div className="space-y-2"><Label>Bairro</Label>
-              <Input value={profile.address_neighborhood} onChange={(e) => setProfile({ ...profile, address_neighborhood: e.target.value })} />
+            <div className="space-y-2">
+              <Label>Bairro</Label>
+              <Input
+                value={profile.address_neighborhood}
+                onChange={(e) => setProfile({ ...profile, address_neighborhood: e.target.value })}
+              />
             </div>
-            <div className="space-y-2 md:col-span-2"><Label>Cidade</Label>
-              <Input value={profile.address_city} onChange={(e) => setProfile({ ...profile, address_city: e.target.value })} />
+            <div className="space-y-2 md:col-span-2">
+              <Label>Cidade</Label>
+              <Input
+                value={profile.address_city}
+                onChange={(e) => setProfile({ ...profile, address_city: e.target.value })}
+              />
             </div>
-            <div className="space-y-2"><Label>UF</Label>
-              <Input maxLength={2} value={profile.address_state} onChange={(e) => setProfile({ ...profile, address_state: e.target.value.toUpperCase() })} />
+            <div className="space-y-2">
+              <Label>UF</Label>
+              <Input
+                maxLength={2}
+                value={profile.address_state}
+                onChange={(e) =>
+                  setProfile({ ...profile, address_state: e.target.value.toUpperCase() })
+                }
+              />
             </div>
           </div>
-          <Button type="submit" disabled={profileSaving}>{profileSaving ? "Salvando..." : "Salvar dados"}</Button>
+          <Button type="submit" disabled={profileSaving}>
+            {profileSaving ? "Salvando..." : "Salvar dados"}
+          </Button>
         </form>
       </Card>
 
@@ -228,13 +288,29 @@ function AccountPage() {
         <form onSubmit={submitPwd} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="new-pwd">Nova senha</Label>
-            <Input id="new-pwd" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+            <Input
+              id="new-pwd"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirm-pwd">Confirmar nova senha</Label>
-            <Input id="confirm-pwd" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required minLength={6} />
+            <Input
+              id="confirm-pwd"
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              required
+              minLength={6}
+            />
           </div>
-          <Button type="submit" disabled={busy}>{busy ? "Salvando..." : "Atualizar senha"}</Button>
+          <Button type="submit" disabled={busy}>
+            {busy ? "Salvando..." : "Atualizar senha"}
+          </Button>
         </form>
       </Card>
     </div>

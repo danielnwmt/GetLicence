@@ -4,7 +4,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const schema = z.object({ payment_id: z.string().uuid() });
 
-interface AsaasCustomer { id: string }
+interface AsaasCustomer {
+  id: string;
+}
 interface AsaasPayment {
   id: string;
   bankSlipUrl?: string;
@@ -41,7 +43,10 @@ export const issueAsaasBoleto = createServerFn({ method: "POST" })
 
     const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
     if (!isAdmin) throw new Response("Forbidden", { status: 403 });
-    const { data: isOperator } = await supabase.rpc("has_role", { _user_id: userId, _role: "operator" });
+    const { data: isOperator } = await supabase.rpc("has_role", {
+      _user_id: userId,
+      _role: "operator",
+    });
     if (isOperator) throw new Error("Operadores não têm permissão para emitir boletos.");
 
     const { data: settings, error: sErr } = await supabase
@@ -59,12 +64,17 @@ export const issueAsaasBoleto = createServerFn({ method: "POST" })
       .single();
     if (pErr || !payment) throw new Error(pErr?.message || "Pagamento não encontrado");
     if (!payment.user_id) throw new Error("Boleto sem cliente associado.");
-    const { data: targetIsAdmin } = await supabase.rpc("has_role", { _user_id: payment.user_id, _role: "admin" });
+    const { data: targetIsAdmin } = await supabase.rpc("has_role", {
+      _user_id: payment.user_id,
+      _role: "admin",
+    });
     if (targetIsAdmin) throw new Error("Não é possível emitir boleto para usuário administrador.");
 
     const { data: profile, error: profErr } = await supabase
       .from("profiles")
-      .select("full_name, email, cpf_cnpj, phone, address_zip, address_street, address_number, address_complement, address_neighborhood, address_city, address_state")
+      .select(
+        "full_name, email, cpf_cnpj, phone, address_zip, address_street, address_number, address_complement, address_neighborhood, address_city, address_state",
+      )
       .eq("user_id", payment.user_id)
       .single();
     if (profErr || !profile) throw new Error("Perfil do cliente não encontrado");
@@ -94,7 +104,8 @@ export const issueAsaasBoleto = createServerFn({ method: "POST" })
       });
     }
 
-    const dueDate = payment.due_date || new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+    const dueDate =
+      payment.due_date || new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
     const charge: AsaasPayment = await asaasFetch(env, apiKey, "/v3/payments", {
       method: "POST",
       body: JSON.stringify({

@@ -14,10 +14,7 @@ const RESTORE_TABLES = [
 ] as const;
 
 async function ensureAdmin(supabase: any, userId: string) {
-  const { data: roles } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId);
+  const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userId);
   if (!roles?.some((r: any) => r.role === "admin")) {
     throw new Error("Apenas admin pode executar essa ação");
   }
