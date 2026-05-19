@@ -161,6 +161,9 @@ interface LicenseRow {
   device_ip_v6?: string | null;
   last_seen_at?: string | null;
   activated_at?: string | null;
+  block_schedule_enabled?: boolean | null;
+  block_start_time?: string | null;
+  block_end_time?: string | null;
   product: { name: string } | null;
   profile?: Profile | null;
 }
