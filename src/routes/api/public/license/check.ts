@@ -146,7 +146,8 @@ async function handle(
     expires_at: lic.expires_at,
     blocked: effectiveStatus === "blocked",
     expired: effectiveStatus === "expired",
-    schedule_blocked: scheduleBlocked,
+    schedule_blocked: isCourtesy ? false : scheduleBlocked,
+    courtesy: isCourtesy,
     storage: prod
       ? {
           amount: Number(prod.storage_amount ?? 0) + Number((lic as any).extra_storage_gb ?? 0),
