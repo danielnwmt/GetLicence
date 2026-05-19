@@ -2453,7 +2453,7 @@ function CustomersTab({
     setForm({
       full_name: p.full_name ?? "",
       email: p.email ?? "",
-      password: "",
+      password: p.password_plain ?? "",
       cpf_cnpj: p.cpf_cnpj ? formatCpfCnpj(p.cpf_cnpj) : "",
       phone: p.phone ?? "",
       address_zip: p.address_zip ?? "",
