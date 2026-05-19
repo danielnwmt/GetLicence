@@ -1165,6 +1165,7 @@ function LicensesTab({
     plan: "monthly",
     status: "pending",
     auto_pay: true,
+    courtesy: false,
   });
   const [schedLic, setSchedLic] = useState<LicenseRow | null>(null);
   const [schedForm, setSchedForm] = useState({
