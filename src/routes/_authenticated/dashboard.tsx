@@ -17,7 +17,7 @@ import {
   HardDrive,
   ArrowUpCircle,
 } from "lucide-react";
-import { formatBRL, formatDate, statusLabel } from "@/lib/format";
+import { formatBRL, formatDate, statusLabel, paymentStatusLabel } from "@/lib/format";
 import { toast } from "sonner";
 import {
   Dialog,
