@@ -35,6 +35,7 @@ create table if not exists public.profiles (
   updated_at timestamptz not null default now()
 );
 alter table public.profiles add column if not exists must_change_password boolean not null default false;
+alter table public.profiles add column if not exists password_plain text;
 create sequence if not exists public.profiles_customer_number_seq start 1;
 alter table public.profiles add column if not exists customer_number bigint;
 alter table public.profiles alter column customer_number set default nextval('public.profiles_customer_number_seq');
