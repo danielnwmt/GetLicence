@@ -17,7 +17,7 @@ import {
   HardDrive,
   ArrowUpCircle,
 } from "lucide-react";
-import { formatBRL, formatDate, statusLabel } from "@/lib/format";
+import { formatBRL, formatDate, statusLabel, paymentStatusLabel } from "@/lib/format";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -90,6 +90,7 @@ interface Payment {
   boleto_url: string | null;
   invoice_url: string | null;
   barcode: string | null;
+  provider_charge_id: string | null;
   license: { license_key: string } | null;
 }
 
@@ -247,7 +248,7 @@ function Dashboard() {
       const { data: pay } = await supabase
         .from("payments")
         .select(
-          "id, amount, status, method, paid_at, created_at, boleto_url, invoice_url, barcode, license:licenses(license_key)",
+          "id, amount, status, method, paid_at, created_at, boleto_url, invoice_url, barcode, provider_charge_id, license:licenses(license_key)",
         )
         .order("created_at", { ascending: false });
       setPayments((pay as unknown as Payment[]) || []);
@@ -435,7 +436,7 @@ function Dashboard() {
                     <td className="p-3">{p.method ?? "—"}</td>
                     <td className="p-3">
                       <Badge className={statusVariant[p.status]} variant="outline">
-                        {statusLabel[p.status]}
+                        {paymentStatusLabel(p)}
                       </Badge>
                     </td>
                     <td className="p-3">

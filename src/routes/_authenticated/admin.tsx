@@ -64,7 +64,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import { runBackupNow, restoreBackup } from "@/lib/backup.functions";
-import { formatBRL, formatDate, statusLabel } from "@/lib/format";
+import { formatBRL, formatDate, statusLabel, paymentStatusLabel } from "@/lib/format";
 import { fetchCep } from "@/lib/cep";
 import { formatCpfCnpj, isValidCpfCnpj } from "@/lib/mask";
 import { toast } from "sonner";
@@ -1829,7 +1829,7 @@ function PaymentsTab({
         String(p.amount),
         p.due_date ? formatDate(p.due_date) : "",
         p.paid_at ? formatDate(p.paid_at) : "",
-        statusLabel[p.status] ?? p.status,
+        paymentStatusLabel(p),
       ]);
     });
     const csv = rows
@@ -2238,7 +2238,7 @@ function PaymentsTab({
                         <Badge variant="destructive">Falhou</Badge>
                       ) : (
                         <Badge variant="secondary" className="gap-1">
-                          <Clock className="h-3 w-3" /> {statusLabel[p.status] ?? p.status}
+                          <Clock className="h-3 w-3" /> {paymentStatusLabel(p)}
                         </Badge>
                       )}
                     </td>
@@ -2809,7 +2809,7 @@ function CustomersTab({
                                     : "secondary"
                               }
                             >
-                              {statusLabel[p.status] ?? p.status}
+                              {paymentStatusLabel(p)}
                             </Badge>
                           </td>
                           <td className="p-2">
