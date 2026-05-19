@@ -248,7 +248,7 @@ function Dashboard() {
       const { data: pay } = await supabase
         .from("payments")
         .select(
-          "id, amount, status, method, paid_at, created_at, boleto_url, invoice_url, barcode, license:licenses(license_key)",
+          "id, amount, status, method, paid_at, created_at, boleto_url, invoice_url, barcode, provider_charge_id, license:licenses(license_key)",
         )
         .order("created_at", { ascending: false });
       setPayments((pay as unknown as Payment[]) || []);
