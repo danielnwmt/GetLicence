@@ -2238,7 +2238,7 @@ function PaymentsTab({
                         <Badge variant="destructive">Falhou</Badge>
                       ) : (
                         <Badge variant="secondary" className="gap-1">
-                          <Clock className="h-3 w-3" /> {statusLabel[p.status] ?? p.status}
+                          <Clock className="h-3 w-3" /> {paymentStatusLabel(p)}
                         </Badge>
                       )}
                     </td>
