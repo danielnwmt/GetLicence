@@ -36,6 +36,9 @@ export type Database = {
         Row: {
           activated_at: string | null
           auto_renew: boolean
+          block_end_time: string | null
+          block_schedule_enabled: boolean | null
+          block_start_time: string | null
           created_at: string
           device_hostname: string | null
           device_ip: string | null
@@ -59,6 +62,9 @@ export type Database = {
         Insert: {
           activated_at?: string | null
           auto_renew?: boolean
+          block_end_time?: string | null
+          block_schedule_enabled?: boolean | null
+          block_start_time?: string | null
           created_at?: string
           device_hostname?: string | null
           device_ip?: string | null
@@ -82,6 +88,9 @@ export type Database = {
         Update: {
           activated_at?: string | null
           auto_renew?: boolean
+          block_end_time?: string | null
+          block_schedule_enabled?: boolean | null
+          block_start_time?: string | null
           created_at?: string
           device_hostname?: string | null
           device_ip?: string | null
