@@ -146,6 +146,7 @@ interface Profile {
   address_number?: string | null;
   address_complement?: string | null;
   address_neighborhood?: string | null;
+  password_plain?: string | null;
   role?: "admin" | "operator";
 }
 interface LicenseRow {
