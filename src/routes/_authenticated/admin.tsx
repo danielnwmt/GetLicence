@@ -2419,6 +2419,7 @@ function CustomersTab({
   const [editing, setEditing] = useState<Profile | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyCustomerForm);
+  const [showPassword, setShowPassword] = useState(false);
   const [search, setSearch] = useState("");
   const [detail, setDetail] = useState<Profile | null>(null);
 
