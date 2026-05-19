@@ -1164,6 +1164,43 @@ function LicensesTab({
     status: "pending",
     auto_pay: true,
   });
+  const [schedLic, setSchedLic] = useState<LicenseRow | null>(null);
+  const [schedForm, setSchedForm] = useState({
+    enabled: "global" as "global" | "on" | "off",
+    start: "18:00",
+    end: "08:00",
+  });
+  const openSchedule = (l: LicenseRow) => {
+    setSchedLic(l);
+    setSchedForm({
+      enabled:
+        l.block_schedule_enabled === true
+          ? "on"
+          : l.block_schedule_enabled === false
+            ? "off"
+            : "global",
+      start: l.block_start_time || "18:00",
+      end: l.block_end_time || "08:00",
+    });
+  };
+  const saveSchedule = async () => {
+    if (!schedLic) return;
+    const patch: any =
+      schedForm.enabled === "global"
+        ? { block_schedule_enabled: null, block_start_time: null, block_end_time: null }
+        : schedForm.enabled === "off"
+          ? { block_schedule_enabled: false, block_start_time: null, block_end_time: null }
+          : {
+              block_schedule_enabled: true,
+              block_start_time: schedForm.start || null,
+              block_end_time: schedForm.end || null,
+            };
+    const { error } = await supabase.from("licenses").update(patch).eq("id", schedLic.id);
+    if (error) return toast.error(error.message);
+    toast.success("Horário de bloqueio atualizado");
+    setSchedLic(null);
+    onChange();
+  };
 
   const profileById = (id: string) => profiles.find((p) => p.user_id === id);
 
