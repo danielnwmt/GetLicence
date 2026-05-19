@@ -275,9 +275,20 @@ function Dashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Minhas licenças</h1>
-        <p className="text-muted-foreground">Suas chaves ativas e histórico de pagamentos.</p>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {isClient ? "Faturas" : "Minhas licenças"}
+        </h1>
+        <p className="text-muted-foreground">
+          {isClient
+            ? "Suas faturas e segundas vias."
+            : "Suas chaves ativas e histórico de pagamentos."}
+        </p>
       </div>
+
+      {!isClient && (
+      <>
+      </>
+      )}
 
       <section>
         <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
