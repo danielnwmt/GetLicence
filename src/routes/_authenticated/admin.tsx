@@ -1829,7 +1829,7 @@ function PaymentsTab({
         String(p.amount),
         p.due_date ? formatDate(p.due_date) : "",
         p.paid_at ? formatDate(p.paid_at) : "",
-        statusLabel[p.status] ?? p.status,
+        paymentStatusLabel(p),
       ]);
     });
     const csv = rows
