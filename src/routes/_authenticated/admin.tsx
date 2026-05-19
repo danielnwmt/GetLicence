@@ -1492,6 +1492,14 @@ function LicensesTab({
                           <XCircle className="h-3.5 w-3.5 text-destructive" />
                         </Button>
                       )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        title="Horário de bloqueio"
+                        onClick={() => openSchedule(l)}
+                      >
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                      </Button>
                       <Button size="sm" variant="ghost" onClick={() => remove(l.id)}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
