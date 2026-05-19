@@ -1219,14 +1219,15 @@ function LicensesTab({
         user_id: form.user_id,
         product_id: form.product_id,
         plan: form.plan as "monthly" | "semestral" | "yearly",
-        status: form.status as "active" | "pending" | "expired" | "cancelled" | "blocked",
+        status: (form.courtesy ? "active" : form.status) as "active" | "pending" | "expired" | "cancelled" | "blocked",
         expires_at: expires.toISOString(),
-      })
+        courtesy: form.courtesy,
+      } as any)
       .select()
       .single();
     if (error) return toast.error(error.message);
 
-    if (form.auto_pay && product) {
+    if (!form.courtesy && form.auto_pay && product) {
       const amount =
         form.plan === "yearly"
           ? Number(product.price_yearly)
@@ -1245,6 +1246,18 @@ function LicensesTab({
     }
     toast.success("Licença emitida");
     setOpen(false);
+    onChange();
+  };
+
+  const toggleCourtesy = async (l: LicenseRow) => {
+    const next = !l.courtesy;
+    const patch: any = { courtesy: next };
+    if (next && (l.status === "blocked" || l.status === "expired" || l.status === "pending")) {
+      patch.status = "active";
+    }
+    const { error } = await supabase.from("licenses").update(patch).eq("id", l.id);
+    if (error) return toast.error(error.message);
+    toast.success(next ? "Cortesia ativada" : "Cortesia desativada");
     onChange();
   };
 
