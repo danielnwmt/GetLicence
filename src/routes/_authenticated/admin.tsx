@@ -2558,14 +2558,25 @@ function CustomersTab({
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label>
-                    {isEdit ? "Nova senha (deixe em branco para manter)" : "Senha inicial *"}
+                    {isEdit ? "Senha do cliente" : "Senha inicial *"}
                   </Label>
-                  <Input
-                    type="text"
-                    value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    placeholder="mín. 6 caracteres"
-                  />
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      value={form.password}
+                      onChange={(e) => setForm({ ...form, password: e.target.value })}
+                      placeholder="mín. 6 caracteres"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                      aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
               </div>
 
