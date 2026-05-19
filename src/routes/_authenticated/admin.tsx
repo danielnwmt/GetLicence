@@ -2448,6 +2448,7 @@ function CustomersTab({
   const openCreate = () => {
     setEditing(null);
     setForm(emptyCustomerForm);
+    setShowPassword(false);
     setOpen(true);
   };
 
