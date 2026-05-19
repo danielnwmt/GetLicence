@@ -1379,10 +1379,20 @@ function LicensesTab({
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
-                  checked={form.auto_pay}
+                  checked={form.auto_pay && !form.courtesy}
+                  disabled={form.courtesy}
                   onChange={(e) => setForm({ ...form, auto_pay: e.target.checked })}
                 />
                 Criar registro de pagamento automático
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={form.courtesy}
+                  onChange={(e) => setForm({ ...form, courtesy: e.target.checked })}
+                />
+                <Gift className="h-3.5 w-3.5 text-emerald-500" />
+                Modo cortesia (sem cobrança e sem bloqueio)
               </label>
             </div>
             <DialogFooter>
