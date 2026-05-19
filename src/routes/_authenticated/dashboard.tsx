@@ -94,7 +94,8 @@ interface Payment {
 }
 
 function Dashboard() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const isClient = role !== "admin";
   const [licenses, setLicenses] = useState<License[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
