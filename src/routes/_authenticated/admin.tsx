@@ -1456,25 +1456,32 @@ function LicensesTab({
                     {l.last_seen_at ? new Date(l.last_seen_at).toLocaleString("pt-BR") : "—"}
                   </td>
                   <td className="p-3">
-                    <Badge
-                      variant={
-                        l.status === "active"
-                          ? "default"
-                          : l.status === "blocked" || l.status === "cancelled"
-                            ? "destructive"
-                            : "secondary"
-                      }
-                    >
-                      {l.status === "active"
-                        ? "Ativa"
-                        : l.status === "pending"
-                          ? "Pendente"
-                          : l.status === "blocked"
-                            ? "Bloqueada"
-                            : l.status === "expired"
-                              ? "Expirada"
-                              : "Inativa"}
-                    </Badge>
+                    <div className="flex flex-col gap-1 items-start">
+                      <Badge
+                        variant={
+                          l.status === "active"
+                            ? "default"
+                            : l.status === "blocked" || l.status === "cancelled"
+                              ? "destructive"
+                              : "secondary"
+                        }
+                      >
+                        {l.status === "active"
+                          ? "Ativa"
+                          : l.status === "pending"
+                            ? "Pendente"
+                            : l.status === "blocked"
+                              ? "Bloqueada"
+                              : l.status === "expired"
+                                ? "Expirada"
+                                : "Inativa"}
+                      </Badge>
+                      {l.courtesy ? (
+                        <Badge variant="outline" className="border-emerald-500 text-emerald-600">
+                          <Gift className="h-3 w-3 mr-1" /> Cortesia
+                        </Badge>
+                      ) : null}
+                    </div>
                   </td>
                   <td className="p-3 text-right">
                     <div className="flex justify-end gap-1">
