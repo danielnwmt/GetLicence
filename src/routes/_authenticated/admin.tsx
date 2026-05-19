@@ -2809,7 +2809,7 @@ function CustomersTab({
                                     : "secondary"
                               }
                             >
-                              {statusLabel[p.status] ?? p.status}
+                              {paymentStatusLabel(p)}
                             </Badge>
                           </td>
                           <td className="p-2">
