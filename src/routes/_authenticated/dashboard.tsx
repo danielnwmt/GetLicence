@@ -436,7 +436,7 @@ function Dashboard() {
                     <td className="p-3">{p.method ?? "—"}</td>
                     <td className="p-3">
                       <Badge className={statusVariant[p.status]} variant="outline">
-                        {statusLabel[p.status]}
+                        {paymentStatusLabel(p)}
                       </Badge>
                     </td>
                     <td className="p-3">
