@@ -403,6 +403,7 @@ function Dashboard() {
           </div>
         )}
       </section>
+      )}
 
       <section>
         <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
