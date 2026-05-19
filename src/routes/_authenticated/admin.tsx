@@ -2468,6 +2468,7 @@ function CustomersTab({
       address_city: p.address_city ?? "",
       address_state: p.address_state ?? "",
     });
+    setShowPassword(false);
     setOpen(true);
   };
 
