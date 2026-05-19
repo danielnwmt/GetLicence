@@ -136,7 +136,8 @@ async function handle(
     }
   }
 
-  const effectiveStatus = scheduleBlocked && newStatus === "active" ? "blocked" : newStatus;
+  const effectiveStatus =
+    isCourtesy ? "active" : scheduleBlocked && newStatus === "active" ? "blocked" : newStatus;
   const allowed = effectiveStatus === "active";
   const prod: any = (lic as any).products ?? null;
   return Response.json({
