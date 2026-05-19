@@ -165,6 +165,7 @@ interface LicenseRow {
   block_schedule_enabled?: boolean | null;
   block_start_time?: string | null;
   block_end_time?: string | null;
+  courtesy?: boolean | null;
   product: { name: string } | null;
   profile?: Profile | null;
 }
