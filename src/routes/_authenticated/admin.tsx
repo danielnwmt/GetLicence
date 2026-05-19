@@ -1533,6 +1533,16 @@ function LicensesTab({
                       >
                         <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                       </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        title={l.courtesy ? "Desativar cortesia" : "Ativar cortesia"}
+                        onClick={() => toggleCourtesy(l)}
+                      >
+                        <Gift
+                          className={`h-3.5 w-3.5 ${l.courtesy ? "text-emerald-500" : "text-muted-foreground"}`}
+                        />
+                      </Button>
                       <Button size="sm" variant="ghost" onClick={() => remove(l.id)}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
