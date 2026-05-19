@@ -64,7 +64,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import { runBackupNow, restoreBackup } from "@/lib/backup.functions";
-import { formatBRL, formatDate, statusLabel } from "@/lib/format";
+import { formatBRL, formatDate, statusLabel, paymentStatusLabel } from "@/lib/format";
 import { fetchCep } from "@/lib/cep";
 import { formatCpfCnpj, isValidCpfCnpj } from "@/lib/mask";
 import { toast } from "sonner";
