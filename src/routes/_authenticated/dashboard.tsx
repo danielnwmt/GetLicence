@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => ({ meta: [{ title: "Minhas licenças — GetLicence" }] }),
+  head: () => ({ meta: [{ title: "Faturas — GetLicence" }] }),
   component: Dashboard,
 });
 
