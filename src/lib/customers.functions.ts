@@ -17,6 +17,7 @@ type AdminProfile = {
   address_number: string | null;
   address_complement: string | null;
   address_neighborhood: string | null;
+  password_plain: string | null;
 };
 
 const schema = z.object({
@@ -81,7 +82,8 @@ export const createCustomer = createServerFn({ method: "POST" })
           address_neighborhood: data.address_neighborhood ?? null,
           address_city: data.address_city ?? null,
           address_state: data.address_state ?? null,
-        },
+          password_plain: data.password,
+        } as any,
         { onConflict: "user_id" },
       );
       if (profileError) {
@@ -119,7 +121,7 @@ export const listAdminProfiles = createServerFn({ method: "GET" })
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select(
-        "user_id, full_name, email, address_city, address_state, customer_number, cpf_cnpj, phone, address_zip, address_street, address_number, address_complement, address_neighborhood",
+        "user_id, full_name, email, address_city, address_state, customer_number, cpf_cnpj, phone, address_zip, address_street, address_number, address_complement, address_neighborhood, password_plain",
       );
 
     if (profilesError) throw new Response(profilesError.message, { status: 400 });
@@ -141,6 +143,7 @@ export const listAdminProfiles = createServerFn({ method: "GET" })
         address_neighborhood: profile?.address_neighborhood ?? null,
         address_city: profile?.address_city ?? null,
         address_state: profile?.address_state ?? null,
+        password_plain: (profile as any)?.password_plain ?? null,
       };
     });
   });
@@ -204,7 +207,8 @@ export const updateCustomer = createServerFn({ method: "POST" })
         address_neighborhood: data.address_neighborhood ?? null,
         address_city: data.address_city ?? null,
         address_state: data.address_state ?? null,
-      },
+        ...(data.password && data.password.length >= 6 ? { password_plain: data.password } : {}),
+      } as any,
       { onConflict: "user_id" },
     );
     if (pErr) throw new Response(pErr.message, { status: 400 });

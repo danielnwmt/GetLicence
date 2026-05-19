@@ -60,6 +60,8 @@ import {
   HardDrive,
   Upload,
   Gift,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { runBackupNow, restoreBackup } from "@/lib/backup.functions";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
@@ -146,6 +148,7 @@ interface Profile {
   address_number?: string | null;
   address_complement?: string | null;
   address_neighborhood?: string | null;
+  password_plain?: string | null;
   role?: "admin" | "operator";
 }
 interface LicenseRow {
@@ -2416,6 +2419,7 @@ function CustomersTab({
   const [editing, setEditing] = useState<Profile | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyCustomerForm);
+  const [showPassword, setShowPassword] = useState(false);
   const [search, setSearch] = useState("");
   const [detail, setDetail] = useState<Profile | null>(null);
 
@@ -2444,6 +2448,7 @@ function CustomersTab({
   const openCreate = () => {
     setEditing(null);
     setForm(emptyCustomerForm);
+    setShowPassword(false);
     setOpen(true);
   };
 
@@ -2452,7 +2457,7 @@ function CustomersTab({
     setForm({
       full_name: p.full_name ?? "",
       email: p.email ?? "",
-      password: "",
+      password: p.password_plain ?? "",
       cpf_cnpj: p.cpf_cnpj ? formatCpfCnpj(p.cpf_cnpj) : "",
       phone: p.phone ?? "",
       address_zip: p.address_zip ?? "",
@@ -2463,6 +2468,7 @@ function CustomersTab({
       address_city: p.address_city ?? "",
       address_state: p.address_state ?? "",
     });
+    setShowPassword(false);
     setOpen(true);
   };
 
@@ -2554,14 +2560,25 @@ function CustomersTab({
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label>
-                    {isEdit ? "Nova senha (deixe em branco para manter)" : "Senha inicial *"}
+                    {isEdit ? "Senha do cliente" : "Senha inicial *"}
                   </Label>
-                  <Input
-                    type="text"
-                    value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    placeholder="mín. 6 caracteres"
-                  />
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      value={form.password}
+                      onChange={(e) => setForm({ ...form, password: e.target.value })}
+                      placeholder="mín. 6 caracteres"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                      aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
               </div>
 
