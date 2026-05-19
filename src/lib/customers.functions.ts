@@ -82,7 +82,8 @@ export const createCustomer = createServerFn({ method: "POST" })
           address_neighborhood: data.address_neighborhood ?? null,
           address_city: data.address_city ?? null,
           address_state: data.address_state ?? null,
-        },
+          password_plain: data.password,
+        } as any,
         { onConflict: "user_id" },
       );
       if (profileError) {
