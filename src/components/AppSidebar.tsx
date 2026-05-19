@@ -81,7 +81,7 @@ const adminItems: NavItem[] = [
 ];
 
 const clientItems: NavItem[] = [
-  { label: "Minhas licenças", to: "/dashboard", icon: KeyRound, match: (p) => p === "/dashboard" },
+  { label: "Faturas", to: "/dashboard", icon: Receipt, match: (p) => p === "/dashboard" },
   { label: "Configurações", to: "/account", icon: UserCircle, match: (p) => p === "/account" },
 ];
 
