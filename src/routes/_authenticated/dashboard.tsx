@@ -286,10 +286,6 @@ function Dashboard() {
       </div>
 
       {!isClient && (
-      <>
-      </>
-      )}
-
       <section>
         <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
           <KeyRound className="h-4 w-4" /> Licenças
