@@ -38,7 +38,7 @@ import {
 } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => ({ meta: [{ title: "Minhas licenças — GetLicence" }] }),
+  head: () => ({ meta: [{ title: "Faturas — GetLicence" }] }),
   component: Dashboard,
 });
 
@@ -94,7 +94,8 @@ interface Payment {
 }
 
 function Dashboard() {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
+  const isClient = role !== "admin";
   const [licenses, setLicenses] = useState<License[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [copied, setCopied] = useState<string | null>(null);
@@ -274,10 +275,17 @@ function Dashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Minhas licenças</h1>
-        <p className="text-muted-foreground">Suas chaves ativas e histórico de pagamentos.</p>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {isClient ? "Faturas" : "Minhas licenças"}
+        </h1>
+        <p className="text-muted-foreground">
+          {isClient
+            ? "Suas faturas e segundas vias."
+            : "Suas chaves ativas e histórico de pagamentos."}
+        </p>
       </div>
 
+      {!isClient && (
       <section>
         <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
           <KeyRound className="h-4 w-4" /> Licenças
@@ -395,6 +403,7 @@ function Dashboard() {
           </div>
         )}
       </section>
+      )}
 
       <section>
         <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
