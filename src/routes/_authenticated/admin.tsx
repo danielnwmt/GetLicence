@@ -60,6 +60,8 @@ import {
   HardDrive,
   Upload,
   Gift,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { runBackupNow, restoreBackup } from "@/lib/backup.functions";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
