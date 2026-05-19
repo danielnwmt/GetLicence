@@ -82,27 +82,46 @@ async function handle(
 
   await sb.from("licenses").update(update).eq("id", lic.id);
 
-  // Bloqueio por horário (fora do expediente) — não persiste no DB, apenas na resposta
+  // Bloqueio por horário (fora do expediente) — pode ser sobrescrito por licença
   const { data: sched } = await sb
     .from("payment_settings")
     .select("block_schedule_enabled, block_start_time, block_end_time")
     .limit(1)
     .maybeSingle();
+
+  const licOverride = (lic as any).block_schedule_enabled;
+  let useSchedule = false;
+  let startStr = "";
+  let endStr = "";
+  if (licOverride === false) {
+    useSchedule = false; // licença ignora bloqueio por horário
+  } else if (licOverride === true) {
+    useSchedule = true;
+    startStr =
+      ((lic as any).block_start_time as string) ||
+      ((sched as any)?.block_start_time as string) ||
+      "";
+    endStr =
+      ((lic as any).block_end_time as string) || ((sched as any)?.block_end_time as string) || "";
+  } else if (sched && (sched as any).block_schedule_enabled) {
+    useSchedule = true;
+    startStr = ((sched as any).block_start_time as string) || "";
+    endStr = ((sched as any).block_end_time as string) || "";
+  }
+
   let scheduleBlocked = false;
-  if (sched && (sched as any).block_schedule_enabled) {
-    const s = ((sched as any).block_start_time as string) || "";
-    const e = ((sched as any).block_end_time as string) || "";
+  if (useSchedule) {
     const toMin = (t: string) => {
       const [h, m] = t.split(":").map(Number);
       return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : null;
     };
-    const start = toMin(s);
-    const end = toMin(e);
+    const start = toMin(startStr);
+    const end = toMin(endStr);
     if (start !== null && end !== null) {
       const cur = now.getHours() * 60 + now.getMinutes();
       // Janela bloqueada: do start (fim do expediente) até o end (início do expediente)
-      const blocked = start === end ? false : start < end ? cur >= start && cur < end : cur >= start || cur < end;
-      scheduleBlocked = blocked;
+      scheduleBlocked =
+        start === end ? false : start < end ? cur >= start && cur < end : cur >= start || cur < end;
     }
   }
 
