@@ -3358,6 +3358,9 @@ function BlockRulesTab() {
   const [settings, setSettings] = useState<{
     block_auto: boolean;
     block_grace_days: number;
+    block_schedule_enabled: boolean;
+    block_start_time: string;
+    block_end_time: string;
   } | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -3365,12 +3368,17 @@ function BlockRulesTab() {
     (async () => {
       const { data } = await supabase
         .from("payment_settings")
-        .select("block_auto, block_grace_days")
+        .select(
+          "block_auto, block_grace_days, block_schedule_enabled, block_start_time, block_end_time",
+        )
         .limit(1)
         .maybeSingle();
       setSettings({
         block_auto: data?.block_auto ?? true,
         block_grace_days: data?.block_grace_days ?? 0,
+        block_schedule_enabled: (data as any)?.block_schedule_enabled ?? false,
+        block_start_time: (data as any)?.block_start_time ?? "18:00",
+        block_end_time: (data as any)?.block_end_time ?? "08:00",
       });
     })();
   }, []);
@@ -3391,7 +3399,13 @@ function BlockRulesTab() {
       if (existing?.id) {
         const { error } = await supabase
           .from("payment_settings")
-          .update({ block_auto: settings.block_auto, block_grace_days: settings.block_grace_days })
+          .update({
+            block_auto: settings.block_auto,
+            block_grace_days: settings.block_grace_days,
+            block_schedule_enabled: settings.block_schedule_enabled,
+            block_start_time: settings.block_start_time || null,
+            block_end_time: settings.block_end_time || null,
+          } as any)
           .eq("id", existing.id);
         if (error) throw error;
       }
@@ -3444,6 +3458,50 @@ function BlockRulesTab() {
           </p>
         </div>
       </div>
+
+      <div className="border-t pt-4 space-y-3">
+        <div>
+          <h4 className="font-semibold">Bloqueio por horário (fora do expediente)</h4>
+          <p className="text-sm text-muted-foreground">
+            Bloqueia o uso das licenças automaticamente fora do horário de expediente e libera no
+            horário definido. Horário do servidor (24h).
+          </p>
+        </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          <div className="space-y-2">
+            <Label>Ativar bloqueio por horário</Label>
+            <Select
+              value={settings.block_schedule_enabled ? "on" : "off"}
+              onValueChange={(v) => update("block_schedule_enabled", v === "on")}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="on">Ativado</SelectItem>
+                <SelectItem value="off">Desativado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Horário de bloqueio (fim do expediente)</Label>
+            <Input
+              type="time"
+              value={settings.block_start_time}
+              onChange={(e) => update("block_start_time", e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Horário de desbloqueio (início do expediente)</Label>
+            <Input
+              type="time"
+              value={settings.block_end_time}
+              onChange={(e) => update("block_end_time", e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+
       <div className="flex justify-end">
         <Button onClick={save} disabled={saving}>
           {saving ? "Salvando..." : "Salvar regra de bloqueio"}
