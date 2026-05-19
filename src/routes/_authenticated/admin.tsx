@@ -161,6 +161,9 @@ interface LicenseRow {
   device_ip_v6?: string | null;
   last_seen_at?: string | null;
   activated_at?: string | null;
+  block_schedule_enabled?: boolean | null;
+  block_start_time?: string | null;
+  block_end_time?: string | null;
   product: { name: string } | null;
   profile?: Profile | null;
 }
@@ -1161,6 +1164,43 @@ function LicensesTab({
     status: "pending",
     auto_pay: true,
   });
+  const [schedLic, setSchedLic] = useState<LicenseRow | null>(null);
+  const [schedForm, setSchedForm] = useState({
+    enabled: "global" as "global" | "on" | "off",
+    start: "18:00",
+    end: "08:00",
+  });
+  const openSchedule = (l: LicenseRow) => {
+    setSchedLic(l);
+    setSchedForm({
+      enabled:
+        l.block_schedule_enabled === true
+          ? "on"
+          : l.block_schedule_enabled === false
+            ? "off"
+            : "global",
+      start: l.block_start_time || "18:00",
+      end: l.block_end_time || "08:00",
+    });
+  };
+  const saveSchedule = async () => {
+    if (!schedLic) return;
+    const patch: any =
+      schedForm.enabled === "global"
+        ? { block_schedule_enabled: null, block_start_time: null, block_end_time: null }
+        : schedForm.enabled === "off"
+          ? { block_schedule_enabled: false, block_start_time: null, block_end_time: null }
+          : {
+              block_schedule_enabled: true,
+              block_start_time: schedForm.start || null,
+              block_end_time: schedForm.end || null,
+            };
+    const { error } = await supabase.from("licenses").update(patch).eq("id", schedLic.id);
+    if (error) return toast.error(error.message);
+    toast.success("Horário de bloqueio atualizado");
+    setSchedLic(null);
+    onChange();
+  };
 
   const profileById = (id: string) => profiles.find((p) => p.user_id === id);
 
@@ -1452,6 +1492,14 @@ function LicensesTab({
                           <XCircle className="h-3.5 w-3.5 text-destructive" />
                         </Button>
                       )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        title="Horário de bloqueio"
+                        onClick={() => openSchedule(l)}
+                      >
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                      </Button>
                       <Button size="sm" variant="ghost" onClick={() => remove(l.id)}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
@@ -1470,6 +1518,59 @@ function LicensesTab({
           </tbody>
         </table>
       </Card>
+      <Dialog open={!!schedLic} onOpenChange={(o) => !o && setSchedLic(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Horário de bloqueio da licença</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-xs text-muted-foreground">
+              Licença: <span className="font-mono">{schedLic?.license_key}</span>
+            </p>
+            <div className="space-y-2">
+              <Label>Comportamento</Label>
+              <Select
+                value={schedForm.enabled}
+                onValueChange={(v: "global" | "on" | "off") =>
+                  setSchedForm({ ...schedForm, enabled: v })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="global">Usar configuração global</SelectItem>
+                  <SelectItem value="on">Bloquear nesta licença (horário próprio)</SelectItem>
+                  <SelectItem value="off">Nunca bloquear por horário</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {schedForm.enabled === "on" && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Início do bloqueio (fim do expediente)</Label>
+                  <Input
+                    type="time"
+                    value={schedForm.start}
+                    onChange={(e) => setSchedForm({ ...schedForm, start: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Fim do bloqueio (início do expediente)</Label>
+                  <Input
+                    type="time"
+                    value={schedForm.end}
+                    onChange={(e) => setSchedForm({ ...schedForm, end: e.target.value })}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={saveSchedule}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
