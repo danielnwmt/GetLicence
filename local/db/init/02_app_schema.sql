@@ -100,6 +100,7 @@ alter table public.licenses add column if not exists device_hostname text;
 alter table public.licenses add column if not exists block_schedule_enabled boolean;
 alter table public.licenses add column if not exists block_start_time text;
 alter table public.licenses add column if not exists block_end_time text;
+alter table public.licenses add column if not exists courtesy boolean not null default false;
 
 create table if not exists public.payments (
   id uuid primary key default gen_random_uuid(),

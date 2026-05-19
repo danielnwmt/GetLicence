@@ -1,0 +1,1 @@
+alter table public.licenses add column if not exists courtesy boolean not null default false;

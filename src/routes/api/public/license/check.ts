@@ -40,7 +40,7 @@ async function handle(
   const { data: lic, error } = await sb
     .from("licenses")
     .select(
-      "id, status, expires_at, activated_at, user_id, product_id, extra_storage_gb, block_schedule_enabled, block_start_time, block_end_time, products:product_id(storage_amount, storage_unit, vps_storage_amount, vps_storage_unit)",
+      "id, status, expires_at, activated_at, user_id, product_id, extra_storage_gb, courtesy, block_schedule_enabled, block_start_time, block_end_time, products:product_id(storage_amount, storage_unit, vps_storage_amount, vps_storage_unit)",
     )
     .eq("license_key", key)
     .maybeSingle();
@@ -58,6 +58,8 @@ async function handle(
   const now = new Date();
   const expired = new Date(lic.expires_at) < now;
 
+  const isCourtesy = (lic as any).courtesy === true;
+
   let newStatus = lic.status;
   const update: Database["public"]["Tables"]["licenses"]["Update"] = {
     last_seen_at: now.toISOString(),
@@ -67,17 +69,26 @@ async function handle(
     device_hostname: params.hostname ?? null,
   };
 
-  // Auto-activate on first valid contact (pending → active) if not expired
-  if (lic.status === "pending" && !expired) {
-    newStatus = "active";
-    update.status = "active";
-    update.activated_at = lic.activated_at ?? now.toISOString();
-  }
+  // Cortesia: força ativa, ignora expiração e bloqueio
+  if (isCourtesy) {
+    if (lic.status !== "active" && lic.status !== "cancelled") {
+      newStatus = "active";
+      update.status = "active";
+      update.activated_at = lic.activated_at ?? now.toISOString();
+    }
+  } else {
+    // Auto-activate on first valid contact (pending → active) if not expired
+    if (lic.status === "pending" && !expired) {
+      newStatus = "active";
+      update.status = "active";
+      update.activated_at = lic.activated_at ?? now.toISOString();
+    }
 
-  // If expired, mark expired
-  if (expired && lic.status !== "expired" && lic.status !== "cancelled") {
-    newStatus = "expired";
-    update.status = "expired";
+    // If expired, mark expired
+    if (expired && lic.status !== "expired" && lic.status !== "cancelled") {
+      newStatus = "expired";
+      update.status = "expired";
+    }
   }
 
   await sb.from("licenses").update(update).eq("id", lic.id);
@@ -125,7 +136,8 @@ async function handle(
     }
   }
 
-  const effectiveStatus = scheduleBlocked && newStatus === "active" ? "blocked" : newStatus;
+  const effectiveStatus =
+    isCourtesy ? "active" : scheduleBlocked && newStatus === "active" ? "blocked" : newStatus;
   const allowed = effectiveStatus === "active";
   const prod: any = (lic as any).products ?? null;
   return Response.json({
@@ -134,7 +146,8 @@ async function handle(
     expires_at: lic.expires_at,
     blocked: effectiveStatus === "blocked",
     expired: effectiveStatus === "expired",
-    schedule_blocked: scheduleBlocked,
+    schedule_blocked: isCourtesy ? false : scheduleBlocked,
+    courtesy: isCourtesy,
     storage: prod
       ? {
           amount: Number(prod.storage_amount ?? 0) + Number((lic as any).extra_storage_gb ?? 0),

@@ -59,6 +59,7 @@ import {
   CloudUpload,
   HardDrive,
   Upload,
+  Gift,
 } from "lucide-react";
 import { runBackupNow, restoreBackup } from "@/lib/backup.functions";
 import { formatBRL, formatDate, statusLabel } from "@/lib/format";
@@ -164,6 +165,7 @@ interface LicenseRow {
   block_schedule_enabled?: boolean | null;
   block_start_time?: string | null;
   block_end_time?: string | null;
+  courtesy?: boolean | null;
   product: { name: string } | null;
   profile?: Profile | null;
 }
@@ -1163,6 +1165,7 @@ function LicensesTab({
     plan: "monthly",
     status: "pending",
     auto_pay: true,
+    courtesy: false,
   });
   const [schedLic, setSchedLic] = useState<LicenseRow | null>(null);
   const [schedForm, setSchedForm] = useState({
@@ -1216,14 +1219,15 @@ function LicensesTab({
         user_id: form.user_id,
         product_id: form.product_id,
         plan: form.plan as "monthly" | "semestral" | "yearly",
-        status: form.status as "active" | "pending" | "expired" | "cancelled" | "blocked",
+        status: (form.courtesy ? "active" : form.status) as "active" | "pending" | "expired" | "cancelled" | "blocked",
         expires_at: expires.toISOString(),
-      })
+        courtesy: form.courtesy,
+      } as any)
       .select()
       .single();
     if (error) return toast.error(error.message);
 
-    if (form.auto_pay && product) {
+    if (!form.courtesy && form.auto_pay && product) {
       const amount =
         form.plan === "yearly"
           ? Number(product.price_yearly)
@@ -1242,6 +1246,18 @@ function LicensesTab({
     }
     toast.success("Licença emitida");
     setOpen(false);
+    onChange();
+  };
+
+  const toggleCourtesy = async (l: LicenseRow) => {
+    const next = !l.courtesy;
+    const patch: any = { courtesy: next };
+    if (next && (l.status === "blocked" || l.status === "expired" || l.status === "pending")) {
+      patch.status = "active";
+    }
+    const { error } = await supabase.from("licenses").update(patch).eq("id", l.id);
+    if (error) return toast.error(error.message);
+    toast.success(next ? "Cortesia ativada" : "Cortesia desativada");
     onChange();
   };
 
@@ -1363,10 +1379,20 @@ function LicensesTab({
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
-                  checked={form.auto_pay}
+                  checked={form.auto_pay && !form.courtesy}
+                  disabled={form.courtesy}
                   onChange={(e) => setForm({ ...form, auto_pay: e.target.checked })}
                 />
                 Criar registro de pagamento automático
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={form.courtesy}
+                  onChange={(e) => setForm({ ...form, courtesy: e.target.checked })}
+                />
+                <Gift className="h-3.5 w-3.5 text-emerald-500" />
+                Modo cortesia (sem cobrança e sem bloqueio)
               </label>
             </div>
             <DialogFooter>
@@ -1430,25 +1456,32 @@ function LicensesTab({
                     {l.last_seen_at ? new Date(l.last_seen_at).toLocaleString("pt-BR") : "—"}
                   </td>
                   <td className="p-3">
-                    <Badge
-                      variant={
-                        l.status === "active"
-                          ? "default"
-                          : l.status === "blocked" || l.status === "cancelled"
-                            ? "destructive"
-                            : "secondary"
-                      }
-                    >
-                      {l.status === "active"
-                        ? "Ativa"
-                        : l.status === "pending"
-                          ? "Pendente"
-                          : l.status === "blocked"
-                            ? "Bloqueada"
-                            : l.status === "expired"
-                              ? "Expirada"
-                              : "Inativa"}
-                    </Badge>
+                    <div className="flex flex-col gap-1 items-start">
+                      <Badge
+                        variant={
+                          l.status === "active"
+                            ? "default"
+                            : l.status === "blocked" || l.status === "cancelled"
+                              ? "destructive"
+                              : "secondary"
+                        }
+                      >
+                        {l.status === "active"
+                          ? "Ativa"
+                          : l.status === "pending"
+                            ? "Pendente"
+                            : l.status === "blocked"
+                              ? "Bloqueada"
+                              : l.status === "expired"
+                                ? "Expirada"
+                                : "Inativa"}
+                      </Badge>
+                      {l.courtesy ? (
+                        <Badge variant="outline" className="border-emerald-500 text-emerald-600">
+                          <Gift className="h-3 w-3 mr-1" /> Cortesia
+                        </Badge>
+                      ) : null}
+                    </div>
                   </td>
                   <td className="p-3 text-right">
                     <div className="flex justify-end gap-1">
@@ -1499,6 +1532,16 @@ function LicensesTab({
                         onClick={() => openSchedule(l)}
                       >
                         <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        title={l.courtesy ? "Desativar cortesia" : "Ativar cortesia"}
+                        onClick={() => toggleCourtesy(l)}
+                      >
+                        <Gift
+                          className={`h-3.5 w-3.5 ${l.courtesy ? "text-emerald-500" : "text-muted-foreground"}`}
+                        />
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => remove(l.id)}>
                         <Trash2 className="h-3.5 w-3.5" />
