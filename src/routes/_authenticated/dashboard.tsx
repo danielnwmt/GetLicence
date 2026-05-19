@@ -90,6 +90,7 @@ interface Payment {
   boleto_url: string | null;
   invoice_url: string | null;
   barcode: string | null;
+  provider_charge_id: string | null;
   license: { license_key: string } | null;
 }
 
