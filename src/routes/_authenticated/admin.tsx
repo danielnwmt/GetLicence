@@ -1518,6 +1518,59 @@ function LicensesTab({
           </tbody>
         </table>
       </Card>
+      <Dialog open={!!schedLic} onOpenChange={(o) => !o && setSchedLic(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Horário de bloqueio da licença</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-xs text-muted-foreground">
+              Licença: <span className="font-mono">{schedLic?.license_key}</span>
+            </p>
+            <div className="space-y-2">
+              <Label>Comportamento</Label>
+              <Select
+                value={schedForm.enabled}
+                onValueChange={(v: "global" | "on" | "off") =>
+                  setSchedForm({ ...schedForm, enabled: v })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="global">Usar configuração global</SelectItem>
+                  <SelectItem value="on">Bloquear nesta licença (horário próprio)</SelectItem>
+                  <SelectItem value="off">Nunca bloquear por horário</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {schedForm.enabled === "on" && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Início do bloqueio (fim do expediente)</Label>
+                  <Input
+                    type="time"
+                    value={schedForm.start}
+                    onChange={(e) => setSchedForm({ ...schedForm, start: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Fim do bloqueio (início do expediente)</Label>
+                  <Input
+                    type="time"
+                    value={schedForm.end}
+                    onChange={(e) => setSchedForm({ ...schedForm, end: e.target.value })}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button onClick={saveSchedule}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
