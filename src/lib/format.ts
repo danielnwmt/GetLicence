@@ -14,3 +14,14 @@ export const statusLabel: Record<string, string> = {
   failed: "Falhou",
   refunded: "Reembolsado",
 };
+
+export function paymentStatusLabel(p: {
+  status: string;
+  provider_charge_id?: string | null;
+  boleto_url?: string | null;
+}) {
+  if (p.status === "pending" && !p.provider_charge_id && !p.boleto_url) {
+    return "Aguardando emissão";
+  }
+  return statusLabel[p.status] ?? p.status;
+}
