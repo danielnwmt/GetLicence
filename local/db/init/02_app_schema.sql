@@ -124,6 +124,9 @@ create table if not exists public.payment_settings (
 );
 -- Colunas adicionais do payment_settings (compat com versão Cloud)
 alter table public.payment_settings add column if not exists block_grace_days integer not null default 0;
+alter table public.payment_settings add column if not exists block_schedule_enabled boolean not null default false;
+alter table public.payment_settings add column if not exists block_start_time text;
+alter table public.payment_settings add column if not exists block_end_time text;
 alter table public.payment_settings add column if not exists block_auto boolean not null default true;
 alter table public.payment_settings add column if not exists coplan_url text;
 alter table public.payment_settings add column if not exists coplan_username text;

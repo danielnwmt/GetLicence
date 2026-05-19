@@ -82,14 +82,40 @@ async function handle(
 
   await sb.from("licenses").update(update).eq("id", lic.id);
 
-  const allowed = newStatus === "active";
+  // Bloqueio por horário (fora do expediente) — não persiste no DB, apenas na resposta
+  const { data: sched } = await sb
+    .from("payment_settings")
+    .select("block_schedule_enabled, block_start_time, block_end_time")
+    .limit(1)
+    .maybeSingle();
+  let scheduleBlocked = false;
+  if (sched && (sched as any).block_schedule_enabled) {
+    const s = ((sched as any).block_start_time as string) || "";
+    const e = ((sched as any).block_end_time as string) || "";
+    const toMin = (t: string) => {
+      const [h, m] = t.split(":").map(Number);
+      return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : null;
+    };
+    const start = toMin(s);
+    const end = toMin(e);
+    if (start !== null && end !== null) {
+      const cur = now.getHours() * 60 + now.getMinutes();
+      // Janela bloqueada: do start (fim do expediente) até o end (início do expediente)
+      const blocked = start === end ? false : start < end ? cur >= start && cur < end : cur >= start || cur < end;
+      scheduleBlocked = blocked;
+    }
+  }
+
+  const effectiveStatus = scheduleBlocked && newStatus === "active" ? "blocked" : newStatus;
+  const allowed = effectiveStatus === "active";
   const prod: any = (lic as any).products ?? null;
   return Response.json({
     ok: allowed,
-    status: newStatus,
+    status: effectiveStatus,
     expires_at: lic.expires_at,
-    blocked: newStatus === "blocked",
-    expired: newStatus === "expired",
+    blocked: effectiveStatus === "blocked",
+    expired: effectiveStatus === "expired",
+    schedule_blocked: scheduleBlocked,
     storage: prod
       ? {
           amount: Number(prod.storage_amount ?? 0) + Number((lic as any).extra_storage_gb ?? 0),
