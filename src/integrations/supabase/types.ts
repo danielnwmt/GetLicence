@@ -174,7 +174,10 @@ export type Database = {
           backup_last_status: string | null
           backup_retention_days: number
           block_auto: boolean
+          block_end_time: string | null
           block_grace_days: number
+          block_schedule_enabled: boolean
+          block_start_time: string | null
           coplan_password: string | null
           coplan_token: string | null
           coplan_url: string | null
@@ -206,7 +209,10 @@ export type Database = {
           backup_last_status?: string | null
           backup_retention_days?: number
           block_auto?: boolean
+          block_end_time?: string | null
           block_grace_days?: number
+          block_schedule_enabled?: boolean
+          block_start_time?: string | null
           coplan_password?: string | null
           coplan_token?: string | null
           coplan_url?: string | null
@@ -238,7 +244,10 @@ export type Database = {
           backup_last_status?: string | null
           backup_retention_days?: number
           block_auto?: boolean
+          block_end_time?: string | null
           block_grace_days?: number
+          block_schedule_enabled?: boolean
+          block_start_time?: string | null
           coplan_password?: string | null
           coplan_token?: string | null
           coplan_url?: string | null
