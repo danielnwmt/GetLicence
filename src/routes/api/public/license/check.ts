@@ -58,6 +58,8 @@ async function handle(
   const now = new Date();
   const expired = new Date(lic.expires_at) < now;
 
+  const isCourtesy = (lic as any).courtesy === true;
+
   let newStatus = lic.status;
   const update: Database["public"]["Tables"]["licenses"]["Update"] = {
     last_seen_at: now.toISOString(),
@@ -67,17 +69,26 @@ async function handle(
     device_hostname: params.hostname ?? null,
   };
 
-  // Auto-activate on first valid contact (pending → active) if not expired
-  if (lic.status === "pending" && !expired) {
-    newStatus = "active";
-    update.status = "active";
-    update.activated_at = lic.activated_at ?? now.toISOString();
-  }
+  // Cortesia: força ativa, ignora expiração e bloqueio
+  if (isCourtesy) {
+    if (lic.status !== "active" && lic.status !== "cancelled") {
+      newStatus = "active";
+      update.status = "active";
+      update.activated_at = lic.activated_at ?? now.toISOString();
+    }
+  } else {
+    // Auto-activate on first valid contact (pending → active) if not expired
+    if (lic.status === "pending" && !expired) {
+      newStatus = "active";
+      update.status = "active";
+      update.activated_at = lic.activated_at ?? now.toISOString();
+    }
 
-  // If expired, mark expired
-  if (expired && lic.status !== "expired" && lic.status !== "cancelled") {
-    newStatus = "expired";
-    update.status = "expired";
+    // If expired, mark expired
+    if (expired && lic.status !== "expired" && lic.status !== "cancelled") {
+      newStatus = "expired";
+      update.status = "expired";
+    }
   }
 
   await sb.from("licenses").update(update).eq("id", lic.id);
