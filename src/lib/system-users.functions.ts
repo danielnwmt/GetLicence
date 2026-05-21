@@ -32,7 +32,7 @@ export const createSystemUser = createServerFn({ method: "POST" })
       email: data.email,
       password: data.password,
       email_confirm: true,
-      user_metadata: { full_name: data.full_name },
+      user_metadata: { full_name: data.full_name, is_system_user: true },
     });
     if (error) throw new Response(error.message, { status: 400 });
 
