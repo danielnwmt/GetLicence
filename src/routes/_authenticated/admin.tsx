@@ -4552,10 +4552,10 @@ function BackupTab() {
       </div>
 
       <div className="flex flex-wrap justify-end gap-2">
-        <Button size="sm" onClick={runNow} disabled={running}>
+        <Button size="sm" onClick={runNow} disabled={running} className="h-7 px-2 text-xs">
           {running ? "Executando..." : "Fazer backup no Google Drive"}
         </Button>
-        <Button size="sm" variant="outline" onClick={save} disabled={saving}>
+        <Button size="sm" variant="outline" onClick={save} disabled={saving} className="h-7 px-2 text-xs">
           {saving ? "Salvando..." : "Salvar configurações"}
         </Button>
       </div>
