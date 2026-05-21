@@ -4415,158 +4415,202 @@ function BackupTab() {
   };
 
   return (
-    <Card className="p-4 space-y-3 text-sm max-w-xl mx-auto">
-      <div className="rounded-md border bg-muted/40 p-2.5 flex items-start gap-2">
-        <div className="rounded bg-background p-1.5 border">
-          <HardDrive className="h-4 w-4 text-primary" />
-        </div>
-        <div className="space-y-0.5">
-          <p className="text-xs">
-            Configure a integração com o Google Drive usando uma <strong>Conta de Serviço</strong>.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            A conta de serviço permite acesso programático ao Drive sem interação do usuário.
-          </p>
-        </div>
-      </div>
+    <div className="mx-auto max-w-5xl">
+      <Card className="overflow-hidden">
+        <div className="grid md:grid-cols-[280px_1fr]">
+          {/* Sidebar */}
+          <aside className="bg-muted/40 border-b md:border-b-0 md:border-r p-5 space-y-4">
+            <div className="flex items-center gap-2.5">
+              <div className="rounded-lg bg-primary/10 p-2 border border-primary/20">
+                <HardDrive className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold leading-tight">Google Drive</h3>
+                <p className="text-[11px] text-muted-foreground">Backup automático</p>
+              </div>
+            </div>
 
-      <div className="space-y-1 max-w-md">
-        <Label className="text-xs">ID da Pasta Raiz no Google Drive</Label>
-        <Input
-          className="h-8 text-xs"
-          value={folderInput}
-          onChange={(e) => setFolderInput(e.target.value)}
-          placeholder="https://drive.google.com/drive/folders/ID_AQUI"
-        />
-        <p className="text-[11px] text-muted-foreground">
-          O ID está na URL da pasta: drive.google.com/drive/folders/<strong>ID_AQUI</strong>
-          {folderId && folderId !== folderInput && (
-            <>
-              {" "}
-              — detectado: <code className="text-foreground">{folderId}</code>
-            </>
-          )}
-        </p>
-      </div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Configure uma <strong className="text-foreground">Conta de Serviço</strong> para enviar
+              backups ao Drive sem interação manual.
+            </p>
 
-      <div className="space-y-1 max-w-md">
-        <Label className="text-xs">E-mail do Proprietário (para transferência de cota)</Label>
-        <Input
-          className="h-8 text-xs"
-          type="email"
-          value={s.gdrive_owner_email}
-          onChange={(e) => setS({ ...s, gdrive_owner_email: e.target.value })}
-          placeholder="contato@seudominio.com"
-        />
-      </div>
+            <div className="space-y-2 pt-2 border-t">
+              <div className="flex items-center gap-2 text-xs">
+                {isActive ? (
+                  <>
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                      Ativo
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <div className="h-2 w-2 rounded-full bg-muted-foreground/40" />
+                    <span className="text-muted-foreground">Não configurado</span>
+                  </>
+                )}
+              </div>
 
-      <div className="space-y-1">
-        <div className="flex items-center justify-between gap-2">
-          <Label className="text-xs">JSON da Conta de Serviço</Label>
-          <Button variant="outline" size="sm" onClick={onPickJson} type="button" className="h-7 px-2 text-xs">
-            <Upload className="h-3.5 w-3.5 mr-1" />
-            Carregar arquivo .json
-          </Button>
-        </div>
-        <input
-          ref={jsonFileRef}
-          type="file"
-          accept="application/json,.json"
-          className="hidden"
-          onChange={onJsonChange}
-        />
-        <Textarea
-          rows={3}
-          placeholder='{"type":"service_account","client_email":"...","private_key":"-----BEGIN PRIVATE KEY-----\n..."}'
-          value={s.gdrive_service_account_json}
-          onChange={(e) => setS({ ...s, gdrive_service_account_json: e.target.value })}
-          className="font-mono text-[10px] max-w-md resize-none"
-        />
-        <p className="text-[11px] text-muted-foreground">
-          Compartilhe a pasta do Drive com o email <code>client_email</code> dessa conta (permissão
-          Editor).
-        </p>
-      </div>
+              {s.backup_last_run_at && (
+                <div className="text-[11px] text-muted-foreground space-y-0.5">
+                  <div>
+                    <span className="opacity-70">Último:</span>{" "}
+                    {new Date(s.backup_last_run_at).toLocaleString("pt-BR")}
+                  </div>
+                  <div className="truncate" title={s.backup_last_status ?? ""}>
+                    <span className="opacity-70">Status:</span> {s.backup_last_status}
+                  </div>
+                </div>
+              )}
+            </div>
 
+            <div className="flex flex-col gap-2 pt-2">
+              <Button onClick={save} disabled={saving} size="sm" className="w-full">
+                <HardDrive className="h-4 w-4 mr-2" />
+                {saving ? "Salvando..." : "Salvar"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={runNow}
+                disabled={running}
+                size="sm"
+                className="w-full"
+              >
+                {running ? "Executando..." : "Fazer backup agora"}
+              </Button>
+            </div>
+          </aside>
 
-      <div className="grid gap-2 md:grid-cols-2 max-w-md">
-        <div className="space-y-1">
-          <Label className="text-xs">Retenção (dias)</Label>
-          <Input
-            className="h-8 text-xs"
-            type="number"
-            min={1}
-            value={s.backup_retention_days}
-            onChange={(e) =>
-              setS({ ...s, backup_retention_days: Math.max(1, Number(e.target.value) || 5) })
-            }
-          />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Backup automático diário</Label>
-          <Select
-            value={s.backup_enabled ? "on" : "off"}
-            onValueChange={(v) => setS({ ...s, backup_enabled: v === "on" })}
-          >
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="on">Ativado</SelectItem>
-              <SelectItem value="off">Desativado</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+          {/* Form */}
+          <div className="p-5 space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">ID da Pasta Raiz no Google Drive</Label>
+              <Input
+                className="h-9"
+                value={folderInput}
+                onChange={(e) => setFolderInput(e.target.value)}
+                placeholder="https://drive.google.com/drive/folders/ID_AQUI"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                O ID está na URL: drive.google.com/drive/folders/<strong>ID_AQUI</strong>
+                {folderId && folderId !== folderInput && (
+                  <>
+                    {" "}— detectado: <code className="text-foreground">{folderId}</code>
+                  </>
+                )}
+              </p>
+            </div>
 
-      {isActive && (
-        <div className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400">
-          <CheckCircle2 className="h-3.5 w-3.5" />
-          Configuração salva e ativa
-        </div>
-      )}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">E-mail do Proprietário</Label>
+              <Input
+                className="h-9"
+                type="email"
+                value={s.gdrive_owner_email}
+                onChange={(e) => setS({ ...s, gdrive_owner_email: e.target.value })}
+                placeholder="contato@seudominio.com"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Para transferência de cota do arquivo.
+              </p>
+            </div>
 
-      {s.backup_last_run_at && (
-        <div className="rounded-md border p-2 text-xs max-w-md">
-          <div>
-            <span className="text-muted-foreground">Último backup:</span>{" "}
-            {new Date(s.backup_last_run_at).toLocaleString("pt-BR")}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <Label className="text-xs font-medium">JSON da Conta de Serviço</Label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onPickJson}
+                  type="button"
+                  className="h-7 px-2 text-xs"
+                >
+                  <Upload className="h-3.5 w-3.5 mr-1" />
+                  Carregar .json
+                </Button>
+              </div>
+              <input
+                ref={jsonFileRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={onJsonChange}
+              />
+              <Textarea
+                rows={4}
+                placeholder='{"type":"service_account", ...}'
+                value={s.gdrive_service_account_json}
+                onChange={(e) => setS({ ...s, gdrive_service_account_json: e.target.value })}
+                className="font-mono text-[11px] resize-none"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Compartilhe a pasta com o <code>client_email</code> (permissão Editor).
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 pt-1">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Retenção (dias)</Label>
+                <Input
+                  className="h-9"
+                  type="number"
+                  min={1}
+                  value={s.backup_retention_days}
+                  onChange={(e) =>
+                    setS({
+                      ...s,
+                      backup_retention_days: Math.max(1, Number(e.target.value) || 5),
+                    })
+                  }
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Backup diário</Label>
+                <Select
+                  value={s.backup_enabled ? "on" : "off"}
+                  onValueChange={(v) => setS({ ...s, backup_enabled: v === "on" })}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="on">Ativado</SelectItem>
+                    <SelectItem value="off">Desativado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-dashed bg-muted/30 p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <CloudUpload className="h-4 w-4 text-muted-foreground" />
+                <div className="text-xs font-medium">Restaurar backup (.json)</div>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Envie um arquivo gerado anteriormente. Os registros existentes serão sobrescritos.
+              </p>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={onFileChange}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onPickFile}
+                disabled={restoring}
+                className="h-8"
+              >
+                <CloudUpload className="h-3.5 w-3.5 mr-1.5" />
+                {restoring ? "Restaurando..." : "Selecionar arquivo"}
+              </Button>
+            </div>
           </div>
-          <div>
-            <span className="text-muted-foreground">Status:</span> {s.backup_last_status}
-          </div>
         </div>
-      )}
-
-      <div className="rounded-md border border-dashed p-2.5 space-y-1.5 max-w-md">
-        <div className="text-xs font-medium">Restaurar backup (.json)</div>
-        <p className="text-[11px] text-muted-foreground">
-          Envie um arquivo de backup gerado anteriormente. Os registros existentes serão
-          sobrescritos pelo conteúdo do arquivo.
-        </p>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="application/json,.json"
-          className="hidden"
-          onChange={onFileChange}
-        />
-        <Button variant="outline" size="sm" onClick={onPickFile} disabled={restoring} className="h-7 px-2 text-xs">
-          <CloudUpload className="h-3.5 w-3.5 mr-1" />
-          {restoring ? "Restaurando..." : "Selecionar arquivo de backup"}
-        </Button>
-      </div>
-
-
-      <div className="flex flex-wrap gap-2">
-        <Button onClick={save} disabled={saving}>
-          <HardDrive className="h-4 w-4 mr-2" />
-          {saving ? "Salvando..." : "Salvar Configuração"}
-        </Button>
-        <Button variant="outline" onClick={runNow} disabled={running}>
-          {running ? "Executando..." : "Fazer backup no Google Drive"}
-        </Button>
-      </div>
-    </Card>
+      </Card>
+    </div>
   );
 }
