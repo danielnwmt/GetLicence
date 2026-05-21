@@ -4415,7 +4415,7 @@ function BackupTab() {
   };
 
   return (
-    <Card className="p-4 space-y-3 text-sm max-w-xl">
+    <Card className="p-4 space-y-3 text-sm max-w-xl mx-auto">
       <div className="rounded-md border bg-muted/40 p-2.5 flex items-start gap-2">
         <div className="rounded bg-background p-1.5 border">
           <HardDrive className="h-4 w-4 text-primary" />
