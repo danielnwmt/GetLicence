@@ -4430,7 +4430,7 @@ function BackupTab() {
         </div>
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-1 max-w-md">
         <Label className="text-xs">ID da Pasta Raiz no Google Drive</Label>
         <Input
           className="h-8 text-xs"
@@ -4449,7 +4449,7 @@ function BackupTab() {
         </p>
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-1 max-w-md">
         <Label className="text-xs">E-mail do Proprietário (para transferência de cota)</Label>
         <Input
           className="h-8 text-xs"
