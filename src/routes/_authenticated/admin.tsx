@@ -1169,7 +1169,9 @@ function LicensesTab({
     status: "pending",
     auto_pay: true,
     courtesy: false,
+    payment_method: "BOLETO",
   });
+
   const [schedLic, setSchedLic] = useState<LicenseRow | null>(null);
   const [schedForm, setSchedForm] = useState({
     enabled: "global" as "global" | "on" | "off",
