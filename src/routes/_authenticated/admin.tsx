@@ -1169,7 +1169,9 @@ function LicensesTab({
     status: "pending",
     auto_pay: true,
     courtesy: false,
+    payment_method: "BOLETO",
   });
+
   const [schedLic, setSchedLic] = useState<LicenseRow | null>(null);
   const [schedForm, setSchedForm] = useState({
     enabled: "global" as "global" | "on" | "off",
@@ -1244,7 +1246,9 @@ function LicensesTab({
           amount,
           status: form.status === "active" ? "paid" : "pending",
           paid_at: form.status === "active" ? new Date().toISOString() : null,
+          method: form.payment_method,
         });
+
       }
     }
     toast.success("Licença emitida");
@@ -1379,6 +1383,23 @@ function LicensesTab({
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2">
+                <Label>Forma de pagamento</Label>
+                <Select
+                  value={form.payment_method}
+                  onValueChange={(v) => setForm({ ...form, payment_method: v })}
+                  disabled={form.courtesy || !form.auto_pay}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BOLETO">Boleto</SelectItem>
+                    <SelectItem value="PIX">PIX</SelectItem>
+                    <SelectItem value="TRANSFERENCIA">Transferência bancária</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -1388,6 +1409,7 @@ function LicensesTab({
                 />
                 Criar registro de pagamento automático
               </label>
+
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
