@@ -2562,23 +2562,57 @@ function CustomersTab({
                   <Label>
                     {isEdit ? "Senha do cliente" : "Senha inicial *"}
                   </Label>
-                  <div className="relative">
-                    <Input
-                      type={showPassword ? "text" : "password"}
-                      value={form.password}
-                      onChange={(e) => setForm({ ...form, password: e.target.value })}
-                      placeholder="mín. 6 caracteres"
-                      className="pr-10"
-                    />
-                    <button
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        value={form.password}
+                        onChange={(e) => setForm({ ...form, password: e.target.value })}
+                        placeholder="mín. 6 caracteres"
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((v) => !v)}
+                        className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                        aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <Button
                       type="button"
-                      onClick={() => setShowPassword((v) => !v)}
-                      className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
-                      aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                      variant="outline"
+                      onClick={() => {
+                        const chars = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+                        let p = "";
+                        for (let i = 0; i < 10; i++) p += chars[Math.floor(Math.random() * chars.length)];
+                        setForm((f) => ({ ...f, password: p }));
+                        setShowPassword(true);
+                        navigator.clipboard.writeText(p).catch(() => {});
+                        toast.success("Senha gerada e copiada");
+                      }}
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
+                      Gerar
+                    </Button>
+                    {form.password && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText(form.password);
+                          toast.success("Senha copiada");
+                        }}
+                      >
+                        Copiar
+                      </Button>
+                    )}
                   </div>
+                  {isEdit && (
+                    <p className="text-xs text-muted-foreground">
+                      Salvar com nova senha substitui a anterior do cliente.
+                    </p>
+                  )}
                 </div>
               </div>
 
