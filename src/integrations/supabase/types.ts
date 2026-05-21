@@ -434,7 +434,7 @@ export type Database = {
           address_zip: string | null
           cpf_cnpj: string | null
           created_at: string
-          customer_number: number
+          customer_number: number | null
           email: string | null
           full_name: string | null
           id: string
@@ -454,7 +454,7 @@ export type Database = {
           address_zip?: string | null
           cpf_cnpj?: string | null
           created_at?: string
-          customer_number?: number
+          customer_number?: number | null
           email?: string | null
           full_name?: string | null
           id?: string
@@ -474,7 +474,7 @@ export type Database = {
           address_zip?: string | null
           cpf_cnpj?: string | null
           created_at?: string
-          customer_number?: number
+          customer_number?: number | null
           email?: string | null
           full_name?: string | null
           id?: string
