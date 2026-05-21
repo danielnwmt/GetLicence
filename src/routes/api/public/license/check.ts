@@ -60,6 +60,16 @@ async function handle(
 
   const isCourtesy = (lic as any).courtesy === true;
 
+  // Pagamento mais recente: TRANSFER não bloqueia/expira automaticamente
+  const { data: lastPayment } = await sb
+    .from("payments")
+    .select("method")
+    .eq("license_id", lic.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const isTransfer = ((lastPayment as any)?.method || "").toUpperCase() === "TRANSFER";
+
   let newStatus = lic.status;
   const update: Database["public"]["Tables"]["licenses"]["Update"] = {
     last_seen_at: now.toISOString(),
@@ -69,8 +79,8 @@ async function handle(
     device_hostname: params.hostname ?? null,
   };
 
-  // Cortesia: força ativa, ignora expiração e bloqueio
-  if (isCourtesy) {
+  // Cortesia ou Transferência bancária: força ativa, ignora expiração
+  if (isCourtesy || isTransfer) {
     if (lic.status !== "active" && lic.status !== "cancelled") {
       newStatus = "active";
       update.status = "active";
@@ -136,8 +146,9 @@ async function handle(
     }
   }
 
+  const bypassBlock = isCourtesy || isTransfer;
   const effectiveStatus =
-    isCourtesy ? "active" : scheduleBlocked && newStatus === "active" ? "blocked" : newStatus;
+    bypassBlock ? "active" : scheduleBlocked && newStatus === "active" ? "blocked" : newStatus;
   const allowed = effectiveStatus === "active";
   const prod: any = (lic as any).products ?? null;
   return Response.json({
@@ -146,7 +157,7 @@ async function handle(
     expires_at: lic.expires_at,
     blocked: effectiveStatus === "blocked",
     expired: effectiveStatus === "expired",
-    schedule_blocked: isCourtesy ? false : scheduleBlocked,
+    schedule_blocked: bypassBlock ? false : scheduleBlocked,
     courtesy: isCourtesy,
     storage: prod
       ? {
