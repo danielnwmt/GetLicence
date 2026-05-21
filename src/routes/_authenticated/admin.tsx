@@ -4610,33 +4610,8 @@ function BackupTab() {
               </div>
             </div>
 
-            <div className="rounded-lg border border-dashed bg-muted/30 p-3 space-y-2">
-              <div className="flex items-center gap-2">
-                <CloudUpload className="h-4 w-4 text-muted-foreground" />
-                <div className="text-xs font-medium">Restaurar backup (.json)</div>
-              </div>
-              <p className="text-[11px] text-muted-foreground">
-                Envie um arquivo gerado anteriormente. Os registros existentes serão sobrescritos.
-              </p>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="application/json,.json"
-                className="hidden"
-                onChange={onFileChange}
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onPickFile}
-                disabled={restoring}
-                className="h-8"
-              >
-                <CloudUpload className="h-3.5 w-3.5 mr-1.5" />
-                {restoring ? "Restaurando..." : "Selecionar arquivo"}
-              </Button>
-            </div>
           </div>
+
         </div>
       </Card>
     </div>
