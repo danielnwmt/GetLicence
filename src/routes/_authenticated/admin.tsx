@@ -1383,6 +1383,23 @@ function LicensesTab({
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2">
+                <Label>Forma de pagamento</Label>
+                <Select
+                  value={form.payment_method}
+                  onValueChange={(v) => setForm({ ...form, payment_method: v })}
+                  disabled={form.courtesy || !form.auto_pay}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BOLETO">Boleto</SelectItem>
+                    <SelectItem value="PIX">PIX</SelectItem>
+                    <SelectItem value="TRANSFERENCIA">Transferência bancária</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -1392,6 +1409,7 @@ function LicensesTab({
                 />
                 Criar registro de pagamento automático
               </label>
+
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
