@@ -1246,7 +1246,9 @@ function LicensesTab({
           amount,
           status: form.status === "active" ? "paid" : "pending",
           paid_at: form.status === "active" ? new Date().toISOString() : null,
+          method: form.payment_method,
         });
+
       }
     }
     toast.success("Licença emitida");
