@@ -201,8 +201,11 @@ end $$;
 -- handle_new_user: cria profile + role 'client' quando GoTrue insere em auth.users
 create or replace function public.handle_new_user() returns trigger language plpgsql security definer set search_path = public as $$
 begin
-  insert into public.profiles (user_id, full_name, email)
-    values (new.id, coalesce(new.raw_user_meta_data->>'full_name',''), new.email)
+  if coalesce(new.raw_user_meta_data->>'is_system_user','') = 'true' then
+    return new;
+  end if;
+  insert into public.profiles (user_id, full_name, email, customer_number)
+    values (new.id, coalesce(new.raw_user_meta_data->>'full_name',''), new.email, nextval('public.profiles_customer_number_seq'))
     on conflict (user_id) do nothing;
   insert into public.user_roles (user_id, role) values (new.id, 'client')
     on conflict (user_id, role) do nothing;
