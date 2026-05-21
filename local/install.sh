@@ -16,14 +16,12 @@ PG_VERSION="16"
 NODE_MAJOR="22"
 POSTGREST_VERSION="v12.2.3"
 GOTRUE_VERSION="v2.158.1"
-STORAGE_VERSION="v1.11.13"
+
 APP_DOMAIN="${APP_DOMAIN:-}"
 SSL_EMAIL="${SSL_EMAIL:-admin@${APP_DOMAIN:-localhost}}"
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 SRC_DIR=$(cd "$SCRIPT_DIR/.." && pwd)
 AUTH_MIGRATIONS_DIR="/usr/local/share/getlicence/auth-migrations"
-STORAGE_DIR="/opt/getlicence-storage"
-STORAGE_DATA_DIR="/var/lib/getlicence-storage"
 REPAIR_AUTH_SCRIPT="$SCRIPT_DIR/repair-auth.sh"
 
 log()  { printf '\033[1;36m▶ %s\033[0m\n' "$*"; }
