@@ -46,7 +46,9 @@ with ordered as (
 )
 update public.profiles p set customer_number = o.rn from ordered o where p.id = o.id;
 select setval('public.profiles_customer_number_seq', coalesce((select max(customer_number) from public.profiles), 0) + 1, false);
-alter table public.profiles alter column customer_number set not null;
+-- customer_number is optional (system users like admins/operators don't consume one)
+alter table public.profiles alter column customer_number drop not null;
+alter table public.profiles alter column customer_number drop default;
 create unique index if not exists profiles_customer_number_key on public.profiles(customer_number);
 
 create table if not exists public.user_roles (
