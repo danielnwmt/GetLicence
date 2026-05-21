@@ -4415,29 +4415,30 @@ function BackupTab() {
   };
 
   return (
-    <Card className="p-6 space-y-5">
-      <div className="rounded-lg border bg-muted/40 p-4 flex items-start gap-3">
-        <div className="rounded-md bg-background p-2 border">
-          <HardDrive className="h-5 w-5 text-primary" />
+    <Card className="p-4 space-y-3 text-sm">
+      <div className="rounded-md border bg-muted/40 p-2.5 flex items-start gap-2">
+        <div className="rounded bg-background p-1.5 border">
+          <HardDrive className="h-4 w-4 text-primary" />
         </div>
-        <div className="space-y-1">
-          <p className="text-sm">
+        <div className="space-y-0.5">
+          <p className="text-xs">
             Configure a integração com o Google Drive usando uma <strong>Conta de Serviço</strong>.
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             A conta de serviço permite acesso programático ao Drive sem interação do usuário.
           </p>
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label>ID da Pasta Raiz no Google Drive</Label>
+      <div className="space-y-1">
+        <Label className="text-xs">ID da Pasta Raiz no Google Drive</Label>
         <Input
+          className="h-8 text-xs"
           value={folderInput}
           onChange={(e) => setFolderInput(e.target.value)}
           placeholder="https://drive.google.com/drive/folders/ID_AQUI"
         />
-        <p className="text-xs text-muted-foreground">
+        <p className="text-[11px] text-muted-foreground">
           O ID está na URL da pasta: drive.google.com/drive/folders/<strong>ID_AQUI</strong>
           {folderId && folderId !== folderInput && (
             <>
@@ -4448,9 +4449,10 @@ function BackupTab() {
         </p>
       </div>
 
-      <div className="space-y-2">
-        <Label>E-mail do Proprietário (para transferência de cota)</Label>
+      <div className="space-y-1">
+        <Label className="text-xs">E-mail do Proprietário (para transferência de cota)</Label>
         <Input
+          className="h-8 text-xs"
           type="email"
           value={s.gdrive_owner_email}
           onChange={(e) => setS({ ...s, gdrive_owner_email: e.target.value })}
@@ -4458,8 +4460,14 @@ function BackupTab() {
         />
       </div>
 
-      <div className="space-y-2">
-        <Label>JSON da Conta de Serviço</Label>
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-2">
+          <Label className="text-xs">JSON da Conta de Serviço</Label>
+          <Button variant="outline" size="sm" onClick={onPickJson} type="button" className="h-7 px-2 text-xs">
+            <Upload className="h-3.5 w-3.5 mr-1" />
+            Carregar arquivo .json
+          </Button>
+        </div>
         <input
           ref={jsonFileRef}
           type="file"
@@ -4467,22 +4475,19 @@ function BackupTab() {
           className="hidden"
           onChange={onJsonChange}
         />
-        <Button variant="outline" size="sm" onClick={onPickJson} type="button">
-          <Upload className="h-4 w-4 mr-2" />
-          Carregar arquivo .json
-        </Button>
         <Textarea
-          rows={8}
+          rows={4}
           placeholder='{"type":"service_account","client_email":"...","private_key":"-----BEGIN PRIVATE KEY-----\n..."}'
           value={s.gdrive_service_account_json}
           onChange={(e) => setS({ ...s, gdrive_service_account_json: e.target.value })}
-          className="font-mono text-xs"
+          className="font-mono text-[11px]"
         />
-        <p className="text-xs text-muted-foreground">
+        <p className="text-[11px] text-muted-foreground">
           Compartilhe a pasta do Drive com o email <code>client_email</code> dessa conta (permissão
           Editor).
         </p>
       </div>
+
 
       <div className="grid gap-3 md:grid-cols-2">
         <div className="space-y-2">
