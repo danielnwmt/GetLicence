@@ -4476,11 +4476,11 @@ function BackupTab() {
           onChange={onJsonChange}
         />
         <Textarea
-          rows={4}
+          rows={3}
           placeholder='{"type":"service_account","client_email":"...","private_key":"-----BEGIN PRIVATE KEY-----\n..."}'
           value={s.gdrive_service_account_json}
           onChange={(e) => setS({ ...s, gdrive_service_account_json: e.target.value })}
-          className="font-mono text-[11px]"
+          className="font-mono text-[10px] max-w-md resize-none"
         />
         <p className="text-[11px] text-muted-foreground">
           Compartilhe a pasta do Drive com o email <code>client_email</code> dessa conta (permissão
