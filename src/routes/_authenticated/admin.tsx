@@ -4430,7 +4430,7 @@ function BackupTab() {
         </div>
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-1 max-w-md">
         <Label className="text-xs">ID da Pasta Raiz no Google Drive</Label>
         <Input
           className="h-8 text-xs"
@@ -4449,7 +4449,7 @@ function BackupTab() {
         </p>
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-1 max-w-md">
         <Label className="text-xs">E-mail do Proprietário (para transferência de cota)</Label>
         <Input
           className="h-8 text-xs"
@@ -4489,7 +4489,7 @@ function BackupTab() {
       </div>
 
 
-      <div className="grid gap-2 md:grid-cols-2">
+      <div className="grid gap-2 md:grid-cols-2 max-w-md">
         <div className="space-y-1">
           <Label className="text-xs">Retenção (dias)</Label>
           <Input
@@ -4527,7 +4527,7 @@ function BackupTab() {
       )}
 
       {s.backup_last_run_at && (
-        <div className="rounded-md border p-2 text-xs">
+        <div className="rounded-md border p-2 text-xs max-w-md">
           <div>
             <span className="text-muted-foreground">Último backup:</span>{" "}
             {new Date(s.backup_last_run_at).toLocaleString("pt-BR")}
@@ -4538,7 +4538,7 @@ function BackupTab() {
         </div>
       )}
 
-      <div className="rounded-md border border-dashed p-2.5 space-y-1.5">
+      <div className="rounded-md border border-dashed p-2.5 space-y-1.5 max-w-md">
         <div className="text-xs font-medium">Restaurar backup (.json)</div>
         <p className="text-[11px] text-muted-foreground">
           Envie um arquivo de backup gerado anteriormente. Os registros existentes serão
