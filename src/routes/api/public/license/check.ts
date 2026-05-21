@@ -146,8 +146,9 @@ async function handle(
     }
   }
 
+  const bypassBlock = isCourtesy || isTransfer;
   const effectiveStatus =
-    isCourtesy ? "active" : scheduleBlocked && newStatus === "active" ? "blocked" : newStatus;
+    bypassBlock ? "active" : scheduleBlocked && newStatus === "active" ? "blocked" : newStatus;
   const allowed = effectiveStatus === "active";
   const prod: any = (lic as any).products ?? null;
   return Response.json({
@@ -156,7 +157,7 @@ async function handle(
     expires_at: lic.expires_at,
     blocked: effectiveStatus === "blocked",
     expired: effectiveStatus === "expired",
-    schedule_blocked: isCourtesy ? false : scheduleBlocked,
+    schedule_blocked: bypassBlock ? false : scheduleBlocked,
     courtesy: isCourtesy,
     storage: prod
       ? {
