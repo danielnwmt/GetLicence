@@ -104,7 +104,7 @@ const ADMIN_TABS: AdminTab[] = [
 ];
 
 export const Route = createFileRoute("/_authenticated/admin")({
-  head: () => ({ meta: [{ title: "Admin — GetLicence" }] }),
+  head: () => ({ meta: [{ title: "GetLicence" }] }),
   validateSearch: (s: Record<string, unknown>): { tab?: AdminTab } => {
     const t = s.tab;
     return {

@@ -14,7 +14,7 @@ import { formatCpfCnpj, isValidCpfCnpj } from "@/lib/mask";
 import { KeyRound, User } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/account")({
-  head: () => ({ meta: [{ title: "Minha conta — GetLicence" }] }),
+  head: () => ({ meta: [{ title: "GetLicence" }] }),
   component: AccountPage,
 });
 
