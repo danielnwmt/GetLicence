@@ -60,6 +60,16 @@ async function handle(
 
   const isCourtesy = (lic as any).courtesy === true;
 
+  // Pagamento mais recente: TRANSFER não bloqueia/expira automaticamente
+  const { data: lastPayment } = await sb
+    .from("payments")
+    .select("method")
+    .eq("license_id", lic.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const isTransfer = ((lastPayment as any)?.method || "").toUpperCase() === "TRANSFER";
+
   let newStatus = lic.status;
   const update: Database["public"]["Tables"]["licenses"]["Update"] = {
     last_seen_at: now.toISOString(),
@@ -69,8 +79,8 @@ async function handle(
     device_hostname: params.hostname ?? null,
   };
 
-  // Cortesia: força ativa, ignora expiração e bloqueio
-  if (isCourtesy) {
+  // Cortesia ou Transferência bancária: força ativa, ignora expiração
+  if (isCourtesy || isTransfer) {
     if (lic.status !== "active" && lic.status !== "cancelled") {
       newStatus = "active";
       update.status = "active";
