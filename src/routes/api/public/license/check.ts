@@ -1,6 +1,38 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
+import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
+  "Access-Control-Max-Age": "86400",
+} as const;
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+  });
+}
+
+const InputSchema = z.object({
+  license_key: z
+    .string()
+    .trim()
+    .min(4)
+    .max(128)
+    .regex(/^[A-Za-z0-9-]+$/, "license_key inválida"),
+  hostname: z.string().trim().max(253).optional().nullable(),
+  ipv4: z
+    .string()
+    .trim()
+    .regex(/^\d{1,3}(\.\d{1,3}){3}$/)
+    .optional()
+    .nullable(),
+  ipv6: z.string().trim().max(45).includes(":").optional().nullable(),
+});
 
 function admin() {
   return createClient<Database>(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
