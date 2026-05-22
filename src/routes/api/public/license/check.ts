@@ -59,7 +59,7 @@ function isIPv4(ip: string | null | undefined): boolean {
 
 async function handle(
   request: Request,
-  params: { license_key?: string; hostname?: string; ipv4?: string; ipv6?: string },
+  params: { license_key?: string; hostname?: string | null; ipv4?: string | null; ipv6?: string | null },
 ) {
   const sb = admin();
   const key = (params.license_key || "").trim().toUpperCase();
