@@ -247,27 +247,67 @@ EOF
 
 # ---------- 8. Nginx ----------
 log "Configurando Nginx"
-SERVER_NAME="${APP_DOMAIN:-_}"
 rm -f /etc/nginx/sites-enabled/default /etc/nginx/sites-available/default
-cat >/etc/nginx/sites-available/getlicence.conf <<NGINX
+
+# Rate-limit zone (5 req/s por IP) para /api/public/
+if ! grep -q "getlicence_pub" /etc/nginx/nginx.conf; then
+  sed -i '/^http {/a \    limit_req_zone $binary_remote_addr zone=getlicence_pub:10m rate=5r/s;' /etc/nginx/nginx.conf
+fi
+
+if [[ -n "$APP_DOMAIN" ]]; then
+  # Bloco catch-all: rejeita silenciosamente Hosts desconhecidos
+  cat >/etc/nginx/sites-available/getlicence-default.conf <<'NGINX'
 server {
   listen 80 default_server;
   listen [::]:80 default_server;
+  server_name _;
+  return 444;
+}
+NGINX
+  ln -sf /etc/nginx/sites-available/getlicence-default.conf /etc/nginx/sites-enabled/getlicence-default.conf
+  LISTEN_LINE="listen 80;"
+  LISTEN_LINE6="listen [::]:80;"
+  SERVER_NAME="$APP_DOMAIN"
+else
+  rm -f /etc/nginx/sites-enabled/getlicence-default.conf
+  LISTEN_LINE="listen 80 default_server;"
+  LISTEN_LINE6="listen [::]:80 default_server;"
+  SERVER_NAME="_"
+fi
+
+cat >/etc/nginx/sites-available/getlicence.conf <<NGINX
+server {
+  ${LISTEN_LINE}
+  ${LISTEN_LINE6}
   server_name ${SERVER_NAME};
   client_max_body_size 25m;
 
   location /auth/v1/ {
     proxy_pass http://127.0.0.1:9999/;
     proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
     proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto \$scheme;
   }
   location /rest/v1/ {
     proxy_pass http://127.0.0.1:3001/;
     proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
     proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
     proxy_set_header Authorization \$http_authorization;
     proxy_set_header apikey \$http_apikey;
+  }
+  # API pública: payload pequeno + rate-limit por IP
+  location /api/public/ {
+    client_max_body_size 64k;
+    limit_req zone=getlicence_pub burst=10 nodelay;
+    limit_req_status 429;
+    proxy_pass http://127.0.0.1:3000;
+    proxy_http_version 1.1;
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
   }
   location / {
     proxy_pass http://127.0.0.1:3000;
@@ -275,6 +315,7 @@ server {
     proxy_set_header Host \$host;
     proxy_set_header Upgrade \$http_upgrade;
     proxy_set_header Connection "upgrade";
+    proxy_set_header X-Real-IP \$remote_addr;
     proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto \$scheme;
     proxy_set_header Authorization \$http_authorization;
@@ -283,7 +324,6 @@ server {
 }
 NGINX
 ln -sf /etc/nginx/sites-available/getlicence.conf /etc/nginx/sites-enabled/getlicence.conf
-rm -f /etc/nginx/sites-enabled/default
 nginx -t >/dev/null
 systemctl reload nginx
 

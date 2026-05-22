@@ -1,6 +1,38 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
+import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
+
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Requested-With",
+  "Access-Control-Max-Age": "86400",
+} as const;
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...CORS_HEADERS },
+  });
+}
+
+const InputSchema = z.object({
+  license_key: z
+    .string()
+    .trim()
+    .min(4)
+    .max(128)
+    .regex(/^[A-Za-z0-9-]+$/, "license_key inválida"),
+  hostname: z.string().trim().max(253).optional().nullable(),
+  ipv4: z
+    .string()
+    .trim()
+    .regex(/^\d{1,3}(\.\d{1,3}){3}$/)
+    .optional()
+    .nullable(),
+  ipv6: z.string().trim().max(45).includes(":").optional().nullable(),
+});
 
 function admin() {
   return createClient<Database>(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
@@ -27,15 +59,12 @@ function isIPv4(ip: string | null | undefined): boolean {
 
 async function handle(
   request: Request,
-  params: { license_key?: string; hostname?: string; ipv4?: string; ipv6?: string },
+  params: { license_key?: string; hostname?: string | null; ipv4?: string | null; ipv6?: string | null },
 ) {
   const sb = admin();
   const key = (params.license_key || "").trim().toUpperCase();
   if (!key)
-    return Response.json(
-      { ok: false, status: "invalid", reason: "missing license_key" },
-      { status: 400 },
-    );
+    return jsonResponse({ ok: false, status: "invalid", reason: "missing license_key" }, 400);
 
   const { data: lic, error } = await sb
     .from("licenses")
@@ -46,10 +75,7 @@ async function handle(
     .maybeSingle();
 
   if (error || !lic) {
-    return Response.json(
-      { ok: false, status: "invalid", reason: "license not found" },
-      { status: 404 },
-    );
+    return jsonResponse({ ok: false, status: "invalid", reason: "license not found" }, 404);
   }
 
   const ip = clientIp(request);
@@ -151,7 +177,7 @@ async function handle(
     bypassBlock ? "active" : scheduleBlocked && newStatus === "active" ? "blocked" : newStatus;
   const allowed = effectiveStatus === "active";
   const prod: any = (lic as any).products ?? null;
-  return Response.json({
+  return jsonResponse({
     ok: allowed,
     status: effectiveStatus,
     expires_at: lic.expires_at,
@@ -172,29 +198,49 @@ async function handle(
   });
 }
 
+function parseInput(raw: Record<string, unknown>) {
+  const cleaned = Object.fromEntries(
+    Object.entries(raw).filter(([, v]) => v !== undefined && v !== null && v !== ""),
+  );
+  const result = InputSchema.safeParse(cleaned);
+  if (!result.success) {
+    return { ok: false as const, error: result.error.issues[0]?.message ?? "invalid input" };
+  }
+  return { ok: true as const, data: result.data };
+}
+
 export const Route = createFileRoute("/api/public/license/check")({
   server: {
     handlers: {
+      OPTIONS: async () => new Response(null, { status: 204, headers: CORS_HEADERS }),
       POST: async ({ request }) => {
         let body: any = {};
         try {
           body = await request.json();
-        } catch {}
-        return handle(request, {
+        } catch {
+          return jsonResponse({ ok: false, status: "invalid", reason: "invalid json" }, 400);
+        }
+        const parsed = parseInput({
           license_key: body?.license_key,
           hostname: body?.hostname,
           ipv4: body?.ipv4,
           ipv6: body?.ipv6,
         });
+        if (!parsed.ok)
+          return jsonResponse({ ok: false, status: "invalid", reason: parsed.error }, 400);
+        return handle(request, parsed.data);
       },
       GET: async ({ request }) => {
         const u = new URL(request.url);
-        return handle(request, {
+        const parsed = parseInput({
           license_key: u.searchParams.get("license_key") ?? undefined,
           hostname: u.searchParams.get("hostname") ?? undefined,
           ipv4: u.searchParams.get("ipv4") ?? undefined,
           ipv6: u.searchParams.get("ipv6") ?? undefined,
         });
+        if (!parsed.ok)
+          return jsonResponse({ ok: false, status: "invalid", reason: parsed.error }, 400);
+        return handle(request, parsed.data);
       },
     },
   },
