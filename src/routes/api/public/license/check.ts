@@ -64,10 +64,7 @@ async function handle(
   const sb = admin();
   const key = (params.license_key || "").trim().toUpperCase();
   if (!key)
-    return Response.json(
-      { ok: false, status: "invalid", reason: "missing license_key" },
-      { status: 400 },
-    );
+    return jsonResponse({ ok: false, status: "invalid", reason: "missing license_key" }, 400);
 
   const { data: lic, error } = await sb
     .from("licenses")
@@ -78,10 +75,7 @@ async function handle(
     .maybeSingle();
 
   if (error || !lic) {
-    return Response.json(
-      { ok: false, status: "invalid", reason: "license not found" },
-      { status: 404 },
-    );
+    return jsonResponse({ ok: false, status: "invalid", reason: "license not found" }, 404);
   }
 
   const ip = clientIp(request);
