@@ -177,7 +177,7 @@ async function handle(
     bypassBlock ? "active" : scheduleBlocked && newStatus === "active" ? "blocked" : newStatus;
   const allowed = effectiveStatus === "active";
   const prod: any = (lic as any).products ?? null;
-  return Response.json({
+  return jsonResponse({
     ok: allowed,
     status: effectiveStatus,
     expires_at: lic.expires_at,
@@ -198,29 +198,49 @@ async function handle(
   });
 }
 
+function parseInput(raw: Record<string, unknown>) {
+  const cleaned = Object.fromEntries(
+    Object.entries(raw).filter(([, v]) => v !== undefined && v !== null && v !== ""),
+  );
+  const result = InputSchema.safeParse(cleaned);
+  if (!result.success) {
+    return { ok: false as const, error: result.error.issues[0]?.message ?? "invalid input" };
+  }
+  return { ok: true as const, data: result.data };
+}
+
 export const Route = createFileRoute("/api/public/license/check")({
   server: {
     handlers: {
+      OPTIONS: async () => new Response(null, { status: 204, headers: CORS_HEADERS }),
       POST: async ({ request }) => {
         let body: any = {};
         try {
           body = await request.json();
-        } catch {}
-        return handle(request, {
+        } catch {
+          return jsonResponse({ ok: false, status: "invalid", reason: "invalid json" }, 400);
+        }
+        const parsed = parseInput({
           license_key: body?.license_key,
           hostname: body?.hostname,
           ipv4: body?.ipv4,
           ipv6: body?.ipv6,
         });
+        if (!parsed.ok)
+          return jsonResponse({ ok: false, status: "invalid", reason: parsed.error }, 400);
+        return handle(request, parsed.data);
       },
       GET: async ({ request }) => {
         const u = new URL(request.url);
-        return handle(request, {
+        const parsed = parseInput({
           license_key: u.searchParams.get("license_key") ?? undefined,
           hostname: u.searchParams.get("hostname") ?? undefined,
           ipv4: u.searchParams.get("ipv4") ?? undefined,
           ipv6: u.searchParams.get("ipv6") ?? undefined,
         });
+        if (!parsed.ok)
+          return jsonResponse({ ok: false, status: "invalid", reason: parsed.error }, 400);
+        return handle(request, parsed.data);
       },
     },
   },
