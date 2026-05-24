@@ -205,7 +205,6 @@ export const updateCustomer = createServerFn({ method: "POST" })
         address_neighborhood: data.address_neighborhood ?? null,
         address_city: data.address_city ?? null,
         address_state: data.address_state ?? null,
-        ...(data.password && data.password.length >= 6 ? { password_plain: data.password } : {}),
       } as any,
       { onConflict: "user_id" },
     );
