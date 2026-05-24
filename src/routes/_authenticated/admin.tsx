@@ -148,7 +148,7 @@ interface Profile {
   address_number?: string | null;
   address_complement?: string | null;
   address_neighborhood?: string | null;
-  password_plain?: string | null;
+  
   role?: "admin" | "operator";
 }
 interface LicenseRow {
@@ -2479,7 +2479,7 @@ function CustomersTab({
     setForm({
       full_name: p.full_name ?? "",
       email: p.email ?? "",
-      password: p.password_plain ?? "",
+      password: "",
       cpf_cnpj: p.cpf_cnpj ? formatCpfCnpj(p.cpf_cnpj) : "",
       phone: p.phone ?? "",
       address_zip: p.address_zip ?? "",
