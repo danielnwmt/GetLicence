@@ -120,14 +120,14 @@ export const listAdminProfiles = createServerFn({ method: "GET" })
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select(
-        "user_id, full_name, email, address_city, address_state, customer_number, cpf_cnpj, phone, address_zip, address_street, address_number, address_complement, address_neighborhood, password_plain",
+        "user_id, full_name, email, address_city, address_state, customer_number, cpf_cnpj, phone, address_zip, address_street, address_number, address_complement, address_neighborhood",
       );
 
     if (profilesError) throw new Response(profilesError.message, { status: 400 });
 
     const filtered = (profiles ?? []).filter((p: any) => !adminIds.has(p.user_id));
 
-    return (filtered as AdminProfile[]).map((profile) => {
+    return (filtered as unknown as AdminProfile[]).map((profile) => {
       return {
         user_id: profile.user_id,
         customer_number: profile?.customer_number ?? null,
@@ -142,7 +142,6 @@ export const listAdminProfiles = createServerFn({ method: "GET" })
         address_neighborhood: profile?.address_neighborhood ?? null,
         address_city: profile?.address_city ?? null,
         address_state: profile?.address_state ?? null,
-        password_plain: (profile as any)?.password_plain ?? null,
       };
     });
   });
