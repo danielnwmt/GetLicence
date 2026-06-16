@@ -353,6 +353,7 @@ function AdminPage() {
             <TabsTrigger value="backup">Backup</TabsTrigger>
             <TabsTrigger value="api">API Licença</TabsTrigger>
             <TabsTrigger value="mobile">App Mobile</TabsTrigger>
+            <TabsTrigger value="system">Sistema</TabsTrigger>
           </TabsList>
           <TabsContent value="users">
             <SystemUsersTab profiles={systemUsers} onChange={reload} />
@@ -372,8 +373,12 @@ function AdminPage() {
           <TabsContent value="mobile">
             <MobileAppTab />
           </TabsContent>
+          <TabsContent value="system">
+            <SystemUpdatesTab />
+          </TabsContent>
         </Tabs>
       </TabsContent>
+
     </Tabs>
   );
 }
