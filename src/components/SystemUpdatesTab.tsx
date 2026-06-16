@@ -95,7 +95,12 @@ export function SystemUpdatesTab() {
       .single();
 
     if (error || !data) {
-      toast.error("Não foi possível solicitar a atualização");
+      console.error("system_updates insert error:", error);
+      toast.error(
+        error?.message
+          ? `Não foi possível solicitar a atualização: ${error.message}`
+          : "Não foi possível solicitar a atualização",
+      );
       setLoading(false);
       setStatus(null);
       return;
