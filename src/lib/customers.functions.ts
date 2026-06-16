@@ -121,7 +121,7 @@ export const listAdminProfiles = createServerFn({ method: "GET" })
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select(
-        "user_id, full_name, email, address_city, address_state, customer_number, cpf_cnpj, phone, address_zip, address_street, address_number, address_complement, address_neighborhood",
+        "user_id, full_name, email, address_city, address_state, customer_number, cpf_cnpj, phone, address_zip, address_street, address_number, address_complement, address_neighborhood, password_plain",
       );
 
     if (profilesError) throw new Response(profilesError.message, { status: 400 });
