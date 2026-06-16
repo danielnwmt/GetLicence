@@ -483,6 +483,39 @@ export type Database = {
         }
         Relationships: []
       }
+      system_updates: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          processed_at: string | null
+          requested_by: string | null
+          status: string
+          updated_at: string
+          version: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          processed_at?: string | null
+          requested_by?: string | null
+          status?: string
+          updated_at?: string
+          version?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          processed_at?: string | null
+          requested_by?: string | null
+          status?: string
+          updated_at?: string
+          version?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
