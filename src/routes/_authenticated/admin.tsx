@@ -2201,6 +2201,34 @@ function PaymentsTab({
               </div>
             </DialogContent>
           </Dialog>
+          <Dialog open={!!confirmPay} onOpenChange={(o) => !o && setConfirmPay(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Confirmar recebimento</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 py-2">
+                <p className="text-sm text-muted-foreground">
+                  Informe a data e hora em que a transferência foi recebida.
+                </p>
+                <div className="space-y-2">
+                  <Label>Data e hora do recebimento</Label>
+                  <Input
+                    type="datetime-local"
+                    value={confirmPay?.datetime ?? ""}
+                    onChange={(e) =>
+                      setConfirmPay((c) => (c ? { ...c, datetime: e.target.value } : c))
+                    }
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setConfirmPay(null)}>
+                  Cancelar
+                </Button>
+                <Button onClick={submitConfirmarRecebimento}>Confirmar pagamento</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
