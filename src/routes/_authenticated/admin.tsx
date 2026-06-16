@@ -1976,9 +1976,33 @@ function PaymentsTab({
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Emitir novo boleto</DialogTitle>
+                <DialogTitle>
+                  {newForm.method === "TRANSFERENCIA" ? "Nova cobrança (transferência)" : "Emitir novo boleto"}
+                </DialogTitle>
               </DialogHeader>
               <div className="space-y-3 py-2">
+                <div className="space-y-2">
+                  <Label>Forma de cobrança</Label>
+                  <Select
+                    value={newForm.method}
+                    onValueChange={(v) =>
+                      setNewForm({ ...newForm, method: v as "BOLETO" | "TRANSFERENCIA" })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="BOLETO">Boleto (Asaas)</SelectItem>
+                      <SelectItem value="TRANSFERENCIA">Transferência bancária (manual)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {newForm.method === "TRANSFERENCIA" && (
+                    <p className="text-xs text-muted-foreground">
+                      Nenhum boleto será emitido. A cobrança ficará pendente até confirmação manual do recebimento.
+                    </p>
+                  )}
+                </div>
                 <div className="space-y-2">
                   <Label>Cliente</Label>
                   <Select
