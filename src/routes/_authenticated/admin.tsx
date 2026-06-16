@@ -2134,7 +2134,13 @@ function PaymentsTab({
               </div>
               <DialogFooter>
                 <Button onClick={createBoleto} disabled={creating}>
-                  {creating ? "Emitindo..." : "Emitir boleto"}
+                  {creating
+                    ? newForm.method === "TRANSFERENCIA"
+                      ? "Criando..."
+                      : "Emitindo..."
+                    : newForm.method === "TRANSFERENCIA"
+                      ? "Criar cobrança"
+                      : "Emitir boleto"}
                 </Button>
               </DialogFooter>
             </DialogContent>
