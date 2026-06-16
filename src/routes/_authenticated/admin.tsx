@@ -8,6 +8,7 @@ import {
   listSystemUsers,
 } from "@/lib/system-users.functions";
 import { issueAsaasBoleto, cancelAsaasBoleto } from "@/lib/boletos.functions";
+import { SystemUpdatesTab } from "@/components/SystemUpdatesTab";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
