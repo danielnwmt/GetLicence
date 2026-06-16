@@ -462,6 +462,31 @@ echo "✓ Removido"
 EOS
 chmod +x /opt/getlicence/*.sh
 
+# ---------- 12b. worker de auto-update (escuta public.system_updates) ----------
+install -m 755 /opt/getlicence/local/update-worker.sh /opt/getlicence/update-worker.sh
+cat >/etc/systemd/system/getlicence-update-worker.service <<EOS
+[Unit]
+Description=GetLicence Update Worker (escuta system_updates)
+After=postgresql.service network-online.target
+Wants=postgresql.service
+
+[Service]
+Type=simple
+Environment=DB_NAME=${DB_NAME}
+Environment=REPO_DIR=/opt/getlicence
+Environment=UPDATE_SCRIPT=/opt/getlicence/update.sh
+Environment=POLL_INTERVAL=5
+ExecStart=/opt/getlicence/update-worker.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOS
+systemctl daemon-reload
+systemctl enable --now getlicence-update-worker.service
+
+
 cat >/root/getlicence-credenciais.txt <<EOF
 GetLicence
 URL:     ${SITE_URL}
