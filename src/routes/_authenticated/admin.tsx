@@ -3997,6 +3997,57 @@ function PayablesTab({
   };
   const [form, setForm] = useState(empty);
   const [filter, setFilter] = useState<"all" | "pending" | "paid" | "overdue">("all");
+  const [aggDue, setAggDue] = useState<Record<string, string>>({});
+  const [aggBaixa, setAggBaixa] = useState<
+    | { key: string; category: "vps" | "storage" | "other"; amount: number; date: string }
+    | null
+  >(null);
+
+  const aggLabel = (c: "vps" | "storage" | "other") =>
+    c === "vps"
+      ? "VPS — mensal recorrente"
+      : c === "storage"
+        ? "Armazenamento — mensal recorrente"
+        : "Software — mensal recorrente";
+
+  const createAggPayable = async (
+    cat: "vps" | "storage" | "other",
+    amount: number,
+    opts: { due_date?: string | null; paid_at?: string | null },
+  ) => {
+    const { error } = await (supabase as any).from("payables").insert({
+      description: aggLabel(cat),
+      category: cat,
+      amount,
+      recurrence: "monthly",
+      due_date: opts.due_date ?? null,
+      status: opts.paid_at ? "paid" : "pending",
+      paid_at: opts.paid_at ?? null,
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Salvo");
+    onChange();
+  };
+
+  const submitAggBaixa = async () => {
+    if (!aggBaixa) return;
+    if (!aggBaixa.date) return toast.error("Informe a data de baixa");
+    await createAggPayable(aggBaixa.category, aggBaixa.amount, {
+      paid_at: new Date(aggBaixa.date).toISOString(),
+    });
+    setAggBaixa(null);
+  };
+
+  const saveAggDue = async (
+    key: string,
+    cat: "vps" | "storage" | "other",
+    amount: number,
+  ) => {
+    const d = aggDue[key];
+    if (!d) return toast.error("Informe a data de vencimento");
+    await createAggPayable(cat, amount, { due_date: d });
+    setAggDue((s) => ({ ...s, [key]: "" }));
+  };
 
   const today = new Date();
   const isOverdue = (p: PayableRow) =>
@@ -4256,11 +4307,47 @@ function PayablesTab({
                   </td>
                   <td className="p-3 text-muted-foreground">—</td>
                   <td className="p-3 font-medium">{formatBRL(r.amount)}</td>
-                  <td className="p-3 text-xs">—</td>
+                  <td className="p-3 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        type="date"
+                        className="h-8 w-[140px] text-xs"
+                        value={aggDue[r.key] ?? ""}
+                        onChange={(e) =>
+                          setAggDue((s) => ({ ...s, [r.key]: e.target.value }))
+                        }
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8"
+                        onClick={() => saveAggDue(r.key, r.category, r.amount)}
+                      >
+                        Salvar
+                      </Button>
+                    </div>
+                  </td>
                   <td className="p-3">
                     <Badge variant="secondary">Recorrente</Badge>
                   </td>
-                  <td className="p-3 text-right text-xs text-muted-foreground">auto</td>
+                  <td className="p-3 text-right">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-emerald-700 border-emerald-500/30 hover:bg-emerald-500/10"
+                      onClick={() =>
+                        setAggBaixa({
+                          key: r.key,
+                          category: r.category,
+                          amount: r.amount,
+                          date: new Date().toISOString().slice(0, 10),
+                        })
+                      }
+                    >
+                      <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Dar baixa
+                    </Button>
+                  </td>
+
                 </tr>
               ))}
             {filtered.map((p) => (
@@ -4403,6 +4490,40 @@ function PayablesTab({
           </div>
           <DialogFooter>
             <Button onClick={save}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!aggBaixa} onOpenChange={(o) => !o && setAggBaixa(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Dar baixa</DialogTitle>
+          </DialogHeader>
+          {aggBaixa && (
+            <div className="space-y-3 py-2">
+              <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">
+                <div className="font-medium">{aggLabel(aggBaixa.category)}</div>
+                <div className="text-muted-foreground">
+                  Valor: {formatBRL(aggBaixa.amount)}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Data da baixa</Label>
+                <Input
+                  type="date"
+                  value={aggBaixa.date}
+                  onChange={(e) =>
+                    setAggBaixa((s) => (s ? { ...s, date: e.target.value } : s))
+                  }
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAggBaixa(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={submitAggBaixa}>Confirmar baixa</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
