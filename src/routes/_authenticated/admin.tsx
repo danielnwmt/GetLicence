@@ -1700,7 +1700,13 @@ function PaymentsTab({
     due_date: "",
     quantity: "1",
     description: "",
+    method: "BOLETO" as "BOLETO" | "TRANSFERENCIA",
   });
+  const toLocalDatetimeInput = (d: Date) => {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+  const [confirmPay, setConfirmPay] = useState<{ id: string; datetime: string } | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "paid" | "pending" | "failed" | "overdue"
@@ -1764,14 +1770,26 @@ function PaymentsTab({
             status: "pending" as const,
             due_date: due,
             notes: newForm.description || null,
+            method: newForm.method,
           })
           .select()
           .single();
         if (error) throw new Error(error.message);
-        const r = await issueBoleto({ data: { payment_id: pay.id } });
-        if (!firstUrl && r.boleto_url) firstUrl = r.boleto_url;
+        if (newForm.method === "BOLETO") {
+          const r = await issueBoleto({ data: { payment_id: pay.id } });
+          if (!firstUrl && r.boleto_url) firstUrl = r.boleto_url;
+        }
       }
-      toast.success(qty > 1 ? `${qty} boletos emitidos` : "Boleto emitido");
+      const isTransfer = newForm.method === "TRANSFERENCIA";
+      toast.success(
+        isTransfer
+          ? qty > 1
+            ? `${qty} cobranças criadas`
+            : "Cobrança criada"
+          : qty > 1
+            ? `${qty} boletos emitidos`
+            : "Boleto emitido",
+      );
       if (firstUrl) window.open(firstUrl, "_blank");
       setNewOpen(false);
       setNewForm({
@@ -1781,10 +1799,11 @@ function PaymentsTab({
         due_date: "",
         quantity: "1",
         description: "",
+        method: "BOLETO",
       });
       onChange();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao emitir boleto");
+      toast.error(e instanceof Error ? e.message : "Falha ao emitir cobrança");
     } finally {
       setCreating(false);
     }
@@ -1826,15 +1845,21 @@ function PaymentsTab({
     onChange();
   };
 
-  const confirmarRecebimento = async (id: string) => {
-    if (!confirm("Confirmar que a transferência foi recebida? O pagamento será marcado como pago."))
-      return;
+  const confirmarRecebimento = (id: string) => {
+    setConfirmPay({ id, datetime: toLocalDatetimeInput(new Date()) });
+  };
+  const submitConfirmarRecebimento = async () => {
+    if (!confirmPay) return;
+    const when = confirmPay.datetime
+      ? new Date(confirmPay.datetime).toISOString()
+      : new Date().toISOString();
     const { error } = await supabase
       .from("payments")
-      .update({ status: "paid", paid_at: new Date().toISOString() })
-      .eq("id", id);
+      .update({ status: "paid", paid_at: when })
+      .eq("id", confirmPay.id);
     if (error) return toast.error(error.message);
     toast.success("Pagamento confirmado");
+    setConfirmPay(null);
     onChange();
   };
 
@@ -1951,9 +1976,33 @@ function PaymentsTab({
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Emitir novo boleto</DialogTitle>
+                <DialogTitle>
+                  {newForm.method === "TRANSFERENCIA" ? "Nova cobrança (transferência)" : "Emitir novo boleto"}
+                </DialogTitle>
               </DialogHeader>
               <div className="space-y-3 py-2">
+                <div className="space-y-2">
+                  <Label>Forma de cobrança</Label>
+                  <Select
+                    value={newForm.method}
+                    onValueChange={(v) =>
+                      setNewForm({ ...newForm, method: v as "BOLETO" | "TRANSFERENCIA" })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="BOLETO">Boleto (Asaas)</SelectItem>
+                      <SelectItem value="TRANSFERENCIA">Transferência bancária (manual)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {newForm.method === "TRANSFERENCIA" && (
+                    <p className="text-xs text-muted-foreground">
+                      Nenhum boleto será emitido. A cobrança ficará pendente até confirmação manual do recebimento.
+                    </p>
+                  )}
+                </div>
                 <div className="space-y-2">
                   <Label>Cliente</Label>
                   <Select
@@ -2085,7 +2134,13 @@ function PaymentsTab({
               </div>
               <DialogFooter>
                 <Button onClick={createBoleto} disabled={creating}>
-                  {creating ? "Emitindo..." : "Emitir boleto"}
+                  {creating
+                    ? newForm.method === "TRANSFERENCIA"
+                      ? "Criando..."
+                      : "Emitindo..."
+                    : newForm.method === "TRANSFERENCIA"
+                      ? "Criar cobrança"
+                      : "Emitir boleto"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -2144,6 +2199,34 @@ function PaymentsTab({
                   ))}
                 </div>
               </div>
+            </DialogContent>
+          </Dialog>
+          <Dialog open={!!confirmPay} onOpenChange={(o) => !o && setConfirmPay(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Confirmar recebimento</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 py-2">
+                <p className="text-sm text-muted-foreground">
+                  Informe a data e hora em que a transferência foi recebida.
+                </p>
+                <div className="space-y-2">
+                  <Label>Data e hora do recebimento</Label>
+                  <Input
+                    type="datetime-local"
+                    value={confirmPay?.datetime ?? ""}
+                    onChange={(e) =>
+                      setConfirmPay((c) => (c ? { ...c, datetime: e.target.value } : c))
+                    }
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setConfirmPay(null)}>
+                  Cancelar
+                </Button>
+                <Button onClick={submitConfirmarRecebimento}>Confirmar pagamento</Button>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
