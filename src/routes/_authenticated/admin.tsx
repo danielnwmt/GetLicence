@@ -4307,11 +4307,47 @@ function PayablesTab({
                   </td>
                   <td className="p-3 text-muted-foreground">—</td>
                   <td className="p-3 font-medium">{formatBRL(r.amount)}</td>
-                  <td className="p-3 text-xs">—</td>
+                  <td className="p-3 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        type="date"
+                        className="h-8 w-[140px] text-xs"
+                        value={aggDue[r.key] ?? ""}
+                        onChange={(e) =>
+                          setAggDue((s) => ({ ...s, [r.key]: e.target.value }))
+                        }
+                      />
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8"
+                        onClick={() => saveAggDue(r.key, r.category, r.amount)}
+                      >
+                        Salvar
+                      </Button>
+                    </div>
+                  </td>
                   <td className="p-3">
                     <Badge variant="secondary">Recorrente</Badge>
                   </td>
-                  <td className="p-3 text-right text-xs text-muted-foreground">auto</td>
+                  <td className="p-3 text-right">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-emerald-700 border-emerald-500/30 hover:bg-emerald-500/10"
+                      onClick={() =>
+                        setAggBaixa({
+                          key: r.key,
+                          category: r.category,
+                          amount: r.amount,
+                          date: new Date().toISOString().slice(0, 10),
+                        })
+                      }
+                    >
+                      <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Dar baixa
+                    </Button>
+                  </td>
+
                 </tr>
               ))}
             {filtered.map((p) => (
