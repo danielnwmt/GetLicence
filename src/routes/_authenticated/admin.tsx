@@ -1700,7 +1700,13 @@ function PaymentsTab({
     due_date: "",
     quantity: "1",
     description: "",
+    method: "BOLETO" as "BOLETO" | "TRANSFERENCIA",
   });
+  const toLocalDatetimeInput = (d: Date) => {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+  const [confirmPay, setConfirmPay] = useState<{ id: string; datetime: string } | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "paid" | "pending" | "failed" | "overdue"
