@@ -1845,15 +1845,21 @@ function PaymentsTab({
     onChange();
   };
 
-  const confirmarRecebimento = async (id: string) => {
-    if (!confirm("Confirmar que a transferência foi recebida? O pagamento será marcado como pago."))
-      return;
+  const confirmarRecebimento = (id: string) => {
+    setConfirmPay({ id, datetime: toLocalDatetimeInput(new Date()) });
+  };
+  const submitConfirmarRecebimento = async () => {
+    if (!confirmPay) return;
+    const when = confirmPay.datetime
+      ? new Date(confirmPay.datetime).toISOString()
+      : new Date().toISOString();
     const { error } = await supabase
       .from("payments")
-      .update({ status: "paid", paid_at: new Date().toISOString() })
-      .eq("id", id);
+      .update({ status: "paid", paid_at: when })
+      .eq("id", confirmPay.id);
     if (error) return toast.error(error.message);
     toast.success("Pagamento confirmado");
+    setConfirmPay(null);
     onChange();
   };
 
