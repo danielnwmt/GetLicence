@@ -2297,15 +2297,27 @@ function PaymentsTab({
                       )}
                     </td>
                     <td className="px-4 py-3 text-right space-x-1 whitespace-nowrap">
-                      {!p.boleto_url && p.status !== "paid" && (
+                      {!p.boleto_url &&
+                        p.status !== "paid" &&
+                        p.method !== "TRANSFERENCIA" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => emitir(p.id)}
+                            disabled={issuingId === p.id}
+                          >
+                            <FileText className="mr-1 h-3.5 w-3.5" />{" "}
+                            {issuingId === p.id ? "Emitindo..." : "Emitir"}
+                          </Button>
+                        )}
+                      {p.method === "TRANSFERENCIA" && p.status !== "paid" && (
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => emitir(p.id)}
-                          disabled={issuingId === p.id}
+                          className="text-emerald-700 border-emerald-500/40 hover:bg-emerald-500/10"
+                          onClick={() => confirmarRecebimento(p.id)}
                         >
-                          <FileText className="mr-1 h-3.5 w-3.5" />{" "}
-                          {issuingId === p.id ? "Emitindo..." : "Emitir"}
+                          <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Confirmar recebimento
                         </Button>
                       )}
                       {p.boleto_url && p.status !== "paid" && (
