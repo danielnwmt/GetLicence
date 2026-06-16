@@ -425,7 +425,7 @@ ADMIN_UID=$(sudo -u postgres psql -d getlicence -tAc "select id from auth.users 
 if [ -n "$ADMIN_UID" ]; then
   sudo -u postgres psql -d getlicence -c "insert into public.user_roles(user_id, role) values ('${ADMIN_UID}','admin') on conflict (user_id, role) do nothing;" >/dev/null
 fi
-sudo -u getlicence bash -lc 'cd /opt/getlicence && bun install --silent'
+sudo -u getlicence bash -lc 'cd /opt/getlicence && bun install --silent && bun run build'
 systemctl restart getlicence-postgrest getlicence-auth getlicence-app
 echo "✓ App atualizado"
 EOS
