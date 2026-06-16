@@ -4493,6 +4493,40 @@ function PayablesTab({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!aggBaixa} onOpenChange={(o) => !o && setAggBaixa(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Dar baixa</DialogTitle>
+          </DialogHeader>
+          {aggBaixa && (
+            <div className="space-y-3 py-2">
+              <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">
+                <div className="font-medium">{aggLabel(aggBaixa.category)}</div>
+                <div className="text-muted-foreground">
+                  Valor: {formatBRL(aggBaixa.amount)}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Data da baixa</Label>
+                <Input
+                  type="date"
+                  value={aggBaixa.date}
+                  onChange={(e) =>
+                    setAggBaixa((s) => (s ? { ...s, date: e.target.value } : s))
+                  }
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAggBaixa(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={submitAggBaixa}>Confirmar baixa</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
