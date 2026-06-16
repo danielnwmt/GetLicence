@@ -223,21 +223,34 @@ HOST=127.0.0.1
 EOF
 chown "$APP_USER:$APP_USER" "$APP_DIR/.env"
 
+# Wrangler (workerd) lê segredos de runtime do .dev.vars
+cat >"$APP_DIR/.dev.vars" <<EOF
+SUPABASE_URL=${SITE_URL}
+SUPABASE_PUBLISHABLE_KEY=${ANON_KEY}
+SUPABASE_SERVICE_ROLE_KEY=${SERVICE_KEY}
+EOF
+chown "$APP_USER:$APP_USER" "$APP_DIR/.dev.vars"
+chmod 600 "$APP_DIR/.dev.vars"
+
 log "Instalando dependências do app"
 sudo -u "$APP_USER" bash -lc "cd $APP_DIR && bun install --silent"
 
-log "Compilando frontend"
-sudo -u "$APP_USER" bash -lc "cd $APP_DIR && bun run build" >/dev/null
+# Localiza o binário do bun do usuário (instalado em \$HOME/.bun/bin/bun)
+BUN_BIN=$(sudo -u "$APP_USER" bash -lc 'command -v bun' || true)
+if [[ -z "$BUN_BIN" ]]; then
+  err "bun não encontrado para o usuário ${APP_USER}"
+  exit 1
+fi
 
 cat >/etc/systemd/system/getlicence-app.service <<EOF
 [Unit]
-Description=GetLicence App (TanStack)
+Description=GetLicence App (TanStack via Wrangler/workerd)
 After=network.target postgresql.service getlicence-postgrest.service getlicence-auth.service
 Requires=postgresql.service getlicence-postgrest.service getlicence-auth.service
 [Service]
 WorkingDirectory=${APP_DIR}
 EnvironmentFile=${APP_DIR}/.env
-ExecStart=/usr/bin/node local/serve-built.mjs
+ExecStart=${BUN_BIN} x wrangler dev --ip 127.0.0.1 --port 3000 --log-level warn
 Restart=always
 RestartSec=3
 User=${APP_USER}
