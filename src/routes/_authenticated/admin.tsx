@@ -1826,6 +1826,18 @@ function PaymentsTab({
     onChange();
   };
 
+  const confirmarRecebimento = async (id: string) => {
+    if (!confirm("Confirmar que a transferência foi recebida? O pagamento será marcado como pago."))
+      return;
+    const { error } = await supabase
+      .from("payments")
+      .update({ status: "paid", paid_at: new Date().toISOString() })
+      .eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Pagamento confirmado");
+    onChange();
+  };
+
   const initials = (name?: string | null, email?: string | null) => {
     const src = (name || email || "?").trim();
     const parts = src.split(/\s+/).filter(Boolean);
