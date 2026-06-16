@@ -8,6 +8,7 @@ import {
   listSystemUsers,
 } from "@/lib/system-users.functions";
 import { issueAsaasBoleto, cancelAsaasBoleto } from "@/lib/boletos.functions";
+import { SystemUpdatesTab } from "@/components/SystemUpdatesTab";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -353,6 +354,7 @@ function AdminPage() {
             <TabsTrigger value="backup">Backup</TabsTrigger>
             <TabsTrigger value="api">API Licença</TabsTrigger>
             <TabsTrigger value="mobile">App Mobile</TabsTrigger>
+            <TabsTrigger value="system">Sistema</TabsTrigger>
           </TabsList>
           <TabsContent value="users">
             <SystemUsersTab profiles={systemUsers} onChange={reload} />
@@ -372,8 +374,12 @@ function AdminPage() {
           <TabsContent value="mobile">
             <MobileAppTab />
           </TabsContent>
+          <TabsContent value="system">
+            <SystemUpdatesTab />
+          </TabsContent>
         </Tabs>
       </TabsContent>
+
     </Tabs>
   );
 }
