@@ -36,6 +36,18 @@ create table if not exists public.profiles (
 );
 alter table public.profiles add column if not exists must_change_password boolean not null default false;
 alter table public.profiles add column if not exists password_plain text;
+-- defensivo: garante que instalações antigas tenham todas as colunas de cadastro
+alter table public.profiles add column if not exists full_name text;
+alter table public.profiles add column if not exists email text;
+alter table public.profiles add column if not exists cpf_cnpj text;
+alter table public.profiles add column if not exists phone text;
+alter table public.profiles add column if not exists address_zip text;
+alter table public.profiles add column if not exists address_street text;
+alter table public.profiles add column if not exists address_number text;
+alter table public.profiles add column if not exists address_complement text;
+alter table public.profiles add column if not exists address_neighborhood text;
+alter table public.profiles add column if not exists address_city text;
+alter table public.profiles add column if not exists address_state text;
 create sequence if not exists public.profiles_customer_number_seq start 1;
 alter table public.profiles add column if not exists customer_number bigint;
 alter table public.profiles alter column customer_number set default nextval('public.profiles_customer_number_seq');
