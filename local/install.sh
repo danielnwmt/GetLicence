@@ -391,9 +391,22 @@ fi
 # ---------- 11. SSL opcional ----------
 if [[ -n "$APP_DOMAIN" ]]; then
   log "Emitindo certificado SSL para ${APP_DOMAIN}"
-  apt-get install -y -qq certbot python3-certbot-nginx >/dev/null
-  certbot --nginx -d "$APP_DOMAIN" --non-interactive --agree-tos -m "$SSL_EMAIL" --redirect \
-    || warn "certbot falhou — confirme que ${APP_DOMAIN} aponta para este servidor"
+  # Aguarda liberação do lock do apt (unattended-upgrades pode estar rodando)
+  for i in $(seq 1 60); do
+    if ! fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1 \
+       && ! fuser /var/lib/apt/lists/lock >/dev/null 2>&1 \
+       && ! fuser /var/lib/dpkg/lock >/dev/null 2>&1; then
+      break
+    fi
+    [[ $i -eq 1 ]] && log "Aguardando apt liberar (unattended-upgrades)..."
+    sleep 5
+  done
+  apt-get install -y -qq certbot python3-certbot-nginx >/dev/null \
+    || warn "Falha ao instalar certbot — pule SSL ou rode 'apt install certbot python3-certbot-nginx' manualmente"
+  if command -v certbot >/dev/null 2>&1; then
+    certbot --nginx -d "$APP_DOMAIN" --non-interactive --agree-tos -m "$SSL_EMAIL" --redirect \
+      || warn "certbot falhou — confirme que ${APP_DOMAIN} aponta para este servidor"
+  fi
 fi
 
 log "Garantindo permissões de administrador"
