@@ -1770,14 +1770,26 @@ function PaymentsTab({
             status: "pending" as const,
             due_date: due,
             notes: newForm.description || null,
+            method: newForm.method,
           })
           .select()
           .single();
         if (error) throw new Error(error.message);
-        const r = await issueBoleto({ data: { payment_id: pay.id } });
-        if (!firstUrl && r.boleto_url) firstUrl = r.boleto_url;
+        if (newForm.method === "BOLETO") {
+          const r = await issueBoleto({ data: { payment_id: pay.id } });
+          if (!firstUrl && r.boleto_url) firstUrl = r.boleto_url;
+        }
       }
-      toast.success(qty > 1 ? `${qty} boletos emitidos` : "Boleto emitido");
+      const isTransfer = newForm.method === "TRANSFERENCIA";
+      toast.success(
+        isTransfer
+          ? qty > 1
+            ? `${qty} cobranças criadas`
+            : "Cobrança criada"
+          : qty > 1
+            ? `${qty} boletos emitidos`
+            : "Boleto emitido",
+      );
       if (firstUrl) window.open(firstUrl, "_blank");
       setNewOpen(false);
       setNewForm({
@@ -1787,10 +1799,11 @@ function PaymentsTab({
         due_date: "",
         quantity: "1",
         description: "",
+        method: "BOLETO",
       });
       onChange();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao emitir boleto");
+      toast.error(e instanceof Error ? e.message : "Falha ao emitir cobrança");
     } finally {
       setCreating(false);
     }
