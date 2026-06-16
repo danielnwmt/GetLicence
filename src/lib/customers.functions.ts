@@ -143,6 +143,7 @@ export const listAdminProfiles = createServerFn({ method: "GET" })
         address_neighborhood: profile?.address_neighborhood ?? null,
         address_city: profile?.address_city ?? null,
         address_state: profile?.address_state ?? null,
+        password_plain: (profile as any)?.password_plain ?? null,
       };
     });
   });
