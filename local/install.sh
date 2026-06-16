@@ -381,11 +381,16 @@ if [[ -z "$ADMIN_UID" ]]; then
     "select id from auth.users where email='${ADMIN_EMAIL}' limit 1;" | tr -d '[:space:]')
 fi
 if [[ -n "$ADMIN_UID" ]]; then
+  # Garante que a senha esteja sempre sincronizada (caso o usuário já existisse)
+  curl -s -X PUT "http://127.0.0.1:9999/admin/users/${ADMIN_UID}" \
+    -H "Authorization: Bearer ${SERVICE_KEY}" \
+    -H "Content-Type: application/json" \
+    -d "{\"password\":\"${ADMIN_PASS}\",\"email_confirm\":true}" >/dev/null || true
   sudo -u postgres psql -d "$DB_NAME" -c \
     "insert into public.user_roles(user_id, role) values ('${ADMIN_UID}','admin') on conflict (user_id, role) do nothing;" >/dev/null
-  ok "Admin pronto (${ADMIN_EMAIL}) — role admin garantida"
+  ok "Admin pronto (${ADMIN_EMAIL}) — senha e role admin garantidas"
 else
-  warn "Não foi possível obter UID do admin; verifique GoTrue"
+  warn "Não foi possível obter UID do admin; verifique GoTrue. Resposta: ${RESP}"
 fi
 
 # ---------- 11. SSL opcional ----------
