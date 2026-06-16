@@ -3997,6 +3997,57 @@ function PayablesTab({
   };
   const [form, setForm] = useState(empty);
   const [filter, setFilter] = useState<"all" | "pending" | "paid" | "overdue">("all");
+  const [aggDue, setAggDue] = useState<Record<string, string>>({});
+  const [aggBaixa, setAggBaixa] = useState<
+    | { key: string; category: "vps" | "storage" | "other"; amount: number; date: string }
+    | null
+  >(null);
+
+  const aggLabel = (c: "vps" | "storage" | "other") =>
+    c === "vps"
+      ? "VPS — mensal recorrente"
+      : c === "storage"
+        ? "Armazenamento — mensal recorrente"
+        : "Software — mensal recorrente";
+
+  const createAggPayable = async (
+    cat: "vps" | "storage" | "other",
+    amount: number,
+    opts: { due_date?: string | null; paid_at?: string | null },
+  ) => {
+    const { error } = await (supabase as any).from("payables").insert({
+      description: aggLabel(cat),
+      category: cat,
+      amount,
+      recurrence: "monthly",
+      due_date: opts.due_date ?? null,
+      status: opts.paid_at ? "paid" : "pending",
+      paid_at: opts.paid_at ?? null,
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Salvo");
+    onChange();
+  };
+
+  const submitAggBaixa = async () => {
+    if (!aggBaixa) return;
+    if (!aggBaixa.date) return toast.error("Informe a data de baixa");
+    await createAggPayable(aggBaixa.category, aggBaixa.amount, {
+      paid_at: new Date(aggBaixa.date).toISOString(),
+    });
+    setAggBaixa(null);
+  };
+
+  const saveAggDue = async (
+    key: string,
+    cat: "vps" | "storage" | "other",
+    amount: number,
+  ) => {
+    const d = aggDue[key];
+    if (!d) return toast.error("Informe a data de vencimento");
+    await createAggPayable(cat, amount, { due_date: d });
+    setAggDue((s) => ({ ...s, [key]: "" }));
+  };
 
   const today = new Date();
   const isOverdue = (p: PayableRow) =>
