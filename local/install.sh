@@ -388,6 +388,10 @@ if [[ -n "$ADMIN_UID" ]]; then
     -d "{\"password\":\"${ADMIN_PASS}\",\"email_confirm\":true}" >/dev/null || true
   sudo -u postgres psql -d "$DB_NAME" -c \
     "insert into public.user_roles(user_id, role) values ('${ADMIN_UID}','admin') on conflict (user_id, role) do nothing;" >/dev/null
+  # Admin não é cliente: zera customer_number e reseta a sequência para começar em 1
+  sudo -u postgres psql -d "$DB_NAME" -c \
+    "update public.profiles set customer_number=null where user_id='${ADMIN_UID}'; \
+     select setval('public.profiles_customer_number_seq', coalesce((select max(customer_number) from public.profiles), 0) + 1, false);" >/dev/null
   ok "Admin pronto (${ADMIN_EMAIL}) — senha e role admin garantidas"
 else
   warn "Não foi possível obter UID do admin; verifique GoTrue. Resposta: ${RESP}"
