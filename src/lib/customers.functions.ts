@@ -118,11 +118,27 @@ export const listAdminProfiles = createServerFn({ method: "GET" })
       .eq("role", "admin");
     const adminIds = new Set((adminRoles ?? []).map((r: any) => r.user_id));
 
-    const { data: profiles, error: profilesError } = await supabase
-      .from("profiles")
-      .select(
-        "user_id, full_name, email, address_city, address_state, customer_number, cpf_cnpj, phone, address_zip, address_street, address_number, address_complement, address_neighborhood, password_plain",
-      );
+    let profiles: any[] | null = null;
+    let profilesError: any = null;
+    {
+      const res = await supabase
+        .from("profiles")
+        .select(
+          "user_id, full_name, email, address_city, address_state, customer_number, cpf_cnpj, phone, address_zip, address_street, address_number, address_complement, address_neighborhood, password_plain",
+        );
+      profiles = res.data as any[] | null;
+      profilesError = res.error;
+    }
+    // Fallback: instalações antigas sem a coluna password_plain
+    if (profilesError) {
+      const res2 = await supabase
+        .from("profiles")
+        .select(
+          "user_id, full_name, email, address_city, address_state, customer_number, cpf_cnpj, phone, address_zip, address_street, address_number, address_complement, address_neighborhood",
+        );
+      profiles = res2.data as any[] | null;
+      profilesError = res2.error;
+    }
 
     if (profilesError) throw new Response(profilesError.message, { status: 400 });
 
